@@ -1,5 +1,6 @@
 package liuyuyang.net.service.impl;
 
+import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -65,10 +66,13 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         context.setVariable("reviewers", comment.getName());
 
         // 获取当前时间
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm:ss");
-        String time = now.format(formatter);
+//        LocalDateTime now = LocalDateTime.now();
+//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm:ss");
+//        String time = now.format(formatter);
+        String time = DateUtil.format(DateUtil.date(), "yyyy年MM月dd日 HH:mm:ss");
         context.setVariable("time", time);
+
+
 
         context.setVariable("content", content.toString());
 
