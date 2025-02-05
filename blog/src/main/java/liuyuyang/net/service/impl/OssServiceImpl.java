@@ -94,11 +94,22 @@ public class OssServiceImpl extends ServiceImpl<OssMapper, Oss> implements OssSe
     @Override
     public void updateOss(Oss oss) {
         String platform = oss.getPlatform();
+        System.out.println(oss);
+        System.out.println(22222);
         if ("local".equals(platform)) {
-            // domin 后缀必须是 /static/
-            if (!oss.getDomain().endsWith("/static/")) {
-                throw new CustomException("本地存储域名必须以 /static/ 结尾");
-            }
+            // if (oss.getDomain().contains("localhost") || oss.getDomain().contains("127.0.0.1")) {
+            //     throw new CustomException("不支持的域名");
+            // }
+
+            // 如果后缀不是 /static/ 则拼接
+            if (!oss.getDomain().endsWith("static/")) oss.setDomain(oss.getDomain() + "static/");
+
+            // 获取当前项目的路径
+            String projectPath = System.getProperty("user.dir");
+            oss.setEndPoint(projectPath + "/");
+
+            System.out.println(oss);
+            System.out.println(3333);
         }
         // 不允许更改平台
         oss.setPlatform(null);
