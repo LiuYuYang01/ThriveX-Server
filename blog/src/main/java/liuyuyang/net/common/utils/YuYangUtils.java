@@ -4,24 +4,71 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.jsonwebtoken.Claims;
-import liuyuyang.net.web.mapper.UserTokenMapper;
 import liuyuyang.net.model.UserToken;
-import liuyuyang.net.common.properties.JwtProperties;
 import liuyuyang.net.vo.FilterVo;
 import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.web.mapper.UserTokenMapper;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Component
 public class YuYangUtils {
-    @Resource
-    private JwtProperties jwtProperties;
+
 
     @Resource
     private UserTokenMapper userTokenMapper;
+
+
+    /**
+     * 获取 HttpServletRequest
+     *
+     * @return {HttpServletRequest}
+     */
+    public static HttpServletRequest getRequest() {
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        return (requestAttributes == null) ? null : ((ServletRequestAttributes) requestAttributes).getRequest();
+    }
+
+    /**
+     * 获取Header的值
+     *
+     * @param name 请求头名称
+     * @return 请求头
+     */
+    public static String getHeader(String name) {
+        HttpServletRequest request = getRequest();
+        return Objects.requireNonNull(request).getHeader(name);
+    }
+
+    /**
+     * 判断是否是管理员
+     */
+    public static boolean isAdmin() {
+        String token = getHeader("Authorization");
+        return isAdmin(token);
+    }
+
+    // 鉴权：判断是否为超级管理员
+    public static boolean isAdmin(String token) {
+        if (token != null) {
+            if (token.startsWith("Bearer ")) token = token.substring(7);
+            Claims claims = JwtUtils.parseJWT(token);
+            Map<String, Object> role = (Map<String, Object>) claims.get("role");
+
+            // 是超级管理员
+            return "admin".equals(role.get("mark"));
+        }
+
+        return false;
+    }
 
     // 分页查询逻辑
     public <T> Page<T> getPageData(PageVo pageVo, List<T> list) {
@@ -62,20 +109,6 @@ public class YuYangUtils {
         return queryWrapper;
     }
 
-    // 鉴权：判断是否为超级管理员
-    public boolean isAdmin(String token) {
-        if (token != null) {
-            if (token.startsWith("Bearer ")) token = token.substring(7);
-            Claims claims = JwtUtils.parseJWT(jwtProperties.getSecretKey(), token);
-            Map<String, Object> role = (Map<String, Object>) claims.get("role");
-
-            // 是超级管理员
-            return "admin".equals(role.get("mark"));
-        }
-
-        return false;
-    }
-
     // 校验当前JWT是否有效
     public boolean check(String token) {
         try {
@@ -88,7 +121,7 @@ public class YuYangUtils {
 
                 // 如果跟之前的token相匹配则进一步判断token是否有效
                 if (userTokens != null && !userTokens.isEmpty()) {
-                    Claims claims = JwtUtils.parseJWT(jwtProperties.getSecretKey(), token);
+                    Claims claims = JwtUtils.parseJWT(token);
                     return true;
                 } else {
                     return false;

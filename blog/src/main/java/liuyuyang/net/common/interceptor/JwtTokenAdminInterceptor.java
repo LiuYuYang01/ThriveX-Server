@@ -4,10 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.jsonwebtoken.Claims;
 import liuyuyang.net.common.annotation.NoTokenRequired;
 import liuyuyang.net.common.execption.CustomException;
-import liuyuyang.net.web.mapper.UserTokenMapper;
-import liuyuyang.net.model.UserToken;
 import liuyuyang.net.common.properties.JwtProperties;
 import liuyuyang.net.common.utils.JwtUtils;
+import liuyuyang.net.model.UserToken;
+import liuyuyang.net.web.mapper.UserTokenMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -57,7 +57,7 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
             if ("GET".equalsIgnoreCase(request.getMethod())) {
                 if (token != null) {
                     if (token.startsWith("Bearer ")) token = token.substring(7);
-                    JwtUtils.parseJWT(jwtProperties.getSecretKey(), token);
+                    JwtUtils.parseJWT(token);
                 }
                 return true;
             }
@@ -71,7 +71,7 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
 
             // 如果跟之前的token相匹配则进一步判断token是否有效
             if (userTokens != null && !userTokens.isEmpty()) {
-                Claims claims = JwtUtils.parseJWT(jwtProperties.getSecretKey(), token);
+                Claims claims = JwtUtils.parseJWT(token);
                 return true;
             } else {
                 throw new CustomException(401, "该账号已在另一台设备登录");

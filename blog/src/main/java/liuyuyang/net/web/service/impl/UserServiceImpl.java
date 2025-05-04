@@ -4,25 +4,28 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import liuyuyang.net.common.execption.CustomException;
+import liuyuyang.net.common.utils.JwtUtils;
+import liuyuyang.net.common.utils.YuYangUtils;
 import liuyuyang.net.dto.user.EditPassDTO;
 import liuyuyang.net.dto.user.UserDTO;
 import liuyuyang.net.dto.user.UserInfoDTO;
 import liuyuyang.net.dto.user.UserLoginDTO;
-import liuyuyang.net.common.execption.CustomException;
+import liuyuyang.net.model.Role;
+import liuyuyang.net.model.User;
+import liuyuyang.net.model.UserToken;
+import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.vo.user.UserFilterVo;
 import liuyuyang.net.web.mapper.RoleMapper;
 import liuyuyang.net.web.mapper.UserMapper;
 import liuyuyang.net.web.mapper.UserTokenMapper;
-import liuyuyang.net.model.*;
-import liuyuyang.net.common.properties.JwtProperties;
 import liuyuyang.net.web.service.UserService;
-import liuyuyang.net.common.utils.JwtUtils;
-import liuyuyang.net.common.utils.YuYangUtils;
-import liuyuyang.net.vo.PageVo;
-import liuyuyang.net.vo.user.UserFilterVo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
@@ -31,14 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-
 @Service
 @Transactional
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
-    @Resource
-    private JwtProperties jwtProperties;
 
     @Resource
     private YuYangUtils yuYangUtils;
@@ -141,12 +139,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         Map<String, Object> result = new HashMap<>();
         result.put("user", user);
         result.put("role", role);
-        String token = JwtUtils.createJWT(jwtProperties.getSecretKey(), jwtProperties.getTtl(), result);
+        String token = JwtUtils.createJWT(result);
         result.put("token", token);
 
         // 先删除用户的token
         LambdaQueryWrapper<UserToken> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
-        userLambdaQueryWrapper.eq(UserToken::getUid,user.getId());
+        userLambdaQueryWrapper.eq(UserToken::getUid, user.getId());
         userTokenMapper.delete(userLambdaQueryWrapper);
         // 再存储用户的token
         UserToken userToken = new UserToken();

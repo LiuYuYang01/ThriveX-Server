@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import liuyuyang.net.model.Article;
-import liuyuyang.net.model.File;
 import liuyuyang.net.vo.PageVo;
 import liuyuyang.net.vo.article.ArticleFillterVo;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +23,7 @@ public interface ArticleService extends IService<Article> {
 
     void edit(Article article);
 
-    Article get(Integer id, String password, String token);
+    Article get(Integer id, String password);
 
     List<Article> list(ArticleFillterVo filterVo, String token);
 

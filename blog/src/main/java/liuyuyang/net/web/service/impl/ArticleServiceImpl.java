@@ -58,6 +58,27 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Resource
     private YuYangUtils yuYangUtils;
 
+    @NotNull
+    private static QueryWrapper<Article> getArticleQueryWrapper(ArticleFillterVo filterVo) {
+        QueryWrapper<Article> queryWrapper = new QueryWrapper<>();
+        queryWrapper.orderByDesc("create_time");
+
+        // 根据关键字通过标题过滤出对应文章数据
+        if (filterVo.getKey() != null && !filterVo.getKey().isEmpty()) {
+            queryWrapper.like("title", "%" + filterVo.getKey() + "%");
+        }
+
+        // 根据开始与结束时间过滤
+        if (filterVo.getStartDate() != null && filterVo.getEndDate() != null) {
+            queryWrapper.between("create_time", filterVo.getStartDate(), filterVo.getEndDate());
+        } else if (filterVo.getStartDate() != null) {
+            queryWrapper.ge("create_time", filterVo.getStartDate());
+        } else if (filterVo.getEndDate() != null) {
+            queryWrapper.le("create_time", filterVo.getEndDate());
+        }
+        return queryWrapper;
+    }
+
     @Override
     public void add(Article article) {
         articleMapper.insert(article);
@@ -191,12 +212,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Article get(Integer id, String password, String token) {
+    public Article get(Integer id, String password) {
         Article data = bindingData(id);
 
         String description = data.getDescription();
         String content = data.getContent();
-
+        // todo ps by:laifeng 这里需要优化， 对于角色判断，请将角色逻辑移到controller层，不要在service中进行，而且可以通过aop进行操作，避免重复判断
+        String token = YuYangUtils.getHeader("Authorization");
         boolean isAdmin = !"".equals(token) && yuYangUtils.isAdmin(token);
 
         ArticleConfig config = data.getConfig();
@@ -472,7 +494,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (ids.size() <= count) {
             // 如果文章数量少于或等于需要的数量，直接返回所有文章
             return ids.stream()
-                    .map(id -> get(id, "", ""))
+                    .map(id -> get(id, ""))
                     .collect(Collectors.toList());
         }
 
@@ -579,27 +601,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             }
         }
 
-        return queryWrapper;
-    }
-
-    @NotNull
-    private static QueryWrapper<Article> getArticleQueryWrapper(ArticleFillterVo filterVo) {
-        QueryWrapper<Article> queryWrapper = new QueryWrapper<>();
-        queryWrapper.orderByDesc("create_time");
-
-        // 根据关键字通过标题过滤出对应文章数据
-        if (filterVo.getKey() != null && !filterVo.getKey().isEmpty()) {
-            queryWrapper.like("title", "%" + filterVo.getKey() + "%");
-        }
-
-        // 根据开始与结束时间过滤
-        if (filterVo.getStartDate() != null && filterVo.getEndDate() != null) {
-            queryWrapper.between("create_time", filterVo.getStartDate(), filterVo.getEndDate());
-        } else if (filterVo.getStartDate() != null) {
-            queryWrapper.ge("create_time", filterVo.getStartDate());
-        } else if (filterVo.getEndDate() != null) {
-            queryWrapper.le("create_time", filterVo.getEndDate());
-        }
         return queryWrapper;
     }
 

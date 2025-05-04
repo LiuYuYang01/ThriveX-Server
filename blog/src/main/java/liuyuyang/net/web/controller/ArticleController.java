@@ -7,13 +7,12 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import liuyuyang.net.common.annotation.NoTokenRequired;
 import liuyuyang.net.common.annotation.PremName;
-import liuyuyang.net.model.Article;
-import liuyuyang.net.common.utils.Result;
-import liuyuyang.net.model.File;
-import liuyuyang.net.web.service.ArticleService;
 import liuyuyang.net.common.utils.Paging;
+import liuyuyang.net.common.utils.Result;
+import liuyuyang.net.model.Article;
 import liuyuyang.net.vo.PageVo;
 import liuyuyang.net.vo.article.ArticleFillterVo;
+import liuyuyang.net.web.service.ArticleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -80,9 +79,9 @@ public class ArticleController {
     @GetMapping("/{id}")
     @ApiOperation("获取文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<Article> get(@PathVariable Integer id, @RequestParam(defaultValue = "") String password, @RequestHeader(value = "Authorization", required = false) String token) {
+    public Result<Article> get(@PathVariable Integer id, @RequestParam(defaultValue = "") String password) {
         password = !password.isEmpty() ? password : "";
-        Article data = articleService.get(id, password, token);
+        Article data = articleService.get(id, password);
         return Result.success(data);
     }
 

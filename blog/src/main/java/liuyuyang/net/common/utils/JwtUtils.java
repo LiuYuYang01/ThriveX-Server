@@ -4,12 +4,37 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import liuyuyang.net.common.properties.JwtProperties;
+import lombok.Getter;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
 
 public class JwtUtils {
+
+    @Getter
+    private static JwtProperties jwtProperties;
+
+    public static void setJwtProperties(JwtProperties properties) {
+        if (JwtUtils.jwtProperties == null) {
+            JwtUtils.jwtProperties = properties;
+        }
+    }
+
+    /**
+     * 生成jwt
+     * 使用Hs256算法, 私匙使用固定秘钥
+     *
+     * @param claims 设置的信息
+     * @return
+     */
+
+    public static String createJWT(Map<String, Object> claims) {
+        return createJWT(getJwtProperties().getSecretKey(), getJwtProperties().getTtl(), claims);
+    }
+
+
     /**
      * 生成jwt
      * 使用Hs256算法, 私匙使用固定秘钥
@@ -40,17 +65,23 @@ public class JwtUtils {
     }
 
     /**
+     * 获取签名秘钥
+     */
+    public static byte[] getSigningKey() {
+        return getJwtProperties().getSecretKey().getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
      * Token解密
      *
-     * @param secretKey jwt秘钥 此秘钥一定要保留好在服务端, 不能暴露出去, 否则sign就可以被伪造, 如果对接多个客户端建议改造成多个
-     * @param token     加密后的token
+     * @param token 加密后的token
      * @return
      */
-    public static Claims parseJWT(String secretKey, String token) {
+    public static Claims parseJWT(String token) {
         // 得到DefaultJwtParser
         Claims claims = Jwts.parser()
                 // 设置签名的秘钥
-                .setSigningKey(secretKey.getBytes(StandardCharsets.UTF_8))
+                .setSigningKey(getSigningKey())
                 // 设置需要解析的jwt
                 .parseClaimsJws(token).getBody();
         return claims;

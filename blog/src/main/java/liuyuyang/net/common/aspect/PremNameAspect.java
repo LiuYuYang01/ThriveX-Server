@@ -4,13 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.jsonwebtoken.Claims;
 import liuyuyang.net.common.annotation.PremName;
 import liuyuyang.net.common.execption.CustomException;
+import liuyuyang.net.common.utils.JwtUtils;
+import liuyuyang.net.model.Permission;
+import liuyuyang.net.model.RolePermission;
 import liuyuyang.net.web.mapper.PermissionMapper;
 import liuyuyang.net.web.mapper.RoleMapper;
 import liuyuyang.net.web.mapper.RolePermissionMapper;
-import liuyuyang.net.model.Permission;
-import liuyuyang.net.model.RolePermission;
-import liuyuyang.net.common.properties.JwtProperties;
-import liuyuyang.net.common.utils.JwtUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
@@ -29,14 +28,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Aspect
 @Component
 public class PremNameAspect {
-    @Resource
-    private JwtProperties jwtProperties;
     @Resource
     private PermissionMapper permissionMapper;
     @Resource
@@ -85,7 +81,7 @@ public class PremNameAspect {
                         token = token.substring(7);
                     }
 
-                    Claims claims = JwtUtils.parseJWT(jwtProperties.getSecretKey(), token);
+                    Claims claims = JwtUtils.parseJWT(token);
                     role = (Map<String, Object>) claims.get("role");
                 } catch (Exception e) {
                     response.setStatus(401);
@@ -95,7 +91,7 @@ public class PremNameAspect {
                 String mark = (String) role.get("mark");
 
                 // 如果是管理员，则不需要权限校验
-                if(Objects.equals(mark, "admin")) return;
+                if (Objects.equals(mark, "admin")) return;
 
                 // 查询当前角色的权限
                 LambdaQueryWrapper<RolePermission> roleLambdaQueryWrapper = new LambdaQueryWrapper<>();

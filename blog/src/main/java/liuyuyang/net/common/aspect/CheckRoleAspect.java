@@ -1,15 +1,8 @@
 package liuyuyang.net.common.aspect;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
 import io.jsonwebtoken.Claims;
 import liuyuyang.net.common.annotation.CheckRole;
 import liuyuyang.net.common.execption.CustomException;
-import liuyuyang.net.common.properties.JwtProperties;
 import liuyuyang.net.common.utils.JwtUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
@@ -19,15 +12,18 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 @Aspect
 @Component
 public class CheckRoleAspect {
-    @Resource
-    private JwtProperties jwtProperties;
+
 
     // 定义切点，支持类和方法上的注解
     @Pointcut("@within(liuyuyang.net.common.annotation.CheckRole) || @annotation(liuyuyang.net.common.annotation.CheckRole)")
@@ -58,7 +54,7 @@ public class CheckRoleAspect {
                 Map<String, Object> role;
 
                 try {
-                    Claims claims = JwtUtils.parseJWT(jwtProperties.getSecretKey(), token);
+                    Claims claims = JwtUtils.parseJWT(token);
                     role = (Map<String, Object>) claims.get("role");
                 } catch (Exception e) {
                     response.setStatus(401);
