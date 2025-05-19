@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.Map;
 
 public class JwtUtils {
-
     @Getter
     private static JwtProperties jwtProperties;
 
@@ -29,11 +28,9 @@ public class JwtUtils {
      * @param claims 设置的信息
      * @return
      */
-
     public static String createJWT(Map<String, Object> claims) {
         return createJWT(getJwtProperties().getSecretKey(), getJwtProperties().getTtl(), claims);
     }
-
 
     /**
      * 生成jwt

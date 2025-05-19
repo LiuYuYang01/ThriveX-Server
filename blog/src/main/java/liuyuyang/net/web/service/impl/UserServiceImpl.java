@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.common.execption.CustomException;
+import liuyuyang.net.common.properties.JwtProperties;
 import liuyuyang.net.common.utils.JwtUtils;
 import liuyuyang.net.common.utils.YuYangUtils;
 import liuyuyang.net.dto.user.EditPassDTO;
@@ -20,6 +21,7 @@ import liuyuyang.net.web.mapper.RoleMapper;
 import liuyuyang.net.web.mapper.UserMapper;
 import liuyuyang.net.web.mapper.UserTokenMapper;
 import liuyuyang.net.web.service.UserService;
+import lombok.Getter;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +39,6 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
-
     @Resource
     private YuYangUtils yuYangUtils;
     @Resource
