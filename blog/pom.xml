@@ -19,10 +19,15 @@
     </properties>
 
     <dependencies>
-        <!-- 用于生成 \ 解析jwt -->
         <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt</artifactId>
+            <groupId>eu.bitwalker</groupId>
+            <artifactId>UserAgentUtils</artifactId>
+            <version>1.21</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.16.1</version>
         </dependency>
         <!--  测试      -->
         <dependency>
@@ -34,18 +39,6 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
-        </dependency>
-
-        <!-- 构建基于Spring Boot的Web应用程序 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-        <!-- 集成MyBatis-Plus和Spring Boot -->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
         </dependency>
 
         <!-- Spring Boot 热重载 -->
@@ -82,21 +75,9 @@
             <artifactId>oshi-core</artifactId>
         </dependency>
 
-
-        <!--        <dependency>-->
-        <!--            <groupId>org.springframework.boot</groupId>-->
-        <!--            <artifactId>spring-boot-starter-mail</artifactId>-->
-        <!--        </dependency>-->
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
-        </dependency>
-
-        <!-- 自定义依赖 -->
-        <dependency>
-            <groupId>liuyuyang.net</groupId>
-            <artifactId>model</artifactId>
         </dependency>
 
         <!--  存储oss使用 https://x-file-storage.xuyanwu.cn/#/      -->
@@ -114,12 +95,6 @@
             <groupId>com.aliyun.oss</groupId>
             <artifactId>aliyun-sdk-oss</artifactId>
             <version>3.16.1</version>
-        </dependency>
-        <!-- 七牛云对象存储 -->
-        <dependency>
-            <groupId>com.qiniu</groupId>
-            <artifactId>qiniu-java-sdk</artifactId>
-            <version>${qiniu.version}</version>
         </dependency>
         <dependency>
             <groupId>com.qcloud</groupId>

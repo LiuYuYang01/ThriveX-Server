@@ -7,14 +7,14 @@ import io.swagger.annotations.ApiOperation;
 import liuyuyang.net.common.annotation.NoTokenRequired;
 import liuyuyang.net.common.annotation.PremName;
 import liuyuyang.net.common.execption.CustomException;
-import liuyuyang.net.web.mapper.LinkTypeMapper;
+import liuyuyang.net.common.utils.Paging;
+import liuyuyang.net.common.utils.Result;
 import liuyuyang.net.model.Link;
 import liuyuyang.net.model.LinkType;
-import liuyuyang.net.common.utils.Result;
-import liuyuyang.net.web.service.LinkService;
-import liuyuyang.net.common.utils.Paging;
 import liuyuyang.net.vo.PageVo;
 import liuyuyang.net.vo.link.LinkFilterVo;
+import liuyuyang.net.web.mapper.LinkTypeMapper;
+import liuyuyang.net.web.service.LinkService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -109,7 +109,7 @@ public class LinkController {
     @PatchMapping("/audit/{id}")
     @ApiOperation("审核指定网站")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
-    public Result auditWeb(@PathVariable Integer id) {
+    public Result<?> auditWeb(@PathVariable Integer id) {
         Link data = linkService.getById(id);
 
         if (data == null) throw new CustomException(400, "该网站不存在");
@@ -117,5 +117,17 @@ public class LinkController {
         data.setAuditStatus(1);
         linkService.updateById(data);
         return Result.success();
+    }
+
+    /**
+     * 获取网站信息
+     *
+     * @param url 网址
+     * @return {@link Result }<{@link Link }>
+     */
+    @GetMapping("/website-info")
+    public Result<Link> getWebsiteInfo(@RequestParam String url) throws Exception {
+        Link info = linkService.fetchWebsiteInfo(url);
+        return Result.success(info);
     }
 }

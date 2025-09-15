@@ -1,50 +1,35 @@
-# 设置第一阶段的go 编译镜像
-FROM golang:1.22.0 AS db_builder
-# 安装git客户端
-RUN apt-get update && apt-get install -y git
-# 设置工作目录
-WORKDIR /
-# 添加源码
-RUN git clone https://gitee.com/liumou_site/database-initialized
-# 编译源码时添加静态链接选项
-RUN cd database-initialized && go mod tidy && CGO_ENABLED=1 go build -ldflags="-linkmode external -extldflags -static" -o database-initialized
-
-# 第二阶段镜像
-# 设置基础镜像
-FROM registry.cn-hangzhou.aliyuncs.com/liuyi778/openjdk:11.0-jre-buster
-#FROM openjdk:17
-# 设置应用程序的网络端口配置
-ENV PORT 9003
-
-# 配置数据库连接参数（数据库地址/端口、数据库名称）
-ENV DB_PORT 3306
-ENV DB_NAME ThriveX
-ENV DB_HOST 127.0.0.1
-ENV DB_USERNAME thrive
-ENV DB_PASSWORD ThriveX@123?
-ENV DB_INFO ${DB_HOST}:${DB_PORT}/${DB_NAME}
-
-# 配置邮件服务器连接参数（SMTP服务器地址、端口及认证信息）
-ENV EMAIL_HOST mail.qq.com
-ENV EMAIL_PORT 465
-ENV EMAIL_USERNAME 123456789@qq.com
-ENV EMAIL_PASSWORD 123456789
-ARG VERSION=2.5.2
-ENV VERSION=${VERSION}
+# 基于官方JDK 1.8镜像作为构建环境
+FROM maven:3.6.3-openjdk-8 AS builder
 
 # 设置工作目录
-WORKDIR /server
-# 添加第一阶段编译好的源码
-COPY --from=db_builder /database-initialized/database-initialized /server/database-initialized
-# 添加jar包
-ADD https://github.com/LiuYuYang01/ThriveX-Server/releases/download/${VERSION}/blog.jar /server/app.jar
-# 添加启动脚本
-COPY RUN.sh /server/RUN.sh
-# 添加SQL脚本
-COPY ThriveX.sql /server/ThriveX.sql
-# 设置权限
-RUN chmod +x /server/RUN.sh && chmod +x /server/database-initialized
-# 尝试运行
-RUN /server/database-initialized -h
-# 设置启动命令
-ENTRYPOINT ["/server/RUN.sh"]
+WORKDIR /app
+
+# 复制Maven配置文件
+COPY . .
+
+# 构建应用，跳过测试以加快构建速度
+RUN mvn install -Dmaven.test.skip=true -P pro
+
+# 运行阶段使用精简的JRE 1.8镜像
+FROM openjdk:8-jre-alpine
+
+# 维护者信息
+LABEL maintainer="1141306760@qq.com"
+
+# 设置时区为Asia/Shanghai
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 设置工作目录
+WORKDIR /app
+
+# 从构建阶段复制打包好的jar文件
+COPY --from=builder /app/blog/target/*.jar app.jar
+# 添加环境变量
+ENV JAVA_OPTS="-Xmx512m -Xms256m"
+# 暴露应用端口
+EXPOSE 9003
+
+# 启动命令，使用exec形式以确保应用接收信号
+# 修改启动命令
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

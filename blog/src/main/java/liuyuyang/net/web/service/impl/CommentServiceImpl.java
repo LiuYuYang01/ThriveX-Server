@@ -3,27 +3,37 @@ package liuyuyang.net.web.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import eu.bitwalker.useragentutils.Browser;
+import eu.bitwalker.useragentutils.OperatingSystem;
+import eu.bitwalker.useragentutils.UserAgent;
 import liuyuyang.net.common.execption.CustomException;
-import liuyuyang.net.model.Comment;
-import liuyuyang.net.web.mapper.ArticleMapper;
-import liuyuyang.net.web.mapper.CommentMapper;
-import liuyuyang.net.model.Article;
-import liuyuyang.net.web.service.CommentService;
-import liuyuyang.net.web.service.WebConfigService;
 import liuyuyang.net.common.utils.EmailUtils;
 import liuyuyang.net.common.utils.YuYangUtils;
+import liuyuyang.net.model.Article;
+import liuyuyang.net.model.Comment;
+import liuyuyang.net.model.EnvConfig;
 import liuyuyang.net.vo.PageVo;
 import liuyuyang.net.vo.comment.CommentFilterVo;
+import liuyuyang.net.web.mapper.ArticleMapper;
+import liuyuyang.net.web.mapper.CommentMapper;
+import liuyuyang.net.web.service.CommentService;
+import liuyuyang.net.web.service.EnvConfigService;
+import liuyuyang.net.web.service.WebConfigService;
+import liuyuyang.net.web.utils.AmapLocationUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -41,9 +51,29 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     private ArticleMapper articleMapper;
     @Resource
     private WebConfigService configService;
+    @Resource
+    private HttpServletRequest request;
+    @Resource
+    private EnvConfigService envConfigService;
 
     @Override
     public void add(Comment comment) throws Exception {
+        String agent = request.getHeader("User-Agent");
+        //解析agent字符串
+        UserAgent userAgent = UserAgent.parseUserAgentString(agent);
+        //获取浏览器对象
+        Browser browser = userAgent.getBrowser();
+        //获取操作系统对象
+        OperatingSystem operatingSystem = userAgent.getOperatingSystem();
+        comment.setUserAgent(agent);
+        comment.setOs(operatingSystem.getName());
+        comment.setBrowser(browser.getName());
+        comment.setIp(getRealIpAddress());
+        EnvConfig envConfig = envConfigService.getByName("gaode_coordinate");
+        Map<String, Object> value = envConfig.getValue();
+        Map<String, String> map = AmapLocationUtil.getLocationByIp(getRealIpAddress(), value.get("key").toString());
+        comment.setProvince(map.get("province"));
+        comment.setCity(map.get("city"));
         commentMapper.insert(comment);
 
         // 文章标题
@@ -86,6 +116,64 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         String emailTitle = (email != null) ? "您有最新回复~" : title;
         emailUtils.send(email, emailTitle, template);
     }
+
+    /**
+     * 获取用户真实IP地址
+     * 考虑代理、负载均衡等场景
+     */
+    private String getRealIpAddress() {
+        // 常用的代理IP请求头
+        String[] headers = {
+                "x-forwarded-for",    // 一般用于记录代理信息
+                "Proxy-Client-IP",    // Apache代理常用
+                "WL-Proxy-Client-IP", // WebLogic代理常用
+                "HTTP_CLIENT_IP",     // 部分代理使用
+                "HTTP_X_FORWARDED_FOR" // 部分代理使用
+        };
+
+        String ipAddress = null;
+        for (String header : headers) {
+            ipAddress = request.getHeader(header);
+            if (isValidIp(ipAddress)) {
+                break;
+            }
+        }
+
+        // 如果以上请求头都没有获取到，则使用remoteAddr
+        if (!isValidIp(ipAddress)) {
+            ipAddress = request.getRemoteAddr();
+            // 处理本地地址情况
+            if ("127.0.0.1".equals(ipAddress) || "0:0:0:0:0:0:0:1".equals(ipAddress)) {
+                // 获取本机真实IP
+                try {
+                    InetAddress inet = InetAddress.getLocalHost();
+                    ipAddress = inet.getHostAddress();
+                } catch (UnknownHostException e) {
+                    // 无法获取本机IP时保持默认值
+                }
+            }
+        }
+
+        // 对于通过多个代理的情况，取第一个有效IP
+        if (ipAddress != null && ipAddress.contains(",")) {
+            String[] ips = ipAddress.split(",");
+            for (String ip : ips) {
+                if (isValidIp(ip.trim())) {
+                    return ip.trim();
+                }
+            }
+        }
+
+        return ipAddress;
+    }
+
+    /**
+     * 验证IP地址是否有效
+     */
+    private boolean isValidIp(String ip) {
+        return ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip);
+    }
+
 
     @Override
     public Comment get(Integer id) {

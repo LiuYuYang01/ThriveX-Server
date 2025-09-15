@@ -16,4 +16,6 @@ public interface LinkService extends IService<Link> {
     List<Link> list(LinkFilterVo filterVo);
 
     Page<Link> paging(LinkFilterVo filterVo, PageVo pageVo);
+
+    Link fetchWebsiteInfo(String url) throws Exception;
 }
