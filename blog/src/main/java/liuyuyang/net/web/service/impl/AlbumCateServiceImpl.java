@@ -59,7 +59,7 @@ public class AlbumCateServiceImpl extends ServiceImpl<AlbumCateMapper, AlbumCate
     @Override
     public List<AlbumCate> list() {
         LambdaQueryWrapper<AlbumCate> lambdaQueryAlbumCateWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryAlbumCateWrapper.orderByDesc(AlbumCate::getId);
+        lambdaQueryAlbumCateWrapper.last("ORDER BY RAND()");
         List<AlbumCate> list = albumCateMapper.selectList(lambdaQueryAlbumCateWrapper);
 
         if (list.isEmpty()) return list;
@@ -82,7 +82,7 @@ public class AlbumCateServiceImpl extends ServiceImpl<AlbumCateMapper, AlbumCate
     @Override
     public Page<AlbumCate> paging(Integer page, Integer size) {
         LambdaQueryWrapper<AlbumCate> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.orderByDesc(AlbumCate::getId);
+        lambdaQueryWrapper.last("ORDER BY RAND()");
         Page<AlbumCate> list = page(new Page<>(page, size), lambdaQueryWrapper);
 
         if (list.getRecords().isEmpty()) return list;
@@ -104,9 +104,11 @@ public class AlbumCateServiceImpl extends ServiceImpl<AlbumCateMapper, AlbumCate
     @Override
     public Page<AlbumImage> getImagesByAlbumId(Integer id, Integer page, Integer size) {
         LambdaQueryWrapper<AlbumImage> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(AlbumImage::getCateId, id);
-        lambdaQueryWrapper.orderByDesc(AlbumImage::getId);
-
+        // 如果 id 为 0，查询全部照片；否则查询指定相册的照片
+        if (id != 0) {
+            lambdaQueryWrapper.eq(AlbumImage::getCateId, id);
+        }
+        lambdaQueryWrapper.last("ORDER BY RAND()");
         return albumImageMapper.selectPage(new Page<>(page, size), lambdaQueryWrapper);
     }
 

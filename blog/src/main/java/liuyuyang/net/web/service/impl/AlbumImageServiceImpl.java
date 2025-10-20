@@ -55,14 +55,14 @@ public class AlbumImageServiceImpl extends ServiceImpl<AlbumImageMapper, AlbumIm
     @Override
     public List<AlbumImage> list() {
         LambdaQueryWrapper<AlbumImage> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.orderByDesc(AlbumImage::getId);
+        lambdaQueryWrapper.last("ORDER BY RAND()");
         return albumImageMapper.selectList(lambdaQueryWrapper);
     }
 
     @Override
     public Page<AlbumImage> paging(Integer page, Integer size) {
         LambdaQueryWrapper<AlbumImage> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.orderByDesc(AlbumImage::getId);
+        lambdaQueryWrapper.last("ORDER BY RAND()");
         return page(new Page<>(page, size), lambdaQueryWrapper);
     }
 
