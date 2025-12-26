@@ -1,0 +1,58 @@
+# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
+# For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
+
+name: 构建并推送到阿里云容器
+
+# 触发条件：推送到main分支或创建标签时触发
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检查代码
+        uses: actions/checkout@v3
+
+      - name: 登录阿里云容器注册表
+        uses: aliyun/acr-login@v1
+        with:
+          login-server: ${{ secrets.ALIYUN_ACR_REGISTRY }}  # 例如：registry.cn-beijing.aliyuncs.com
+          username: ${{ secrets.ALIYUN_ACR_USERNAME }}
+          password: ${{ secrets.ALIYUN_ACR_PASSWORD }}
+
+      - name: 构建和推送后端jar镜像包
+        env:
+          ACR_REGISTRY: ${{ secrets.ALIYUN_ACR_REGISTRY }}
+          ACR_NAMESPACE: ${{ secrets.ALIYUN_ACR_NAMESPACE }}  # 你的命名空间
+          DOCKER_VERSION: latest
+          IMAGE_NAME: thrive-blog  # 镜像名称
+        run: |
+          # 构建镜像
+          docker build -t $ACR_REGISTRY/$ACR_NAMESPACE/$IMAGE_NAME:$DOCKER_VERSION .
+          
+          # 推送版本标签镜像
+          docker push $ACR_REGISTRY/$ACR_NAMESPACE/$IMAGE_NAME:$DOCKER_VERSION
+
+      - name: 连接服务器并执行命令
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            echo "开始执行服务器命令"
+            docker stop thrive-blog
+            docker rm thrive-blog
+            // 更新镜像
+            docker rmi registry.cn-chengdu.aliyuncs.com/thrivex-blog/thrive-blog:latest
+            docker pull registry.cn-chengdu.aliyuncs.com/thrivex-blog/thrive-blog:latest
+            cd /root/thrive-blog
+            docker-compose up -d
+            echo "服务器命令执行完成"

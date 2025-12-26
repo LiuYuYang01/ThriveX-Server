@@ -36,4 +36,14 @@ public class CommentFormDTO {
 
     @ApiModelProperty(value = "创建时间", example = "1723533206613", required = true)
     private String createTime;
+
+    private String userAgent;
+
+    private String ip;
+
+    private String browser;
+
+    private String os;
+    private String province;
+    private String city;
 }
