@@ -63,7 +63,7 @@ file:
 # 限流注解配置
 blog:
   limit:
-    tokens: 20     # 所有受限接口统一每周期允许 x 次
+    tokens: 100     # 所有受限接口统一每周期允许 x 次
     duration: 60    # 周期统一为 60 秒
     blacklist:
       threshold: 10  # 触发黑名单的限流次数阈值

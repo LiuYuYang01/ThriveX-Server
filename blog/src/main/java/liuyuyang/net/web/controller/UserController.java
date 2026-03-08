@@ -9,6 +9,7 @@ import liuyuyang.net.dto.user.UserDTO;
 import liuyuyang.net.dto.user.UserInfoDTO;
 import liuyuyang.net.dto.user.UserLoginDTO;
 import liuyuyang.net.model.User;
+import liuyuyang.net.common.annotation.RateLimit;
 import liuyuyang.net.common.utils.Result;
 import liuyuyang.net.web.service.UserService;
 import liuyuyang.net.common.utils.Paging;
@@ -110,6 +111,7 @@ public class UserController {
         return Result.success();
     }
 
+    @RateLimit
     @GetMapping("/author")
     @ApiOperation("获取作者信息")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 11)

@@ -19,7 +19,6 @@ import liuyuyang.net.model.WebConfig;
 @RequestMapping("/web_config")
 @Transactional
 public class WebConfigController {
-
     @Resource
     private WebConfigService webConfigService;
 
