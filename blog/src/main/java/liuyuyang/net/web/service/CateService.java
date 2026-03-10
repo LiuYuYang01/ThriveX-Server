@@ -20,11 +20,17 @@ public interface CateService extends IService<Cate> {
 
     Cate get(Integer cid);
 
-    List<Cate> list(String pattern);
-
-    Page<Cate> paging(Integer page, Integer size);
+    /**
+     * 获取分类列表，支持 pattern（list/tree）和分页
+     *
+     * @param pattern list: 扁平数组 | tree: 树形结构
+     * @param page    可选，分页时传入
+     * @param size    可选，分页时传入
+     * @return 传 page&amp;size 时返回 Page，否则返回 List
+     */
+    Object list(String pattern, Integer page, Integer size);
 
     List<CateArticleCount> cateArticleCount();
 
-    List<Cate> buildCateTree(List<Cate> list, Integer lever);
+    List<Cate> buildCateTree(List<Cate> list, Integer level);
 }

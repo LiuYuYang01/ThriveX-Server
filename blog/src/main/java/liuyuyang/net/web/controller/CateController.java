@@ -8,6 +8,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import liuyuyang.net.common.annotation.NoTokenRequired;
 import liuyuyang.net.common.annotation.RateLimit;
+import liuyuyang.net.common.execption.CustomException;
 import liuyuyang.net.dto.cate.CateFormDTO;
 import liuyuyang.net.model.Cate;
 import liuyuyang.net.common.utils.Result;
@@ -38,24 +39,22 @@ public class CateController {
         return Result.success();
     }
 
-    @DeleteMapping("/{id}")
-    @ApiOperation("删除分类")
+    @DeleteMapping("/batch")
+    @ApiOperation("批量删除分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
-    public Result<String> del(@PathVariable Integer id) {
-        cateService.del(id);
+    public Result<String> batchDel(@RequestBody List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new CustomException(400, "请提供要删除的分类 ID");
+        }
+        cateService.batchDel(ids);
         return Result.success();
     }
 
-    @DeleteMapping("/batch")
-    @ApiOperation("批量删除分类")
+    @DeleteMapping("/{id}")
+    @ApiOperation("删除分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result batchDel(@RequestBody List<Integer> ids) {
-        for (Integer id : ids) {
-            boolean e = cateService.isExistTwoCate(id);
-            if (!e) return Result.error();
-            cateService.removeById(id);
-        }
-
+    public Result<String> del(@PathVariable Integer id) {
+        cateService.del(id);
         return Result.success();
     }
 
@@ -69,41 +68,37 @@ public class CateController {
     }
 
     @RateLimit
-    @GetMapping("/{id}")
-    @ApiOperation("获取分类")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<Cate> get(@PathVariable Integer id) {
-        Cate data = cateService.get(id);
-        return Result.success(data);
-    }
-
-    @RateLimit
-    @NoTokenRequired
-    @PostMapping("/list")
-    @ApiOperation("获取分类列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<List<Cate>> list(@ApiParam(value = "默认为tree树性结构，设置为list表示列表结构") @RequestParam(defaultValue = "recursion") String pattern) {
-        List<Cate> data = cateService.list(pattern);
-        return Result.success(data);
-    }
-
-    @RateLimit
-    @NoTokenRequired
-    @PostMapping("/paging")
-    @ApiOperation("分页查询分类列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result paging(@RequestParam(defaultValue = "1") Integer page, @RequestParam(defaultValue = "5") Integer size) {
-        Page<Cate> data = cateService.paging(page, size);
-        Map<String, Object> result = Paging.filter(data);
-        return Result.success(result);
-    }
-
-    @RateLimit
     @GetMapping("/article/count")
     @ApiOperation("获取每个分类中的文章数量")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
     public Result<List<CateArticleCount>> cateArticleCount() {
         List<CateArticleCount> list = cateService.cateArticleCount();
         return Result.success(list);
+    }
+
+    @RateLimit
+    @NoTokenRequired
+    @GetMapping
+    @ApiOperation(value = "获取分类列表", notes = "pattern: list 扁平数组 | tree 树形结构；传 page/size 时分页返回，否则返回全部")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
+    public Result list(
+            @ApiParam(value = "list: 扁平数组 | tree: 树形结构") @RequestParam(required = false, defaultValue = "list") String pattern,
+            @ApiParam(value = "页码") @RequestParam(required = false) Integer page,
+            @ApiParam(value = "每页数量") @RequestParam(required = false) Integer size) {
+        boolean hasPage = page != null && size != null;
+        Integer p = hasPage ? Math.max(1, page) : null;
+        Integer s = hasPage ? Math.max(1, size) : null;
+        Object data = cateService.list(pattern, p, s);
+        boolean isPaging = data instanceof Page;
+        return Result.success(isPaging ? Paging.filter((Page<?>) data) : data);
+    }
+
+    @RateLimit
+    @GetMapping("/{id}")
+    @ApiOperation("获取分类")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    public Result<Cate> get(@PathVariable Integer id) {
+        Cate data = cateService.get(id);
+        return Result.success(data);
     }
 }

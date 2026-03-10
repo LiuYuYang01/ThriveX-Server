@@ -10,6 +10,7 @@ import java.util.List;
 
 @Mapper
 public interface CateMapper extends BaseMapper<Cate> {
-    @Select("select MIN(c.name) AS name, count(*) as count from article a join article_cate ac on a.id = ac.article_id join cate c on c.id = ac.cate_id group by c.id")
-    public List<CateArticleCount> cateArticleCount();
+
+    @Select("SELECT MIN(c.name) AS name, COUNT(*) AS count FROM article a JOIN article_cate ac ON a.id = ac.article_id JOIN cate c ON c.id = ac.cate_id GROUP BY c.id")
+    List<CateArticleCount> cateArticleCount();
 }
