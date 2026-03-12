@@ -16,11 +16,10 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @Component
-public class YuYangUtils {
+public class CommonUtils {
     @Resource
     private UserTokenMapper userTokenMapper;
 

@@ -12,7 +12,7 @@ import liuyuyang.net.common.utils.Result;
 import liuyuyang.net.dto.article.ArticleFormDTO;
 import liuyuyang.net.model.Article;
 import liuyuyang.net.vo.PageVo;
-import liuyuyang.net.vo.article.ArticleFillterVo;
+import liuyuyang.net.vo.article.ArticleFilterVo;
 import liuyuyang.net.web.service.ArticleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,21 +84,11 @@ public class ArticleController {
 
     @RateLimit
     @NoTokenRequired
-    @PostMapping("/list")
-    @ApiOperation("获取文章列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result<List<Article>> list(@RequestBody ArticleFillterVo filterVo, @RequestHeader(value = "Authorization", required = false) String token) {
-        List<Article> data = articleService.list(filterVo, token);
-        return Result.success(data);
-    }
-
-    @RateLimit
-    @NoTokenRequired
-    @PostMapping("/paging")
+    @GetMapping
     @ApiOperation("分页查询文章列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
-    public Result paging(@RequestBody ArticleFillterVo filterVo, PageVo pageVo, @RequestHeader(value = "Authorization", required = false) String token) {
-        Page<Article> list = articleService.paging(filterVo, pageVo, token);
+    public Result paging(ArticleFilterVo filterVo, @RequestHeader(value = "Authorization", required = false) String token) {
+        Page<Article> list = articleService.paging(filterVo, token);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }

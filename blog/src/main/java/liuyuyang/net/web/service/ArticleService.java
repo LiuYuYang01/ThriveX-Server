@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import liuyuyang.net.dto.article.ArticleFormDTO;
 import liuyuyang.net.model.Article;
 import liuyuyang.net.vo.PageVo;
-import liuyuyang.net.vo.article.ArticleFillterVo;
+import liuyuyang.net.vo.article.ArticleFilterVo;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,9 +26,9 @@ public interface ArticleService extends IService<Article> {
 
     Article get(Integer id, String password);
 
-    List<Article> list(ArticleFillterVo filterVo, String token);
+    List<Article> list(ArticleFilterVo filterVo, String token);
 
-    Page<Article> paging(ArticleFillterVo filterVo, PageVo pageVo, String token);
+    Page<Article> paging(ArticleFilterVo filterVo, String token);
 
     Page<Article> getCateArticleList(Integer id, PageVo pageVo);
 
@@ -47,5 +47,5 @@ public interface ArticleService extends IService<Article> {
     // void exportArticle(List<Integer> ids);
     ResponseEntity<byte[]> exportArticle(List<Integer> ids);
 
-    QueryWrapper<Article> queryWrapperArticle(ArticleFillterVo filterVo);
+    QueryWrapper<Article> queryWrapperArticle(ArticleFilterVo filterVo);
 }

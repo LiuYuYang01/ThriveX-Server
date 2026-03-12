@@ -6,11 +6,11 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.common.execption.CustomException;
-import liuyuyang.net.common.utils.YuYangUtils;
+import liuyuyang.net.common.utils.CommonUtils;
 import liuyuyang.net.dto.article.ArticleFormDTO;
 import liuyuyang.net.model.*;
 import liuyuyang.net.vo.PageVo;
-import liuyuyang.net.vo.article.ArticleFillterVo;
+import liuyuyang.net.vo.article.ArticleFilterVo;
 import liuyuyang.net.web.mapper.*;
 import liuyuyang.net.web.service.ArticleCateService;
 import liuyuyang.net.web.service.ArticleService;
@@ -59,10 +59,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Resource
     private CommentMapper commentMapper;
     @Resource
-    private YuYangUtils yuYangUtils;
+    private CommonUtils commonUtils;
 
     @NotNull
-    private static QueryWrapper<Article> getArticleQueryWrapper(ArticleFillterVo filterVo) {
+    private static QueryWrapper<Article> getArticleQueryWrapper(ArticleFilterVo filterVo) {
         QueryWrapper<Article> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByDesc("create_time");
 
@@ -227,8 +227,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         String description = data.getDescription();
         String content = data.getContent();
         // todo ps by:laifeng 这里需要优化， 对于角色判断，请将角色逻辑移到controller层，不要在service中进行，而且可以通过aop进行操作，避免重复判断
-        String token = YuYangUtils.getHeader("Authorization");
-        boolean isAdmin = !"".equals(token) && yuYangUtils.isAdmin(token);
+        String token = CommonUtils.getHeader("Authorization");
+        boolean isAdmin = !"".equals(token) && CommonUtils.isAdmin(token);
 
         ArticleConfig config = data.getConfig();
 
@@ -312,7 +312,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public List<Article> list(ArticleFillterVo filterVo, String token) {
+    public List<Article> list(ArticleFilterVo filterVo, String token) {
         // 首先根据文章配置表的条件筛选出符合条件的文章ID
         QueryWrapper<ArticleConfig> configQueryWrapper = new QueryWrapper<>();
 
@@ -342,7 +342,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         queryWrapper.in("id", articleIds);
         List<Article> list = articleMapper.selectList(queryWrapper);
 
-        boolean isAdmin = yuYangUtils.isAdmin(token);
+        boolean isAdmin = commonUtils.isAdmin(token);
         list = list.stream()
                 .map(article -> bindingData(article.getId()))
                 // 如果是普通用户则不显示隐藏的文章，如果是管理员则显示
@@ -371,16 +371,20 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Page<Article> paging(ArticleFillterVo filterVo, PageVo pageVo, String token) {
+    public Page<Article> paging(ArticleFilterVo filterVo, String token) {
         List<Article> list = list(filterVo, token);
-        boolean isAdmin = yuYangUtils.isAdmin(token);
+        boolean isAdmin = CommonUtils.isAdmin(token);
         if (!isAdmin) {
             list = list.stream().filter(k -> !Objects.equals(k.getConfig().getStatus(), "no_home")).collect(Collectors.toList());
         }
-        Page<Article> result = yuYangUtils.getPageData(pageVo, list);
-        return result;
+
+        PageVo pageVo = new PageVo();
+        pageVo.setPage(filterVo.getPage());
+        pageVo.setSize(filterVo.getSize());
+        return commonUtils.getPageData(pageVo, list);
     }
 
+    // 获取指定分类中所有文章
     @Override
     public Page<Article> getCateArticleList(Integer id, PageVo pageVo) {
         // 通过分类 id 查询出所有文章id
@@ -415,19 +419,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         Page<Article> page = new Page<>(pageVo.getPage(), pageVo.getSize());
         articleMapper.selectPage(page, queryWrapperArticle);
 
-        // 绑定数据并处理加密文章
-        page.setRecords(page.getRecords().stream().map(article -> {
-                    Article boundArticle = bindingData(article.getId());
-                    // 如果有密码，设置描述和内容为提示信息
-                    if (boundArticle.getConfig().getIsEncrypt() == 1) {
-                        boundArticle.setDescription("该文章是加密的");
-                        boundArticle.setContent("该文章是加密的");
-                    }
-                    return boundArticle;
-                }).filter(article -> !Objects.equals(article.getConfig().getStatus(), "hide"))  // 修改过滤条件
-                .collect(Collectors.toList()));
-
-        return page;
+        // 绑定数据并处理加密/隐藏文章
+        return processArticlePage(page);
     }
 
     @Override
@@ -463,19 +456,27 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         Page<Article> page = new Page<>(pageVo.getPage(), pageVo.getSize());
         articleMapper.selectPage(page, queryWrapperArticle);
 
-        // 绑定数据并处理加密文章
-        page.setRecords(page.getRecords().stream().map(article -> {
-                    Article boundArticle = bindingData(article.getId());
-                    // 如果有密码，设置描述和内容为提示信息
-                    if (boundArticle.getConfig().getIsEncrypt() == 1) {
-                        boundArticle.setDescription("该文章是加密的");
-                        boundArticle.setContent("该文章是加密的");
-                    }
-                    return boundArticle;
-                })
-                .filter(article -> !Objects.equals(article.getConfig().getStatus(), "hide"))
-                .collect(Collectors.toList()));
+        // 绑定数据并处理加密/隐藏文章
+        return processArticlePage(page);
+    }
 
+    /**
+     * 公共文章分页结果处理：绑定数据、处理加密文章、过滤隐藏文章
+     */
+    private Page<Article> processArticlePage(Page<Article> page) {
+        page.setRecords(
+                page.getRecords().stream()
+                        .map(article -> {
+                            Article boundArticle = bindingData(article.getId());
+                            if (boundArticle.getConfig() != null && boundArticle.getConfig().getIsEncrypt() == 1) {
+                                boundArticle.setDescription("该文章是加密的");
+                                boundArticle.setContent("该文章是加密的");
+                            }
+                            return boundArticle;
+                        })
+                        .filter(article -> article.getConfig() == null || !Objects.equals(article.getConfig().getStatus(), "hide"))
+                        .collect(Collectors.toList())
+        );
         return page;
     }
 
@@ -572,7 +573,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     // 过滤文章数据
     @Override
-    public QueryWrapper<Article> queryWrapperArticle(ArticleFillterVo filterVo) {
+    public QueryWrapper<Article> queryWrapperArticle(ArticleFilterVo filterVo) {
         QueryWrapper<Article> queryWrapper = getArticleQueryWrapper(filterVo);
 
         // 根据分类id过滤
