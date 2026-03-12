@@ -10,7 +10,7 @@ import liuyuyang.net.web.mapper.LinkTypeMapper;
 import liuyuyang.net.model.Link;
 import liuyuyang.net.web.service.LinkService;
 import liuyuyang.net.common.utils.EmailUtils;
-import liuyuyang.net.common.utils.YuYangUtils;
+import liuyuyang.net.common.utils.CommonUtils;
 import liuyuyang.net.vo.PageVo;
 import liuyuyang.net.vo.link.LinkFilterVo;
 import org.springframework.stereotype.Service;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements LinkService {
     @Resource
-    private YuYangUtils yuYangUtils;
+    private CommonUtils commonUtils;
     @Resource
     private LinkMapper linkMapper;
     @Resource
@@ -57,7 +57,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
         }
 
         // 判断权限
-        boolean isAdminPermissions = yuYangUtils.isAdmin();
+        boolean isAdminPermissions = commonUtils.isAdmin();
         // 如果是超级管理员在添加时候不需要审核，直接显示
         if (isAdminPermissions) {
             link.setAuditStatus(1);
@@ -81,7 +81,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
 
     @Override
     public List<Link> list(LinkFilterVo filterVo) {
-        QueryWrapper<Link> queryWrapper = yuYangUtils.queryWrapperFilter(filterVo);
+        QueryWrapper<Link> queryWrapper = commonUtils.queryWrapperFilter(filterVo);
         queryWrapper.eq("audit_status", filterVo.getStatus()); // 只显示审核成功的网站
 
         // 查询所有网站

@@ -5,7 +5,7 @@ import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
-import liuyuyang.net.common.utils.YuYangUtils;
+import liuyuyang.net.common.utils.CommonUtils;
 import liuyuyang.net.web.mapper.LinkMapper;
 import liuyuyang.net.web.mapper.LinkTypeMapper;
 import liuyuyang.net.model.Link;
@@ -39,7 +39,7 @@ public class RssServiceImpl implements RssService {
     @Resource
     private LinkTypeMapper linkTypeMapper;
     @Resource
-    private YuYangUtils yuYangUtils;
+    private CommonUtils commonUtils;
 
     // 线程池，用于并发获取RSS内容
     private final ExecutorService executorService = Executors.newFixedThreadPool(10);
@@ -134,7 +134,7 @@ public class RssServiceImpl implements RssService {
     @Override
     public Page<Rss> paging(PageVo pageVo) {
         // 使用工具类进行分页
-        return yuYangUtils.getPageData(pageVo, list());
+        return commonUtils.getPageData(pageVo, list());
     }
 
     /**

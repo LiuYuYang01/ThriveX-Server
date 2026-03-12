@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.web.mapper.RecordMapper;
 import liuyuyang.net.model.Record;
 import liuyuyang.net.web.service.RecordService;
-import liuyuyang.net.common.utils.YuYangUtils;
+import liuyuyang.net.common.utils.CommonUtils;
 import liuyuyang.net.vo.FilterVo;
 import liuyuyang.net.vo.PageVo;
 import org.springframework.stereotype.Service;
@@ -21,11 +21,11 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
     @Resource
     private RecordMapper recordMapper;
     @Resource
-    private YuYangUtils yuYangUtils;
+    private CommonUtils commonUtils;
 
     @Override
     public List<Record> list(FilterVo filterVo) {
-        QueryWrapper<Record> queryWrapper = yuYangUtils.queryWrapperFilter(filterVo, "content");
+        QueryWrapper<Record> queryWrapper = commonUtils.queryWrapperFilter(filterVo, "content");
         List<Record> list = recordMapper.selectList(queryWrapper);
         return list;
     }
@@ -33,6 +33,6 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
     @Override
     public Page<Record> paging(FilterVo filterVo, PageVo pageVo) {
         List<Record> list = list(filterVo);
-        return yuYangUtils.getPageData(pageVo, list);
+        return commonUtils.getPageData(pageVo, list);
     }
 }

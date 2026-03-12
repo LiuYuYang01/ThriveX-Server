@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.common.execption.CustomException;
 import liuyuyang.net.common.utils.JwtUtils;
-import liuyuyang.net.common.utils.YuYangUtils;
+import liuyuyang.net.common.utils.CommonUtils;
 import liuyuyang.net.dto.user.EditPassDTO;
 import liuyuyang.net.dto.user.UserDTO;
 import liuyuyang.net.dto.user.UserInfoDTO;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     @Resource
-    private YuYangUtils yuYangUtils;
+    private CommonUtils commonUtils;
     @Resource
     private UserMapper userMapper;
     @Resource
@@ -92,7 +92,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public List<User> list(UserFilterVo filterVo) {
-        QueryWrapper<User> queryWrapper = yuYangUtils.queryWrapperFilter(filterVo, "name");
+        QueryWrapper<User> queryWrapper = commonUtils.queryWrapperFilter(filterVo, "name");
 
         List<User> list = userMapper.selectList(queryWrapper);
 
@@ -108,7 +108,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public Page<User> paging(UserFilterVo filterVo, PageVo pageVo) {
         List<User> list = list(filterVo);
-        return yuYangUtils.getPageData(pageVo, list);
+        return commonUtils.getPageData(pageVo, list);
     }
 
     @Override
@@ -158,7 +158,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public void check(String token) {
-        boolean isCheck = yuYangUtils.check(token);
+        boolean isCheck = commonUtils.check(token);
 
         if (!isCheck) {
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
