@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.*;
 
@@ -43,6 +45,40 @@ public class FileController {
         List<String> urls = new ArrayList<>();
 
         for (MultipartFile file : files) {
+            // 校验文件是否为空
+            if (file.isEmpty()) {
+                throw new CustomException(400, "文件不能为空");
+            }
+
+            // 只允许的图片扩展名
+            Set<String> allowedExt = new HashSet<>(Arrays.asList("jpg", "jpeg", "png", "webp"));
+            String originalFilename = file.getOriginalFilename();
+            String ext = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                ext = originalFilename.substring(originalFilename.lastIndexOf('.') + 1).toLowerCase();
+            }
+
+            if (!allowedExt.contains(ext)) {
+                throw new CustomException(400, "仅支持上传图片类型文件（jpg、jpeg、png、webp）");
+            }
+
+            // 只允许的图片 MIME 类型
+            Set<String> allowedContentTypes = new HashSet<>(Arrays.asList(
+                    "image/jpeg",
+                    "image/png",
+                    "image/webp"
+            ));
+            String contentType = file.getContentType();
+            if (contentType == null || !allowedContentTypes.contains(contentType.toLowerCase())) {
+                throw new CustomException(400, "文件类型不合法，仅支持上传图片类型文件");
+            }
+
+            // 解码校验，防止伪装成图片的恶意文件
+            BufferedImage image = ImageIO.read(file.getInputStream());
+            if (image == null) {
+                throw new CustomException(400, "文件内容不是有效的图片");
+            }
+
             FileInfo result = fileStorageService.of(file)
                     .setPlatform(OssUtils.getPlatform())
                     .setPath(dir + '/')
