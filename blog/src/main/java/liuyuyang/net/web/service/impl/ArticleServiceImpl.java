@@ -312,8 +312,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         return data;
     }
 
+    // 处理文章数据
     @Override
-    public List<Article> getArticleList(ArticleFilterVo filterVo, String token) {
+    public List<Article> processArticleData(ArticleFilterVo filterVo, String token) {
         // 首先根据文章配置表的条件筛选出符合条件的文章ID
         QueryWrapper<ArticleConfig> configQueryWrapper = new QueryWrapper<>();
 
@@ -354,8 +355,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Page<Article> getArticleListPage(ArticleFilterVo filterVo, String token) {
-        List<Article> list = getArticleList(filterVo, token);
+    public Page<Article> getArticleList(ArticleFilterVo filterVo, String token) {
+        List<Article> list = processArticleData(filterVo, token);
         boolean isAdmin = CommonUtils.isAdmin(token);
         if (!isAdmin) {
             // 统一使用展示规则控制首页可见性
@@ -373,14 +374,17 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         PageVo pageVo = new PageVo();
-        pageVo.setPage(filterVo.getPage());
-        pageVo.setSize(filterVo.getSize());
+        pageVo.setPage(Math.max(1, filterVo.getPage()));
+        pageVo.setSize(Math.max(1, filterVo.getSize()));
         return commonUtils.getPageData(pageVo, list);
     }
 
     // 获取指定分类中所有文章
     @Override
     public Page<Article> getCateArticleList(Integer id, PageVo pageVo) {
+        int p = pageVo.getPage() != null ? Math.max(1, pageVo.getPage()) : 1;
+        int s = pageVo.getSize() != null ? Math.max(1, pageVo.getSize()) : 5;
+        
         // 通过分类 id 查询出所有文章id
         QueryWrapper<ArticleCate> queryWrapperArticleCate = new QueryWrapper<>();
         queryWrapperArticleCate.eq("cate_id", id); // 修改in为eq,因为只查询单个分类
@@ -390,7 +394,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 有数据就查询，没有就返回空数组
         if (articleIds.isEmpty()) {
-            return new Page<>(pageVo.getPage(), pageVo.getSize(), 0);
+            return new Page<>(p, s, 0);
         }
 
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -402,7 +406,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 如果过滤后没有文章,直接返回空页
         if (articleIds.isEmpty()) {
-            return new Page<>(pageVo.getPage(), pageVo.getSize(), 0);
+            return new Page<>(p, s, 0);
         }
 
         // 构建文章查询条件
@@ -411,7 +415,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         queryWrapperArticle.orderByDesc("create_time");
 
         // 查询文章列表
-        Page<Article> page = new Page<>(pageVo.getPage(), pageVo.getSize());
+        Page<Article> page = new Page<>(p, s);
         articleMapper.selectPage(page, queryWrapperArticle);
 
         // 绑定数据并处理加密/隐藏文章
@@ -420,6 +424,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Override
     public Page<Article> getTagArticleList(Integer id, PageVo pageVo) {
+        int p = pageVo.getPage() != null ? Math.max(1, pageVo.getPage()) : 1;
+        int s = pageVo.getSize() != null ? Math.max(1, pageVo.getSize()) : 5;
+
         // 通过标签 id 查询出所有文章 id
         QueryWrapper<ArticleTag> queryWrapperArticleTag = new QueryWrapper<>();
         queryWrapperArticleTag.eq("tag_id", id);
@@ -429,7 +436,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 有数据就查询，没有就返回空数组
         if (articleIds.isEmpty()) {
-            return new Page<>(pageVo.getPage(), pageVo.getSize(), 0);
+            return new Page<>(p, s, 0);
         }
 
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -441,7 +448,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 如果过滤后没有文章,直接返回空页
         if (articleIds.isEmpty()) {
-            return new Page<>(pageVo.getPage(), pageVo.getSize(), 0);
+            return new Page<>(p, s, 0);
         }
 
         // 构建文章查询条件
@@ -449,7 +456,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         queryWrapperArticle.in("id", articleIds).orderByDesc("create_time");
 
         // 查询文章列表
-        Page<Article> page = new Page<>(pageVo.getPage(), pageVo.getSize());
+        Page<Article> page = new Page<>(p, s);
         articleMapper.selectPage(page, queryWrapperArticle);
 
         // 绑定数据并处理加密/隐藏文章
@@ -582,7 +589,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (!cate_ids.isEmpty()) {
             QueryWrapper<Cate> queryWrapperCateList = new QueryWrapper<>();
             queryWrapperCateList.in("id", cate_ids);
-            List<Cate> cates = cateService.buildCateTree(cateMapper.selectList(queryWrapperCateList), 0);
+            List<Cate> cates = cateService.buildCateTreeData(cateMapper.selectList(queryWrapperCateList), 0);
             data.setCateList(cates);
         }
 

@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -101,17 +102,17 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
     @Override
     public Page<Link> paging(LinkFilterVo filterVo, PageVo pageVo) {
         List<Link> list = list(filterVo);
+        int p = pageVo.getPage() != null ? Math.max(1, pageVo.getPage()) : 1;
+        int s = pageVo.getSize() != null ? Math.max(1, pageVo.getSize()) : 5;
 
         // 分页处理
-        int start = (pageVo.getPage() - 1) * pageVo.getSize();
-        int end = Math.min(start + pageVo.getSize(), list.size());
-        List<Link> pagedLinks = list.subList(start, end);
+        int start = Math.min((p - 1) * s, list.size());
+        int end = Math.min(start + s, list.size());
+        List<Link> pagedLinks = start >= end ? new ArrayList<>() : list.subList(start, end);
 
-        // 返回分页结果
-        Page<Link> result = new Page<>(pageVo.getPage(), pageVo.getSize());
+        Page<Link> result = new Page<>(p, s);
         result.setRecords(pagedLinks);
         result.setTotal(list.size());
-
         return result;
     }
 }

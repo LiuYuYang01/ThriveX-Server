@@ -73,6 +73,8 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
 
     @Override
     public Page<Wall> getCateWallList(Integer cateId, PageVo pageVo) {
+        int p = pageVo.getPage() != null ? Math.max(1, pageVo.getPage()) : 1;
+        int s = pageVo.getSize() != null ? Math.max(1, pageVo.getSize()) : 5;
         WallCate wallCate = wallCateMapper.selectById(cateId);
 
         QueryWrapper<Wall> queryWrapper = new QueryWrapper<>();
@@ -87,7 +89,7 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
         queryWrapper.eq("audit_status", 1);
         queryWrapper.orderByDesc("create_time");
 
-        Page<Wall> page = new Page<>(pageVo.getPage(), pageVo.getSize());
+        Page<Wall> page = new Page<>(p, s);
         wallMapper.selectPage(page, queryWrapper);
 
         List<Wall> list = page.getRecords();
