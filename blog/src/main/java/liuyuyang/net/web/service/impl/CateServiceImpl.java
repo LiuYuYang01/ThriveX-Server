@@ -4,11 +4,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.common.execption.CustomException;
+import liuyuyang.net.common.utils.CommonUtils;
 import liuyuyang.net.model.ArticleCate;
 import liuyuyang.net.web.mapper.ArticleCateMapper;
 import liuyuyang.net.web.mapper.CateMapper;
 import liuyuyang.net.model.Cate;
 import liuyuyang.net.result.cate.CateArticleCount;
+import liuyuyang.net.vo.PageVo;
 import liuyuyang.net.web.service.CateService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,8 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
     private CateMapper cateMapper;
     @Resource
     private ArticleCateMapper articleCateMapper;
+    @Resource
+    private CommonUtils commonUtils;
 
     // 判断是否存在二级分类
     @Override
@@ -53,7 +57,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
     }
 
     @Override
-    public void del(Integer id) {
+    public void delCateData(Integer id) {
         isExistTwoCate(id);
         isCateArticleCount(id);
         int affected = cateMapper.deleteById(id);
@@ -63,7 +67,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
     }
 
     @Override
-    public void batchDel(List<Integer> ids) {
+    public void batchDelCateData(List<Integer> ids) {
         if (ids == null || ids.isEmpty()) {
             return;
         }
@@ -93,7 +97,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
     }
 
     @Override
-    public Cate get(Integer id) {
+    public Cate getCateData(Integer id) {
         Cate cate = cateMapper.selectById(id);
         if (cate == null) {
             throw new CustomException(400, "该分类不存在");
@@ -101,45 +105,44 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         LambdaQueryWrapper<Cate> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(Cate::getOrder);
         List<Cate> all = cateMapper.selectList(wrapper);
-        cate.setChildren(buildCateTree(all, id));
+        cate.setChildren(buildCateTreeData(all, id));
         return cate;
     }
 
     @Override
-    public Object list(String pattern, Integer page, Integer size) {
+    public Page<Cate> list(String pattern, Integer page, Integer size) {
         LambdaQueryWrapper<Cate> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(Cate::getOrder);
         List<Cate> raw = cateMapper.selectList(wrapper);
 
-        Object data = Objects.equals(pattern, "tree") ? buildCateTree(raw, 0) : raw;
-        List<Cate> arr = data instanceof List ? (List<Cate>) data : new ArrayList<>();
+        // 如果是 tree 模式则构建树形，否则用扁平列表
+        List<Cate> arr = Objects.equals(pattern, "tree") ? buildCateTreeData(raw, 0) : raw;
 
-        if (page != null && size != null) {
-            int p = Math.max(1, page);
-            int s = Math.max(1, size);
-            int start = (p - 1) * s;
-            int from = Math.min(start, arr.size());
-            int to = Math.min(start + s, arr.size());
-            List<Cate> records = from >= to ? new ArrayList<>() : arr.subList(from, to);
-            Page<Cate> result = new Page<>(p, s);
-            result.setRecords(records);
+        // 不传 page/size 则返回全部
+        if (page == null || size == null) {
+            Page<Cate> result = new Page<>(1, arr.size());
+            result.setRecords(new ArrayList<>(arr));
             result.setTotal(arr.size());
             return result;
         }
-        return data;
+
+        PageVo pageVo = new PageVo();
+        pageVo.setPage(Math.max(1, page));
+        pageVo.setSize(Math.max(1, size));
+        return commonUtils.getPageData(pageVo, arr);
     }
 
     @Override
-    public List<CateArticleCount> cateArticleCount() {
+    public List<CateArticleCount> getCateArticleCount() {
         return cateMapper.cateArticleCount();
     }
 
     @Override
-    public List<Cate> buildCateTree(List<Cate> list, Integer level) {
+    public List<Cate> buildCateTreeData(List<Cate> list, Integer level) {
         List<Cate> children = new ArrayList<>();
         for (Cate cate : list) {
             if (Objects.equals(cate.getLevel(), level)) {
-                cate.setChildren(buildCateTree(list, cate.getId()));
+                cate.setChildren(buildCateTreeData(list, cate.getId()));
                 children.add(cate);
             }
         }

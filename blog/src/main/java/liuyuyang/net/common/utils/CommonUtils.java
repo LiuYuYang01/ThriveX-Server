@@ -15,6 +15,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -63,16 +64,19 @@ public class CommonUtils {
         return false;
     }
 
-    // 分页查询逻辑
+    /** 对内存列表做分页，返回 MyBatis-Plus Page（避免 start 超出列表长度） */
     public <T> Page<T> getPageData(PageVo pageVo, List<T> list) {
-        int start = (pageVo.getPage() - 1) * pageVo.getSize();
-        int end = Math.min(start + pageVo.getSize(), list.size());
-        List<T> pagedRecords = list.subList(start, end);
+        // 下限保护：页码至少为 1，避免非法分页
+        int page = Math.max(1, pageVo.getPage() != null ? pageVo.getPage() : 1);
+        int size = Math.max(1, pageVo.getSize() != null ? pageVo.getSize() : 5);
+        int total = list.size();
+        int start = Math.min((page - 1) * size, total);
+        int end = Math.min(start + size, total);
+        List<T> pagedRecords = start >= end ? new ArrayList<>() : list.subList(start, end);
 
-        Page<T> result = new Page<>(pageVo.getPage(), pageVo.getSize());
+        Page<T> result = new Page<>(page, size);
         result.setRecords(pagedRecords);
-        result.setTotal(list.size());
-
+        result.setTotal(total);
         return result;
     }
 
@@ -114,7 +118,7 @@ public class CommonUtils {
 
                 // 如果跟之前的token相匹配则进一步判断token是否有效
                 if (userTokens != null && !userTokens.isEmpty()) {
-                    Claims claims = JwtUtils.parseJWT(token);
+                    JwtUtils.parseJWT(token);
                     return true;
                 } else {
                     return false;

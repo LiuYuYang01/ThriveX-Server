@@ -83,7 +83,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public void add(ArticleFormDTO articleFormDTO) {
+    public void addArticleData(ArticleFormDTO articleFormDTO) {
         Article article = BeanUtil.copyProperties(articleFormDTO, Article.class);
         articleMapper.insert(article);
 
@@ -128,7 +128,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public void del(Integer id, Integer is_del) {
+    public void delArticleData(Integer id, Integer is_del) {
         Article article = articleMapper.selectById(id);
 
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -156,7 +156,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public void reduction(Integer id) {
+    public void recoveryArticleData(Integer id) {
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getArticleId, id);
         ArticleConfig articleConfig = articleConfigMapper.selectOne(articleConfigLambdaQueryWrapper);
@@ -165,7 +165,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public void delBatch(List<Integer> ids) {
+    public void delBatchArticleData(List<Integer> ids) {
         delArticleCorrelationData(ids);
 
         // 批量删除文章
@@ -178,7 +178,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public void edit(ArticleFormDTO articleFormDTO) {
+    public void editArticleData(ArticleFormDTO articleFormDTO) {
         if (articleFormDTO.getCateIds() == null || articleFormDTO.getCateIds().isEmpty())
             throw new CustomException(400, "编辑失败：请绑定分类");
 
@@ -222,8 +222,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Article get(Integer id, String password) {
-        Article data = bindingData(id);
+    public Article getArticleData(Integer id, String password) {
+        Article data = bindingArticleData(id);
 
         String description = data.getDescription();
         String content = data.getContent();
@@ -259,9 +259,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 data.setContent("该文章需要密码才能查看");
 
                 // 验证密码是否正确
-                // if
-                // (config.getPassword().equals(DigestUtils.md5DigestAsHex(password.getBytes())))
-                // {
                 if (config.getPassword().equals(password)) {
                     data.setDescription(description);
                     data.setContent(content);
@@ -316,7 +313,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public List<Article> list(ArticleFilterVo filterVo, String token) {
+    public List<Article> getArticleList(ArticleFilterVo filterVo, String token) {
         // 首先根据文章配置表的条件筛选出符合条件的文章ID
         QueryWrapper<ArticleConfig> configQueryWrapper = new QueryWrapper<>();
 
@@ -350,21 +347,29 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 绑定数据 + 统一的展示规则（过滤隐藏文章 + 处理加密文章）
         return list.stream()
-                .map(article -> bindingData(article.getId()))
+                .map(article -> bindingArticleData(article.getId()))
                 .filter(article -> shouldShowInList(article, isAdmin))
                 .map(this::maskIfEncrypted)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Page<Article> paging(ArticleFilterVo filterVo, String token) {
-        List<Article> list = list(filterVo, token);
+    public Page<Article> getArticleListPage(ArticleFilterVo filterVo, String token) {
+        List<Article> list = getArticleList(filterVo, token);
         boolean isAdmin = CommonUtils.isAdmin(token);
         if (!isAdmin) {
             // 统一使用展示规则控制首页可见性
             list = list.stream()
                     .filter(this::shouldShowOnHomeForNonAdmin)
                     .collect(Collectors.toList());
+        }
+
+        // 不传 page/size 则返回全部
+        if (filterVo.getPage() == null || filterVo.getSize() == null) {
+            Page<Article> result = new Page<>(1, list.size());
+            result.setRecords(new ArrayList<>(list));
+            result.setTotal(list.size());
+            return result;
         }
 
         PageVo pageVo = new PageVo();
@@ -458,7 +463,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         page.setRecords(
                 page.getRecords().stream()
                         .map(article -> {
-                            Article boundArticle = bindingData(article.getId());
+                            Article boundArticle = bindingArticleData(article.getId());
                             // 分类/标签页默认按普通用户规则展示
                             if (!shouldShowInList(boundArticle, false)) {
                                 return null;
@@ -509,7 +514,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public List<Article> getRandomArticles(Integer count) {
+    public List<Article> getRandomArticleList(Integer count) {
         // 一次性从配置表筛选出符合条件的文章ID，避免 N+1 查询
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDraft, 0);
@@ -529,7 +534,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         // 如果总数不超过 count，沿用原有行为：直接通过 get 返回完整文章数据（包含权限等处理）
         if (ids.size() <= count) {
             return ids.stream()
-                    .map(id -> get(id, ""))
+                    .map(id -> getArticleData(id, ""))
                     .collect(Collectors.toList());
         }
 
@@ -539,19 +544,19 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 与原逻辑保持一致，大量数据时仅做绑定，不走 get 的密码/上下篇逻辑
         return randomArticleIds.stream()
-                .map(this::bindingData)
+                .map(this::bindingArticleData)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<Article> getRecommendedArticles(Integer count) {
+    public List<Article> getHotArticleList(Integer count) {
         QueryWrapper<Article> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByDesc("view").last("LIMIT " + count);
-        return list(queryWrapper);
+        return articleMapper.selectList(queryWrapper);
     }
 
     @Override
-    public void recordView(Integer id) {
+    public void recordViewArticleData(Integer id) {
         Article data = articleMapper.selectById(id);
         if (data == null)
             throw new CustomException(400, "获取失败：该文章不存在");
@@ -561,7 +566,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     // 关联文章数据
     @Override
-    public Article bindingData(Integer id) {
+    public Article bindingArticleData(Integer id) {
         Article data = articleMapper.selectById(id);
 
         if (data == null)
@@ -671,7 +676,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public void importArticle(MultipartFile[] list) throws IOException {
+    public void importArticleList(MultipartFile[] list) throws IOException {
         if (list == null || list.length == 0)
             throw new CustomException(400, "导入失败：文件列表为空");
 
@@ -746,12 +751,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             article.setConfig(config);
 
             // 保存文章
-            add(article);
+            addArticleData(article);
         }
     }
 
     @Override
-    public ResponseEntity<byte[]> exportArticle(List<Integer> ids) {
+    public ResponseEntity<byte[]> exportArticleList(List<Integer> ids) {
         // 创建一个临时目录用于存储导出的Markdown文件
         java.io.File tempDir = new java.io.File(System.getProperty("java.io.tmpdir"), "exported_articles");
 

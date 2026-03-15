@@ -14,23 +14,23 @@ public interface CateService extends IService<Cate> {
     // 判断该分类中是否有文章
     Boolean isCateArticleCount(Integer cid);
 
-    void del(Integer cid);
+    void delCateData(Integer cid);
 
-    void batchDel(List<Integer> ids);
+    void batchDelCateData(List<Integer> ids);
 
-    Cate get(Integer cid);
+    Cate getCateData(Integer cid);
 
     /**
-     * 获取分类列表，支持 pattern（list/tree）和分页
+     * 获取分类列表，支持 pattern（list/tree）。不传 page/size 时返回全部，传则分页。
      *
      * @param pattern list: 扁平数组 | tree: 树形结构
-     * @param page    可选，分页时传入
-     * @param size    可选，分页时传入
-     * @return 传 page&amp;size 时返回 Page，否则返回 List
+     * @param page    页码（从 1 开始），可选
+     * @param size    每页数量，可选
+     * @return 分页结果（未传 page/size 时为一页全量）
      */
-    Object list(String pattern, Integer page, Integer size);
+    Page<Cate> list(String pattern, Integer page, Integer size);
 
-    List<CateArticleCount> cateArticleCount();
+    List<CateArticleCount> getCateArticleCount();
 
-    List<Cate> buildCateTree(List<Cate> list, Integer level);
+    List<Cate> buildCateTreeData(List<Cate> list, Integer level);
 }

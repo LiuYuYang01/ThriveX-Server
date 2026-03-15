@@ -14,38 +14,37 @@ import java.io.IOException;
 import java.util.List;
 
 public interface ArticleService extends IService<Article> {
-    void add(ArticleFormDTO articleFormDTO);
+    void addArticleData(ArticleFormDTO articleFormDTO);
 
-    void del(Integer id, Integer is_del);
+    void delArticleData(Integer id, Integer is_del);
 
-    void reduction(Integer id);
+    void recoveryArticleData(Integer id);
 
-    void delBatch(List<Integer> ids);
+    void delBatchArticleData(List<Integer> ids);
 
-    void edit(ArticleFormDTO articleFormDTO);
+    void editArticleData(ArticleFormDTO articleFormDTO);
 
-    Article get(Integer id, String password);
+    Article getArticleData(Integer id, String password);
 
-    List<Article> list(ArticleFilterVo filterVo, String token);
+    List<Article> getArticleList(ArticleFilterVo filterVo, String token);
 
-    Page<Article> paging(ArticleFilterVo filterVo, String token);
+    Page<Article> getArticleListPage(ArticleFilterVo filterVo, String token);
 
     Page<Article> getCateArticleList(Integer id, PageVo pageVo);
 
     Page<Article> getTagArticleList(Integer id, PageVo pageVo);
 
-    List<Article> getRandomArticles(Integer count);
+    List<Article> getRandomArticleList(Integer count);
 
-    List<Article> getRecommendedArticles(Integer count);
+    List<Article> getHotArticleList(Integer count);
 
-    void recordView(Integer id);
+    void recordViewArticleData(Integer id);
 
-    Article bindingData(Integer id);
+    Article bindingArticleData(Integer id);
 
-    void importArticle(MultipartFile[] list) throws IOException;
+    void importArticleList(MultipartFile[] list) throws IOException;
 
-    // void exportArticle(List<Integer> ids);
-    ResponseEntity<byte[]> exportArticle(List<Integer> ids);
+    ResponseEntity<byte[]> exportArticleList(List<Integer> ids);
 
     QueryWrapper<Article> queryWrapperArticle(ArticleFilterVo filterVo);
 }
