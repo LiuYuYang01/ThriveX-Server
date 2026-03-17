@@ -3,6 +3,9 @@ spring:
     name: service-system
   profiles:
     active: pro
+  jackson:
+    # 统一下划线格式如：is_del
+#    property-naming-strategy: SNAKE_CASE
   # 约束文件上传大小
   servlet.multipart.max-file-size: 10MB
   servlet.multipart.max-request-size: 100MB

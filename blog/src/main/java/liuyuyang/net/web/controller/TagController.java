@@ -29,7 +29,7 @@ public class TagController {
     @ApiOperation("新增标签")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
     public Result<String> add(@RequestBody Tag tag) {
-        tagService.save(tag);
+        tagService.addTagData(tag);
         return Result.success();
     }
 

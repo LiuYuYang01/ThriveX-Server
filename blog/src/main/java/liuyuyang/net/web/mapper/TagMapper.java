@@ -10,6 +10,6 @@ import java.util.List;
 
 @Mapper
 public interface TagMapper extends BaseMapper<Tag> {
-    @Select("select t.*, count(at.article_id) as count from article a, tag t, article_tag at where a.id = at.article_id and t.id = at.tag_id group by t.id, t.name order by count desc")
+    @Select("select t.*, count(at.article_id) as count from tag t left join article_tag at on t.id = at.tag_id left join article a on at.article_id = a.id group by t.id, t.name order by count desc")
     List<Tag> staticArticleCount();
 }
