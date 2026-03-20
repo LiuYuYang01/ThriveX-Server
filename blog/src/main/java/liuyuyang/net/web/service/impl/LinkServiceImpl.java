@@ -11,6 +11,7 @@ import liuyuyang.net.model.Link;
 import liuyuyang.net.web.service.LinkService;
 import liuyuyang.net.common.utils.EmailUtils;
 import liuyuyang.net.common.utils.CommonUtils;
+import liuyuyang.net.common.utils.UrlSecurityUtils;
 import liuyuyang.net.vo.PageVo;
 import liuyuyang.net.vo.link.LinkFilterVo;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,8 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
 
     @Override
     public void add(Link link, String token) throws Exception {
+        UrlSecurityUtils.validateExternalHttpUrl("RSS 地址", link.getRss());
+
         // 前端用户手动提交
         if (token == null || token.isEmpty()) {
             // 添加之前先判断所选的网站类型是否为当前用户可选的
@@ -58,7 +61,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
         }
 
         // 判断权限
-        boolean isAdminPermissions = commonUtils.isAdmin();
+        boolean isAdminPermissions = CommonUtils.isAdmin();
         // 如果是超级管理员在添加时候不需要审核，直接显示
         if (isAdminPermissions) {
             link.setAuditStatus(1);

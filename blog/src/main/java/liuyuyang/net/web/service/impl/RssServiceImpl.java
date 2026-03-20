@@ -5,7 +5,9 @@ import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import liuyuyang.net.common.execption.CustomException;
 import liuyuyang.net.common.utils.CommonUtils;
+import liuyuyang.net.common.utils.UrlSecurityUtils;
 import liuyuyang.net.web.mapper.LinkMapper;
 import liuyuyang.net.web.mapper.LinkTypeMapper;
 import liuyuyang.net.model.Link;
@@ -22,6 +24,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
@@ -54,8 +57,7 @@ public class RssServiceImpl implements RssService {
     @PostConstruct
     public void init() {
         // 从数据库加载所有链接类型，并存入缓存
-        linkTypeMapper.selectList(null).forEach(lt ->
-                typeCache.put(lt.getId(), lt.getName()));
+        linkTypeMapper.selectList(null).forEach(lt -> typeCache.put(lt.getId(), lt.getName()));
     }
 
     @Cacheable(value = "rssCache", key = "'allFeeds'")
@@ -64,14 +66,17 @@ public class RssServiceImpl implements RssService {
         // 线程安全的列表，用于收集所有RSS条目
         List<Rss> rssList = Collections.synchronizedList(new ArrayList<>());
 
-        // 从数据库获取所有链接
-        List<Link> linkList = linkMapper.selectList(null);
+        // 仅聚合审核通过且配置了 rss 的链接
+        List<Link> linkList = linkMapper
+                .selectList(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Link>()
+                        .eq("audit_status", 1)
+                        .isNotNull("rss")
+                        .ne("rss", ""));
 
         // 为每个有RSS地址的链接创建异步任务
         List<CompletableFuture<Void>> futures = linkList.stream()
-                .filter(link -> link.getRss() != null)  // 过滤掉没有RSS地址的链接
-                .map(link -> CompletableFuture.runAsync(() ->
-                        processFeedWithTimeout(link, rssList), executorService))  // 异步处理每个RSS源
+                .filter(link -> link.getRss() != null) // 过滤掉没有RSS地址的链接
+                .map(link -> CompletableFuture.runAsync(() -> processFeedWithTimeout(link, rssList), executorService)) // 异步处理每个RSS源
                 .collect(Collectors.toList());
 
         // 等待所有异步任务完成
@@ -97,10 +102,11 @@ public class RssServiceImpl implements RssService {
      */
     private void processFeedWithTimeout(Link link, List<Rss> rssList) {
         try {
-            HttpURLConnection connection = (HttpURLConnection)
-                    new URL(link.getRss()).openConnection();
+            UrlSecurityUtils.validateExternalHttpUrl("RSS 地址", link.getRss());
+            HttpURLConnection connection = (HttpURLConnection) new URL(link.getRss()).openConnection();
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(10000);
+            connection.setInstanceFollowRedirects(false);
 
             try (InputStream input = connection.getInputStream()) {
                 SyndFeed feed = new SyndFeedInput().build(new XmlReader(input));
@@ -116,8 +122,7 @@ public class RssServiceImpl implements RssService {
                             rss.setType(typeCache.get(link.getTypeId()));
                             rss.setAuthor(data.getAuthor());
                             rss.setTitle(data.getTitle());
-                            rss.setDescription(data.getDescription() != null ?
-                                    data.getDescription().getValue() : "");
+                            rss.setDescription(data.getDescription() != null ? data.getDescription().getValue() : "");
                             rss.setUrl(data.getLink());
                             rss.setCreateTime(String.valueOf(data.getPublishedDate().getTime()));
                             return rss;
@@ -126,6 +131,8 @@ public class RssServiceImpl implements RssService {
 
                 rssList.addAll(limitedItems);
             }
+        } catch (CustomException | ConnectException e) {
+            System.err.println("已拦截或不可达: " + link.getRss());
         } catch (Exception e) {
             System.err.println("解析失败: " + link.getRss());
         }
