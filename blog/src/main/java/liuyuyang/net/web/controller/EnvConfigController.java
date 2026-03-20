@@ -4,6 +4,7 @@ import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import liuyuyang.net.common.annotation.NoTokenRequired;
 import liuyuyang.net.common.utils.Result;
 import liuyuyang.net.model.EnvConfig;
 import liuyuyang.net.web.service.EnvConfigService;
@@ -63,6 +64,7 @@ public class EnvConfigController {
         return success ? Result.success() : Result.error();
     }
 
+    @NoTokenRequired
     @ApiOperation("获取高德地图配置")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
     @GetMapping("/gaode_map")

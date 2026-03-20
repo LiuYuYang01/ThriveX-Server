@@ -4,6 +4,7 @@ import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import liuyuyang.net.common.annotation.NoTokenRequired;
 import liuyuyang.net.common.annotation.RateLimit;
 import liuyuyang.net.common.utils.Result;
 import liuyuyang.net.model.PageConfig;
@@ -30,6 +31,7 @@ public class PageConfigController {
         return Result.success("获取成功", data);
     }
 
+    @NoTokenRequired
     @RateLimit
     @ApiOperation("根据名称获取页面配置")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)

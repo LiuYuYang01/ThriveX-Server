@@ -3,6 +3,7 @@ package liuyuyang.net.web.controller;
 import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import liuyuyang.net.common.annotation.NoTokenRequired;
 import liuyuyang.net.common.annotation.RateLimit;
 import liuyuyang.net.common.utils.Result;
 import liuyuyang.net.web.service.WebConfigService;
@@ -31,6 +32,7 @@ public class WebConfigController {
         return Result.success("获取成功", data);
     }
 
+    @NoTokenRequired
     @RateLimit
     @ApiOperation("根据名称获取网站配置")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
@@ -40,6 +42,7 @@ public class WebConfigController {
         return webConfig != null ? Result.success("获取成功", webConfig) : Result.error("配置不存在");
     }
 
+    @NoTokenRequired
     @RateLimit
     @ApiOperation("根据ID获取网站配置")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)

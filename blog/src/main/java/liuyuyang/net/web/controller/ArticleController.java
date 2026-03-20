@@ -72,6 +72,7 @@ public class ArticleController {
         return Result.success();
     }
 
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/{id}")
     @ApiOperation("获取文章")
@@ -82,8 +83,8 @@ public class ArticleController {
         return Result.success(data);
     }
 
-    @RateLimit
     @NoTokenRequired
+    @RateLimit
     @GetMapping
     @ApiOperation(value = "获取文章列表", notes = "不传 page/size 返回全部，传则分页（来自 filterVo）")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
@@ -93,6 +94,7 @@ public class ArticleController {
         return Result.success(result);
     }
 
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/cate/{cate_id}")
     @ApiOperation("获取指定分类的文章")
@@ -103,6 +105,7 @@ public class ArticleController {
         return Result.success(result);
     }
 
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/tag/{tag_id}")
     @ApiOperation("获取指定标签的文章")
@@ -113,6 +116,7 @@ public class ArticleController {
         return Result.success(result);
     }
 
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/hot")
     @ApiOperation("获取热门文章数据")
@@ -122,6 +126,7 @@ public class ArticleController {
         return Result.success(data);
     }
 
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/random")
     @ApiOperation("随机获取文章数据")
@@ -131,6 +136,7 @@ public class ArticleController {
         return Result.success(data);
     }
 
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/view/{article_id}")
     @ApiOperation("递增文章浏览量")

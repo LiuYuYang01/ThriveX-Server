@@ -98,6 +98,7 @@ public class LinkController {
         return Result.success(result);
     }
 
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/type")
     @ApiOperation("获取网站类型列表")

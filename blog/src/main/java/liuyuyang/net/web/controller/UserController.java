@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import liuyuyang.net.common.annotation.NoTokenRequired;
 import liuyuyang.net.dto.user.EditPassDTO;
 import liuyuyang.net.dto.user.UserDTO;
 import liuyuyang.net.dto.user.UserInfoDTO;
@@ -111,6 +112,7 @@ public class UserController {
         return Result.success();
     }
 
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/author")
     @ApiOperation("获取作者信息")

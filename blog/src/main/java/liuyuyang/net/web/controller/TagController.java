@@ -90,6 +90,7 @@ public class TagController {
     }
 
     // 统计文章数量
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/article/count")
     @ApiOperation("统计每个标签下的文章数量")

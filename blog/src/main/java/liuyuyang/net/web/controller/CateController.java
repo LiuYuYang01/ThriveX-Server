@@ -67,6 +67,7 @@ public class CateController {
         return Result.success();
     }
 
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/article/count")
     @ApiOperation("获取每个分类中的文章数量")

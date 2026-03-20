@@ -1,7 +1,6 @@
 package liuyuyang.net.common.interceptor;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.jsonwebtoken.Claims;
 import liuyuyang.net.common.annotation.NoTokenRequired;
 import liuyuyang.net.common.execption.CustomException;
 import liuyuyang.net.common.properties.JwtProperties;
@@ -54,6 +53,10 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        if (!(handler instanceof HandlerMethod)) {
+            return true;
+        }
+
         HandlerMethod handlerMethod = (HandlerMethod) handler;
         Method method = handlerMethod.getMethod();
 
@@ -65,18 +68,15 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
         // 校验令牌
         try {
             log.info("jwt校验：{}", token);
-
-            // 如果是GET请求没有传token就直接放行，传了token就必须经过验证
-            if ("GET".equalsIgnoreCase(request.getMethod())) {
-                if (token != null) {
-                    if (token.startsWith("Bearer ")) token = token.substring(7);
-                    JwtUtils.parseJWT(token);
-                }
-                return true;
+            if (token == null || token.trim().isEmpty()) {
+                throw new CustomException(401, "请先登录");
             }
 
             // 处理Authorization的Bearer
             if (token.startsWith("Bearer ")) token = token.substring(7);
+            if (token.trim().isEmpty()) {
+                throw new CustomException(401, "无效或过期的 Token");
+            }
 
             LambdaQueryWrapper<UserToken> userTokenLambdaQueryWrapper = new LambdaQueryWrapper<>();
             userTokenLambdaQueryWrapper.eq(UserToken::getToken, token);
@@ -84,7 +84,7 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
 
             // 如果跟之前的token相匹配则进一步判断token是否有效
             if (userTokens != null && !userTokens.isEmpty()) {
-                Claims claims = JwtUtils.parseJWT(token);
+                JwtUtils.parseJWT(token);
                 return true;
             } else {
                 throw new CustomException(401, "该账号已在另一台设备登录");

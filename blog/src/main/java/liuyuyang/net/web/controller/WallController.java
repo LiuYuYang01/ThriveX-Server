@@ -106,6 +106,7 @@ public class WallController {
         return Result.success(result);
     }
 
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/cate")
     @ApiOperation("获取留言分类列表")
