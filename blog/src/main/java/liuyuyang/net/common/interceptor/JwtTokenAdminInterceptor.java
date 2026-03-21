@@ -10,7 +10,6 @@ import liuyuyang.net.common.utils.JwtUtils;
 import liuyuyang.net.model.UserToken;
 import liuyuyang.net.web.mapper.UserTokenMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -34,7 +33,7 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
     @Resource
     private BlackListUtils blackListUtils;
 
-    public boolean preHandle(HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull Object handler) {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         // 从请求头中获取令牌
         String token = request.getHeader(jwtProperties.getTokenName());
 

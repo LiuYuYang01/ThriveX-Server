@@ -1,6 +1,5 @@
 package liuyuyang.net.web.controller;
 
-import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import io.swagger.annotations.Api;
@@ -15,6 +14,7 @@ import liuyuyang.net.common.utils.Result;
 import liuyuyang.net.result.cate.CateArticleCount;
 import liuyuyang.net.web.service.CateService;
 import liuyuyang.net.common.utils.Paging;
+import org.springframework.beans.BeanUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +34,8 @@ public class CateController {
     @ApiOperation("新增分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
     public Result<String> addArticleData(@RequestBody CateFormDTO cateFormDTO) {
-        Cate cate = BeanUtil.copyProperties(cateFormDTO, Cate.class);
+        Cate cate = new Cate();
+        BeanUtils.copyProperties(cateFormDTO, cate);
         cateService.save(cate);
         return Result.success();
     }
@@ -62,7 +63,8 @@ public class CateController {
     @ApiOperation("编辑分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
     public Result<String> editArticleData(@RequestBody CateFormDTO cateFormDTO) {
-        Cate cate = BeanUtil.copyProperties(cateFormDTO, Cate.class);
+        Cate cate = new Cate();
+        BeanUtils.copyProperties(cateFormDTO, cate);
         cateService.updateById(cate);
         return Result.success();
     }

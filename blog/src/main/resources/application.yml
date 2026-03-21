@@ -50,16 +50,6 @@ knife4j:
     enable-footer-custom: true
     footer-custom-content: 互联网从不缺乏天才，而努力才是最终的入场劵!
 
-dromara:
-  # 文件存储配置
-  x-file-storage:
-    default-platform: local-plus
-    local-plus:
-      - platform: local # 存储平台标识
-        enable-storage: true  # 启用存储
-        enable-access: true # 启用访问（线上请使用 Nginx 配置，效率更高）
-        path-patterns: /static/** # 访问路径
-
 file:
   dir: ./upload/
 
