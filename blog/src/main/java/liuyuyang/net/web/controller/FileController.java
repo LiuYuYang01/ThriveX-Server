@@ -1,26 +1,39 @@
 package liuyuyang.net.web.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import com.qiniu.common.QiniuException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import liuyuyang.net.core.execption.CustomException;
+import io.swagger.annotations.ApiParam;
+import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.core.utils.Result;
-import liuyuyang.net.core.utils.OssUtils;
-import org.dromara.x.file.storage.core.FileInfo;
-import org.dromara.x.file.storage.core.FileStorageService;
-import org.dromara.x.file.storage.core.get.ListFilesResult;
-import org.dromara.x.file.storage.core.get.RemoteDirInfo;
-import org.dromara.x.file.storage.core.get.RemoteFileInfo;
+import liuyuyang.net.dto.file.FileBatchDeleteFormDTO;
+import liuyuyang.net.dto.file.FileCompressFormDTO;
+import liuyuyang.net.dto.file.FileCompressTaskQueryDTO;
+import liuyuyang.net.dto.file.FileDirCreateFormDTO;
+import liuyuyang.net.dto.file.FileDirDeleteFormDTO;
+import liuyuyang.net.dto.file.FileDirRenameFormDTO;
+import liuyuyang.net.dto.file.FileFilterDTO;
+import liuyuyang.net.vo.file.FileCompressItemVO;
+import liuyuyang.net.vo.file.FileCompressVO;
+import liuyuyang.net.vo.file.FileDirCreateVO;
+import liuyuyang.net.vo.file.FileDirDeleteVO;
+import liuyuyang.net.vo.file.FileDirRenameVO;
+import liuyuyang.net.vo.file.FileInfoVO;
+import liuyuyang.net.vo.file.FileListItemVO;
+import liuyuyang.net.vo.file.FileTreeVO;
+import liuyuyang.net.vo.file.FileUploadVO;
+import liuyuyang.net.web.service.FileService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
+import javax.validation.Valid;
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 统一文件上传
@@ -34,178 +47,99 @@ import java.util.*;
 @Transactional
 public class FileController {
     @Resource
-    private FileStorageService fileStorageService;
+    private FileService fileService;
 
     @PostMapping
     @ApiOperation("文件上传")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<Object> add(@RequestParam(defaultValue = "") String dir, @RequestParam MultipartFile[] files)
-            throws IOException {
-        if (dir == null || dir.trim().isEmpty())
-            throw new CustomException(400, "请指定一个目录");
-
-        List<String> urls = new ArrayList<>();
-
-        for (MultipartFile file : files) {
-            // 校验文件是否为空
-            if (file.isEmpty()) {
-                throw new CustomException(400, "文件不能为空");
-            }
-
-            // 只允许的图片扩展名
-            Set<String> allowedExt = new HashSet<>(Arrays.asList("jpg", "jpeg", "png", "webp"));
-            String originalFilename = file.getOriginalFilename();
-            String ext = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                ext = originalFilename.substring(originalFilename.lastIndexOf('.') + 1).toLowerCase();
-            }
-
-            if (!allowedExt.contains(ext)) {
-                throw new CustomException(400, "仅支持上传图片类型文件（jpg、jpeg、png、webp）");
-            }
-
-            // 只允许的图片 MIME 类型
-            Set<String> allowedContentTypes = new HashSet<>(Arrays.asList(
-                    "image/jpeg",
-                    "image/png",
-                    "image/webp"));
-            String contentType = file.getContentType();
-            if (contentType == null || !allowedContentTypes.contains(contentType.toLowerCase())) {
-                throw new CustomException(400, "文件类型不合法，仅支持上传图片类型文件");
-            }
-
-            // 解码校验，防止伪装成图片的恶意文件
-            BufferedImage image = ImageIO.read(file.getInputStream());
-            if (image == null) {
-                throw new CustomException(400, "文件内容不是有效的图片");
-            }
-
-            FileInfo result = fileStorageService.of(file)
-                    .setPlatform(OssUtils.getPlatform())
-                    .setPath(dir + '/')
-                    .upload();
-
-            if (result == null)
-                throw new CustomException("上传文件失败");
-
-            String url = result.getUrl();
-            urls.add(url.startsWith("https://") ? url : "https://" + url);
-        }
-
-        return Result.success("文件上传成功：", urls);
+    public Result<FileUploadVO> addFileData(
+            @ApiParam(value = "业务相对目录", required = true) @RequestParam String dir,
+            @ApiParam(value = "待上传文件", required = true) @RequestParam MultipartFile[] files) throws IOException {
+        FileUploadVO data = fileService.addFileData(dir, files);
+        return Result.success("文件上传成功：", data);
     }
 
     @DeleteMapping
     @ApiOperation("删除文件")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
-    public Result<String> del(@RequestParam String filePath) {
-        String url = filePath.startsWith("https://") ? filePath : "https://" + filePath;
-        boolean delete = fileStorageService.delete(url);
-        return Result.status(delete);
+    public Result<String> delFileData(
+            @ApiParam(value = "文件 URL 或 key", required = true) @RequestParam String filePath) throws QiniuException {
+        fileService.delFileData(filePath);
+        return Result.success();
     }
 
     @DeleteMapping("/batch")
     @ApiOperation("批量删除文件")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result batchDel(@RequestBody String[] pathList) throws QiniuException {
-        for (String url : pathList) {
-            boolean delete = fileStorageService.delete(url.startsWith("https://") ? url : "https://" + url);
-            if (!delete)
-                throw new CustomException("删除文件失败");
-        }
+    public Result<String> batchDelFileData(@RequestBody @Valid FileBatchDeleteFormDTO dto) throws QiniuException {
+        fileService.batchDelFileData(dto);
         return Result.success();
     }
 
     @GetMapping("/info")
     @ApiOperation("获取文件信息")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<FileInfo> get(@RequestParam String filePath) throws QiniuException {
-        FileInfo fileInfo = fileStorageService.getFileInfoByUrl(filePath);
-        return Result.success(fileInfo);
-    }
-
-    @GetMapping("/dir")
-    @ApiOperation("获取目录列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<List<Map>> getDirList() {
-        ListFilesResult result = fileStorageService.listFiles()
-                .setPlatform(OssUtils.getPlatform())
-                .listFiles();
-
-        // 获取文件列表
-        List<Map> list = new ArrayList<>();
-        List<RemoteDirInfo> fileList = result.getDirList();
-
-        for (RemoteDirInfo item : fileList) {
-            Map<String, Object> data = new HashMap<>();
-            data.put("name", item.getName());
-            data.put("path", item.getOriginal());
-            list.add(data);
-        }
-
-        return Result.success(list);
+    public Result<FileInfoVO> getFileData(
+            @ApiParam(value = "文件 URL 或 key", required = true) @RequestParam String filePath) throws QiniuException {
+        return Result.success(fileService.getFileData(filePath));
     }
 
     @GetMapping("/list")
     @ApiOperation("获取指定目录中的文件")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<Map<String, Object>> getFileList(
-            @RequestParam String dir,
-            @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "20") Integer size) {
-        if (dir == null || dir.trim().isEmpty())
-            throw new CustomException(400, "请指定一个目录");
+    public Result<Map<String, Object>> getFileList(FileFilterDTO fileFilterDTO) throws QiniuException {
+        Page<FileListItemVO> list = fileService.getFileList(fileFilterDTO);
+        Map<String, Object> result = Paging.filter(list);
+        return Result.success(result);
+    }
 
-        ListFilesResult result = fileStorageService.listFiles()
-                .setPlatform(OssUtils.getPlatform())
-                .setPath(dir + '/')
-                .listFiles();
+    @GetMapping("/tree")
+    @ApiOperation("获取文件目录树")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
+    public Result<FileTreeVO> getFileTreeData() throws QiniuException {
+        return Result.success(fileService.getFileTreeData());
+    }
 
-        // 获取文件列表
-        List<Map<String, Object>> fileList = new ArrayList<>();
-        List<RemoteFileInfo> remoteFileList = result.getFileList();
+    @PostMapping("/dir")
+    @ApiOperation("新增目录")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    public Result<FileDirCreateVO> addFileDirData(@RequestBody @Valid FileDirCreateFormDTO dto) throws IOException {
+        return Result.success(fileService.addFileDirData(dto));
+    }
 
-        // 按lastModified时间降序排序（最新的在前）
-        remoteFileList.sort((a, b) -> b.getLastModified().compareTo(a.getLastModified()));
+    @PatchMapping("/dir")
+    @ApiOperation("重命名目录")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
+    public Result<FileDirRenameVO> renameFileDirData(@RequestBody @Valid FileDirRenameFormDTO dto) throws QiniuException {
+        return Result.success(fileService.renameFileDirData(dto));
+    }
 
-        // 计算分页参数
-        int total = remoteFileList.size();
-        int startIndex = (page - 1) * size;
-        int endIndex = Math.min(startIndex + size, total);
+    @DeleteMapping("/dir")
+    @ApiOperation("删除目录")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
+    public Result<FileDirDeleteVO> delFileDirData(@RequestBody @Valid FileDirDeleteFormDTO dto) throws QiniuException {
+        return Result.success(fileService.delFileDirData(dto));
+    }
 
-        // 分页处理
-        List<RemoteFileInfo> pageList = remoteFileList.subList(startIndex, endIndex);
+    @PostMapping("/compress")
+    @ApiOperation("图片瘦身（七牛 pfop 异步）")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 10)
+    public Result<FileCompressVO> compressFileData(@RequestBody @Valid FileCompressFormDTO dto) {
+        return Result.success(fileService.compressFileData(dto));
+    }
 
-        for (RemoteFileInfo item : pageList) {
-            // 如果是目录就略过
-            if (Objects.equals(item.getExt(), ""))
-                continue;
+    @GetMapping("/compress/task/{taskId}")
+    @ApiOperation("查询单个瘦身任务状态")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 11)
+    public Result<FileCompressItemVO> queryCompressTask(
+            @ApiParam(value = "七牛 pfop persistentId", required = true) @PathVariable String taskId) {
+        return Result.success(fileService.queryCompressTask(taskId));
+    }
 
-            Map<String, Object> data = new HashMap<>();
-            data.put("basePath", item.getBasePath());
-            data.put("dir", dir);
-            data.put("path", item.getBasePath() + item.getPath() + item.getFilename());
-            data.put("name", item.getFilename());
-            data.put("size", item.getSize());
-            data.put("type", item.getExt());
-            data.put("date", item.getLastModified());
-
-            String url = item.getUrl();
-            if (!url.startsWith("https://"))
-                url = "https://" + url;
-            data.put("url", url);
-
-            fileList.add(data);
-        }
-
-        // 构建分页结果
-        Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("result", fileList);
-        resultMap.put("size", size);
-        resultMap.put("page", page);
-        resultMap.put("pages", (total + size - 1) / size);
-        resultMap.put("total", total);
-
-        return Result.success(resultMap);
+    @PostMapping("/compress/tasks")
+    @ApiOperation("批量查询瘦身任务状态")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 12)
+    public Result<List<FileCompressItemVO>> queryCompressTasks(@RequestBody @Valid FileCompressTaskQueryDTO dto) {
+        return Result.success(fileService.queryCompressTasks(dto));
     }
 }

@@ -1,24 +1,24 @@
 package liuyuyang.net.web.controller;
 
-import cn.hutool.core.bean.BeanUtil;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
-import liuyuyang.net.core.execption.CustomException;
-import liuyuyang.net.model.Comment;
+import liuyuyang.net.dto.PageDTO;
+import liuyuyang.net.dto.comment.CommentFilterDTO;
 import liuyuyang.net.dto.comment.CommentFormDTO;
 import liuyuyang.net.core.utils.Result;
-import liuyuyang.net.web.service.CommentService;
 import liuyuyang.net.core.utils.Paging;
-import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.comment.CommentFilterDTO;
+import liuyuyang.net.validation.ValidationGroups;
+import liuyuyang.net.vo.comment.CommentVO;
+import liuyuyang.net.web.service.CommentService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
@@ -26,99 +26,79 @@ import java.util.Map;
 @RestController
 @RequestMapping("/comment")
 @Transactional
+@Validated
 public class CommentController {
     @Resource
     private CommentService commentService;
 
-    @RateLimit
     @NoTokenRequired
+    @RateLimit
     @PostMapping
     @ApiOperation("新增评论")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> add(@RequestBody CommentFormDTO commentFormDTO) throws Exception {
-        Comment comment =  BeanUtil.copyProperties(commentFormDTO, Comment.class);
-        commentService.add(comment);
+    public Result<String> addCommentData(@RequestBody @Validated(ValidationGroups.Create.class) CommentFormDTO commentFormDTO) throws Exception {
+        commentFormDTO.setId(null);
+        commentService.addCommentData(commentFormDTO);
         return Result.success();
     }
 
     @DeleteMapping("/{id}")
     @ApiOperation("删除评论")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
-    public Result<String> del(@PathVariable Integer id) {
-        Comment data = commentService.getById(id);
-        if (data == null) return Result.error("删除评论失败：该评论不存在");
-        commentService.removeById(id);
+    public Result<String> delCommentData(@PathVariable Integer id) {
+        commentService.delCommentData(id);
         return Result.success();
     }
 
     @DeleteMapping("/batch")
     @ApiOperation("批量删除评论")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result batchDel(@RequestBody List<Integer> ids) {
-        commentService.removeByIds(ids);
+    public Result<String> batchDelCommentData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
+        commentService.batchDelCommentData(ids);
         return Result.success();
     }
 
     @PatchMapping
     @ApiOperation("编辑评论")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> edit(@RequestBody CommentFormDTO commentFormDTO) {
-        Comment comment =  BeanUtil.copyProperties(commentFormDTO, Comment.class);
-        commentService.updateById(comment);
+    public Result<String> editCommentData(@RequestBody @Validated(ValidationGroups.Update.class) CommentFormDTO commentFormDTO) {
+        commentService.editCommentData(commentFormDTO);
         return Result.success();
     }
 
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/{id}")
     @ApiOperation("获取评论")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<Comment> get(@PathVariable Integer id) {
-        Comment data = commentService.get(id);
+    public Result<CommentVO> getCommentData(@PathVariable Integer id) {
+        CommentVO data = commentService.getCommentData(id);
         return Result.success(data);
     }
 
-    @RateLimit
     @NoTokenRequired
-    @PostMapping("/list")
-    @ApiOperation("获取评论列表")
+    @RateLimit
+    @GetMapping
+    @ApiOperation(value = "获取评论列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<List<Comment>> list(@RequestBody CommentFilterDTO filterVo) {
-        List<Comment> list = commentService.list(filterVo);
-        return Result.success(list);
+    public Result<Map<String, Object>> getCommentList(CommentFilterDTO linkFilterDTO) {
+        return Result.success(Paging.filter(commentService.getCommentList(linkFilterDTO)));
     }
 
-    @RateLimit
     @NoTokenRequired
-    @PostMapping("/paging")
-    @ApiOperation("分页查询评论列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result paging(@RequestBody CommentFilterDTO filterVo, PageDTO pageDTO) {
-        Page<Comment> list = commentService.paging(filterVo, pageDTO);
-        Map<String, Object> result = Paging.filter(list);
-        return Result.success(result);
-    }
-
     @RateLimit
-    @NoTokenRequired
-    @PostMapping("/article/{articleId}")
+    @GetMapping("/article/{articleId}")
     @ApiOperation("获取指定文章中所有评论")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
-    public Result getArticleCommentList(@PathVariable Integer articleId, PageDTO pageDTO) {
-        Page<Comment> list = commentService.getArticleCommentList(articleId, pageDTO);
-        Map<String, Object> result = Paging.filter(list);
-        return Result.success(result);
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    public Result<Map<String, Object>> getArticleCommentList(@PathVariable Integer articleId, PageDTO pageDTO) {
+        return Result.success(Paging.filter(commentService.getArticleCommentList(articleId, pageDTO)));
     }
 
     @PatchMapping("/audit/{id}")
     @ApiOperation("审核指定评论")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
-    public Result auditComment(@PathVariable Integer id) {
-        Comment data = commentService.getById(id);
-
-        if (data == null) throw new CustomException(400, "该评论不存在");
-
-        data.setAuditStatus(1);
-        commentService.updateById(data);
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
+    public Result<String> auditCommentData(@PathVariable Integer id) {
+        commentService.auditCommentData(id);
         return Result.success();
     }
 }

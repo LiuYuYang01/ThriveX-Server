@@ -1,10 +1,9 @@
 package liuyuyang.net.web.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import liuyuyang.net.core.enums.ArticleStatus;
+import liuyuyang.net.enums.article.ArticleStatusEnum;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.article.ArticleFormDTO;
@@ -12,19 +11,21 @@ import liuyuyang.net.model.*;
 import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.article.ArticleFilterDTO;
 import liuyuyang.net.vo.article.ArticleVO;
+import liuyuyang.net.vo.cate.CateVO;
 import liuyuyang.net.web.mapper.*;
 import liuyuyang.net.web.service.ArticleCateService;
 import liuyuyang.net.web.service.ArticleService;
 import liuyuyang.net.web.service.ArticleTagService;
 import liuyuyang.net.web.service.CateService;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotNull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -63,33 +64,34 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private CommonUtils commonUtils;
 
     @NotNull
-    private static LambdaQueryWrapper<Article> getArticleQueryWrapper(ArticleFilterDTO filterVo) {
+    private static LambdaQueryWrapper<Article> getArticleQueryWrapper(ArticleFilterDTO articleFilterDTO) {
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.orderByDesc(Article::getCreateTime);
 
         // 根据关键字通过标题过滤出对应文章数据
-        if (filterVo.getKey() != null && !filterVo.getKey().isEmpty()) {
-            queryWrapper.like(Article::getTitle, filterVo.getKey());
+        if (articleFilterDTO.getTitle() != null && !articleFilterDTO.getTitle().isEmpty()) {
+            queryWrapper.like(Article::getTitle, "%" + articleFilterDTO.getTitle() + "%");
         }
 
         // 根据开始与结束时间过滤
-        if (filterVo.getStartDate() != null && filterVo.getEndDate() != null) {
-            queryWrapper.between(Article::getCreateTime, filterVo.getStartDate(), filterVo.getEndDate());
-        } else if (filterVo.getStartDate() != null) {
-            queryWrapper.ge(Article::getCreateTime, filterVo.getStartDate());
-        } else if (filterVo.getEndDate() != null) {
-            queryWrapper.le(Article::getCreateTime, filterVo.getEndDate());
+        if (articleFilterDTO.getStartDate() != null && articleFilterDTO.getEndDate() != null) {
+            queryWrapper.between(Article::getCreateTime, articleFilterDTO.getStartDate(), articleFilterDTO.getEndDate());
+        } else if (articleFilterDTO.getStartDate() != null) {
+            queryWrapper.ge(Article::getCreateTime, articleFilterDTO.getStartDate());
+        } else if (articleFilterDTO.getEndDate() != null) {
+            queryWrapper.le(Article::getCreateTime, articleFilterDTO.getEndDate());
         }
         return queryWrapper;
     }
 
     @Override
     public void addArticleData(ArticleFormDTO articleFormDTO) {
-        Article article = BeanUtil.copyProperties(articleFormDTO, Article.class);
+        Article article = new Article();
+        BeanUtils.copyProperties(articleFormDTO, article);
         articleMapper.insert(article);
 
         // 新增分类
-        List<Integer> cateIdList = article.getCateIds();
+        List<Integer> cateIdList = articleFormDTO.getCateIds();
         if (!cateIdList.isEmpty()) {
             ArrayList<ArticleCate> cateArrayList = new ArrayList<>(cateIdList.size());
             for (Integer id : cateIdList) {
@@ -102,7 +104,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 新增标签
-        List<Integer> tagIdList = article.getTagIds();
+        List<Integer> tagIdList = articleFormDTO.getTagIds();
 
         if (tagIdList != null && !tagIdList.isEmpty()) {
             ArrayList<ArticleTag> tagArrayList = new ArrayList<>(tagIdList.size());
@@ -116,10 +118,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 新增文章配置
-        ArticleConfig config = article.getConfig();
+        ArticleConfig config = articleFormDTO.getConfig();
         ArticleConfig articleConfig = new ArticleConfig();
         articleConfig.setArticleId(article.getId());
-        articleConfig.setStatus(config.getStatus() != null ? config.getStatus() : ArticleStatus.DEFAULT);
+        articleConfig.setStatus(config.getStatus() != null ? config.getStatus() : ArticleStatusEnum.DEFAULT);
         articleConfig.setPassword(config.getPassword());
         articleConfig.setIsDraft(config.getIsDraft());
         articleConfig.setIsEncrypt(config.getIsEncrypt());
@@ -150,7 +152,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         if (is_del != 0 && is_del != 1) {
-            throw new CustomException(400, "参数有误：请选择是否严格删除");
+            throw new CustomException("参数有误：请选择是否严格删除");
         }
     }
 
@@ -179,7 +181,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Override
     public void editArticleData(ArticleFormDTO articleFormDTO) {
         if (articleFormDTO.getCateIds() == null || articleFormDTO.getCateIds().isEmpty())
-            throw new CustomException(400, "编辑失败：请绑定分类");
+            throw new CustomException("编辑失败：请绑定分类");
 
         // 删除文章关联的数据
         delArticleCorrelationData(articleFormDTO.getId());
@@ -207,14 +209,15 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         ArticleConfig config = articleFormDTO.getConfig();
         ArticleConfig articleConfig = new ArticleConfig();
         articleConfig.setArticleId(articleFormDTO.getId());
-        articleConfig.setStatus(config.getStatus() != null ? config.getStatus() : ArticleStatus.DEFAULT);
+        articleConfig.setStatus(config.getStatus() != null ? config.getStatus() : ArticleStatusEnum.DEFAULT);
         articleConfig.setPassword(config.getPassword());
         articleConfig.setIsDraft(Boolean.TRUE.equals(config.getIsDraft()));
         articleConfig.setIsEncrypt(Boolean.TRUE.equals(config.getIsEncrypt()));
         articleConfig.setIsDel(false);
         articleConfigMapper.insert(articleConfig);
 
-        Article article = BeanUtil.copyProperties(articleFormDTO, Article.class);
+        Article article = new Article();
+        BeanUtils.copyProperties(articleFormDTO, article);
 
         // 修改文章
         articleMapper.updateById(article);
@@ -241,7 +244,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 throw new CustomException(404, "该文章已被删除");
             }
 
-            if (ArticleStatus.HIDE.equals(config.getStatus())) {
+            if (ArticleStatusEnum.HIDE.equals(config.getStatus())) {
                 throw new CustomException(611, "该文章已被隐藏");
             }
 
@@ -266,7 +269,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 获取当前文章的创建时间
-        String createTime = data.getCreateTime();
+        Long createTime = data.getCreateTime();
 
         // 查询上一篇文章
         LambdaQueryWrapper<Article> prevQueryWrapper = new LambdaQueryWrapper<>();
@@ -311,18 +314,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     // 处理文章数据
     @Override
-    public List<ArticleVO> processArticleData(ArticleFilterDTO filterVo) {
+    public List<ArticleVO> processArticleData(ArticleFilterDTO articleFilterDTO) {
         // 首先根据文章配置表的条件筛选出符合条件的文章ID
         LambdaQueryWrapper<ArticleConfig> configQueryWrapper = new LambdaQueryWrapper<>();
 
         // 根据草稿状态筛选
-        if (filterVo.getIsDraft() != null) {
-            configQueryWrapper.eq(ArticleConfig::getIsDraft, filterVo.getIsDraft());
+        if (articleFilterDTO.getIsDraft() != null) {
+            configQueryWrapper.eq(ArticleConfig::getIsDraft, articleFilterDTO.getIsDraft());
         }
 
         // 根据删除状态筛选
-        if (filterVo.getIsDel() != null) {
-            configQueryWrapper.eq(ArticleConfig::getIsDel, filterVo.getIsDel());
+        if (articleFilterDTO.getIsDel() != null) {
+            configQueryWrapper.eq(ArticleConfig::getIsDel, articleFilterDTO.getIsDel());
         }
 
         // 获取符合条件的文章ID列表
@@ -337,7 +340,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 构建文章查询条件
-        LambdaQueryWrapper<Article> queryWrapper = queryWrapperArticle(filterVo);
+        LambdaQueryWrapper<Article> queryWrapper = queryWrapperArticle(articleFilterDTO);
         queryWrapper.in(Article::getId, articleIds);
         List<Article> list = articleMapper.selectList(queryWrapper);
 
@@ -352,8 +355,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Page<ArticleVO> getArticleList(ArticleFilterDTO filterVo) {
-        List<ArticleVO> list = processArticleData(filterVo);
+    public Page<ArticleVO> getArticleList(ArticleFilterDTO articleFilterDTO) {
+        List<ArticleVO> list = processArticleData(articleFilterDTO);
 
         boolean isAdmin = CommonUtils.isAdmin();
         if (!isAdmin) {
@@ -363,25 +366,16 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                     .collect(Collectors.toList());
         }
 
-        // 不传 page/size 则返回全部
-        if (filterVo.getPageNum() == null || filterVo.getPageSize() == null) {
-            Page<ArticleVO> result = new Page<>(1, list.size());
-            result.setRecords(new ArrayList<>(list));
-            result.setTotal(list.size());
-            return result;
-        }
-
-        PageDTO pageDTO = new PageDTO();
-        pageDTO.setPageNum(Math.max(1, filterVo.getPageNum()));
-        pageDTO.setPageSize(Math.max(1, filterVo.getPageSize()));
-        return commonUtils.getPageData(pageDTO, list);
+        return commonUtils.paginate(articleFilterDTO, list);
     }
 
     // 获取指定分类中所有文章
     @Override
     public Page<ArticleVO> getCateArticleList(Integer id, PageDTO pageDTO) {
-        int p = pageDTO.getPageNum() != null ? Math.max(1, pageDTO.getPageNum()) : 1;
-        int s = pageDTO.getPageSize() != null ? Math.max(1, pageDTO.getPageSize()) : 5;
+        Cate cate = cateMapper.selectById(id);
+        if (cate == null || (!CommonUtils.isAdmin() && Boolean.TRUE.equals(cate.getIsHide()))) {
+            throw new CustomException("该分类不存在");
+        }
 
         // 通过分类 id 查询出所有文章id
         LambdaQueryWrapper<ArticleCate> queryWrapperArticleCate = new LambdaQueryWrapper<>();
@@ -392,7 +386,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 有数据就查询，没有就返回空数组
         if (articleIds.isEmpty()) {
-            return new Page<>(p, s, 0);
+            return commonUtils.paginate(pageDTO, new ArrayList<>());
         }
 
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -407,7 +401,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 如果过滤后没有文章,直接返回空页
         if (articleIds.isEmpty()) {
-            return new Page<>(p, s, 0);
+            return commonUtils.paginate(pageDTO, new ArrayList<>());
         }
 
         // 构建文章查询条件
@@ -415,19 +409,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 .in(Article::getId, articleIds)
                 .orderByDesc(Article::getCreateTime);
 
-        // 查询文章列表
-        Page<Article> page = new Page<>(p, s);
-        articleMapper.selectPage(page, queryWrapperArticle);
-
-        // 绑定数据并处理加密/隐藏文章
-        return processArticlePage(page);
+        List<Article> articles = articleMapper.selectList(queryWrapperArticle);
+        List<ArticleVO> vos = processArticleList(articles);
+        return commonUtils.paginate(pageDTO, vos);
     }
 
     @Override
     public Page<ArticleVO> getTagArticleList(Integer id, PageDTO pageDTO) {
-        int p = pageDTO.getPageNum() != null ? Math.max(1, pageDTO.getPageNum()) : 1;
-        int s = pageDTO.getPageSize() != null ? Math.max(1, pageDTO.getPageSize()) : 5;
-
         // 通过标签 id 查询出所有文章 id
         LambdaQueryWrapper<ArticleTag> queryWrapperArticleTag = new LambdaQueryWrapper<>();
         queryWrapperArticleTag.eq(ArticleTag::getTagId, id);
@@ -437,7 +425,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 有数据就查询，没有就返回空数组
         if (articleIds.isEmpty()) {
-            return new Page<>(p, s, 0);
+            return commonUtils.paginate(pageDTO, new ArrayList<>());
         }
 
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -449,26 +437,23 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 如果过滤后没有文章,直接返回空页
         if (articleIds.isEmpty()) {
-            return new Page<>(p, s, 0);
+            return commonUtils.paginate(pageDTO, new ArrayList<>());
         }
 
         // 构建文章查询条件
         LambdaQueryWrapper<Article> queryWrapperArticle = new LambdaQueryWrapper<>();
         queryWrapperArticle.in(Article::getId, articleIds).orderByDesc(Article::getCreateTime);
 
-        // 查询文章列表
-        Page<Article> page = new Page<>(p, s);
-        articleMapper.selectPage(page, queryWrapperArticle);
-
-        // 绑定数据并处理加密/隐藏文章
-        return processArticlePage(page);
+        List<Article> articles = articleMapper.selectList(queryWrapperArticle);
+        List<ArticleVO> vos = processArticleList(articles);
+        return commonUtils.paginate(pageDTO, vos);
     }
 
     /**
-     * 公共文章分页结果处理：绑定数据、处理加密文章、过滤隐藏文章
+     * 绑定数据、处理加密文章、过滤隐藏文章
      */
-    private Page<ArticleVO> processArticlePage(Page<Article> page) {
-        List<ArticleVO> records = page.getRecords().stream()
+    private List<ArticleVO> processArticleList(List<Article> articles) {
+        return articles.stream()
                 .map(article -> {
                     ArticleVO boundArticle = bindingArticleData(article.getId());
                     // 分类/标签页默认按普通用户规则展示
@@ -479,10 +464,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-
-        Page<ArticleVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
-        result.setRecords(records);
-        return result;
     }
 
     /**
@@ -497,7 +478,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (isAdmin)
             return true;
         // 非管理员不能看到隐藏文章
-        return !Objects.equals(config.getStatus(), ArticleStatus.HIDE);
+        return !Objects.equals(config.getStatus(), ArticleStatusEnum.HIDE);
     }
 
     /**
@@ -508,7 +489,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (config == null) {
             return true;
         }
-        return !Objects.equals(config.getStatus(), ArticleStatus.NO_HOME);
+        return !Objects.equals(config.getStatus(), ArticleStatusEnum.NO_HOME);
     }
 
     /**
@@ -529,7 +510,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDraft, false);
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDel, false);
-        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getStatus, ArticleStatus.DEFAULT);
+        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getStatus, ArticleStatusEnum.DEFAULT);
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getPassword, "");
 
         List<Integer> ids = articleConfigMapper.selectList(articleConfigLambdaQueryWrapper)
@@ -571,7 +552,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     public void recordViewArticleData(Integer id) {
         Article data = articleMapper.selectById(id);
         if (data == null)
-            throw new CustomException(400, "获取失败：该文章不存在");
+            throw new CustomException("获取失败：该文章不存在");
         data.setView(data.getView() + 1);
         articleMapper.updateById(data);
     }
@@ -581,9 +562,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     public ArticleVO bindingArticleData(Integer id) {
         Article entity = articleMapper.selectById(id);
         if (entity == null)
-            throw new CustomException(400, "获取文章失败：该文章不存在");
+            throw new CustomException("获取文章失败：该文章不存在");
 
-        ArticleVO data = BeanUtil.copyProperties(entity, ArticleVO.class);
+        ArticleVO data = new ArticleVO();
+        BeanUtils.copyProperties(entity, data);
 
         // 查询当前文章的分类ID
         LambdaQueryWrapper<ArticleCate> queryWrapperCateIds = new LambdaQueryWrapper<>();
@@ -591,11 +573,15 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         List<Integer> cate_ids = articleCateMapper.selectList(queryWrapperCateIds).stream().map(ArticleCate::getCateId)
                 .collect(Collectors.toList());
 
-        // 如果有分类，则绑定分类信息
+        // 如果有分类，则绑定分类信息（仅返回文章关联的分类，而非整棵分类树）
         if (!cate_ids.isEmpty()) {
             LambdaQueryWrapper<Cate> queryWrapperCateList = new LambdaQueryWrapper<>();
             queryWrapperCateList.in(Cate::getId, cate_ids);
-            List<Cate> cates = cateService.buildCateTreeData(cateMapper.selectList(queryWrapperCateList), 0);
+            List<CateVO> cates = cateMapper.selectList(queryWrapperCateList).stream().map(cate -> {
+                CateVO cateVO = new CateVO();
+                BeanUtils.copyProperties(cate, cateVO);
+                return cateVO;
+            }).collect(Collectors.toList());
             data.setCateList(cates);
         }
 
@@ -625,15 +611,19 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     // 过滤文章数据
     @Override
-    public LambdaQueryWrapper<Article> queryWrapperArticle(ArticleFilterDTO filterVo) {
-        LambdaQueryWrapper<Article> queryWrapper = getArticleQueryWrapper(filterVo);
+    public LambdaQueryWrapper<Article> queryWrapperArticle(ArticleFilterDTO articleFilterDTO) {
+        LambdaQueryWrapper<Article> queryWrapper = getArticleQueryWrapper(articleFilterDTO);
 
-        // 根据分类id过滤
-        if (filterVo.getCateId() != null) {
+        // 根据分类 id 过滤（cateIds 数组，满足任一分类即可）
+        List<Integer> filterCateIds = articleFilterDTO.getCateIds() == null
+                ? Collections.emptyList()
+                : articleFilterDTO.getCateIds().stream().distinct().collect(Collectors.toList());
+
+        if (!filterCateIds.isEmpty()) {
             LambdaQueryWrapper<ArticleCate> queryWrapperArticleIds = new LambdaQueryWrapper<>();
-            queryWrapperArticleIds.eq(ArticleCate::getCateId, filterVo.getCateId());
+            queryWrapperArticleIds.in(ArticleCate::getCateId, filterCateIds);
             List<Integer> articleIds = articleCateMapper.selectList(queryWrapperArticleIds).stream()
-                    .map(ArticleCate::getArticleId).collect(Collectors.toList());
+                    .map(ArticleCate::getArticleId).distinct().collect(Collectors.toList());
 
             if (!articleIds.isEmpty()) {
                 queryWrapper.in(Article::getId, articleIds);
@@ -644,9 +634,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 根据标签id过滤
-        if (filterVo.getTagId() != null) {
+        if (articleFilterDTO.getTagId() != null) {
             LambdaQueryWrapper<ArticleTag> queryWrapperArticleIds = new LambdaQueryWrapper<>();
-            queryWrapperArticleIds.eq(ArticleTag::getTagId, filterVo.getTagId());
+            queryWrapperArticleIds.eq(ArticleTag::getTagId, articleFilterDTO.getTagId());
             List<Integer> articleIds = articleTagMapper.selectList(queryWrapperArticleIds).stream()
                     .map(ArticleTag::getArticleId).collect(Collectors.toList());
 
@@ -691,12 +681,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Override
     public void importArticleList(MultipartFile[] list) throws IOException {
         if (list == null || list.length == 0)
-            throw new CustomException(400, "导入失败：文件列表为空");
+            throw new CustomException("导入失败：文件列表为空");
 
         // 验证所有文件格式
         for (MultipartFile file : list) {
             if (file == null || file.getOriginalFilename() == null || !file.getOriginalFilename().endsWith(".md")) {
-                throw new CustomException(400, "导入失败：请确保所有文件都是 .md 格式");
+                throw new CustomException("导入失败：请确保所有文件都是 .md 格式");
             }
         }
 
@@ -749,14 +739,14 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             article.setTitle(title);
             article.setDescription(description);
             article.setContent(articleContent.toString().trim());
-            article.setCreateTime(String.valueOf(LocalDateTime.now()));
+            article.setCreateTime(System.currentTimeMillis());
 
             // 设置默认分类（这里假设使用 ID 为 1 的分类）
             article.setCateIds(Collections.singletonList(1));
 
             // 设置默认文章配置
             ArticleConfig config = new ArticleConfig();
-            config.setStatus(ArticleStatus.DEFAULT);
+            config.setStatus(ArticleStatusEnum.DEFAULT);
             config.setPassword("");
             config.setIsDraft(false);
             config.setIsEncrypt(false);
