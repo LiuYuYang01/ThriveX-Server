@@ -60,6 +60,14 @@ public class QiniuStorageService {
         return key != null && key.endsWith("/");
     }
 
+    /**
+     * 七牛 {@code FileInfo.putTime} 为自 Unix 纪元起的 <strong>100 纳秒</strong> 计数；
+     * 转为毫秒时间戳，与 {@code java.util.Date#getTime()}、前端 {@code Date} 一致。
+     */
+    private static long qiniuPutTimeToEpochMillis(long putTime100ns) {
+        return putTime100ns / 10_000L;
+    }
+
     public QiniuStorageService(EnvConfigService envConfigService) {
         this.envConfigService = envConfigService;
     }
@@ -95,6 +103,8 @@ public class QiniuStorageService {
 
     /**
      * 查询单个对象的元信息（stat），入参可为 URL、以 / 开头的路径或纯 key。
+     * <p>
+     * 返回的 {@code putTime} 为<strong>毫秒</strong>时间戳（已自七牛 100ns 换算）。
      */
     public Map<String, Object> getFileInfo(String filePath) throws QiniuException {
         QiniuConfig config = getQiniuConfig();
@@ -109,7 +119,7 @@ public class QiniuStorageService {
         data.put("size", fileInfo.fsize);
         data.put("hash", fileInfo.hash);
         data.put("mimeType", fileInfo.mimeType);
-        data.put("putTime", fileInfo.putTime);
+        data.put("putTime", qiniuPutTimeToEpochMillis(fileInfo.putTime));
         data.put("url", buildPublicUrl(config.getDomain(), key));
         return data;
     }
@@ -120,6 +130,8 @@ public class QiniuStorageService {
      * 占位逻辑：
      * - 过滤 `.keep`（应用内目录占位）；
      * - 过滤 key 以 `/` 结尾的对象（七牛控制台「新建文件夹」产生的目录占位），避免当成文件展示。
+     * <p>
+     * 每条结果中的 {@code date} 为上传时间的<strong>毫秒</strong>时间戳。
      */
     public Map<String, Object> listFiles(String dir, Integer page, Integer size) throws QiniuException {
         QiniuConfig config = getQiniuConfig();
@@ -167,7 +179,7 @@ public class QiniuStorageService {
                 data.put("name", name);
                 data.put("size", item.fsize);
                 data.put("type", ext);
-                data.put("date", item.putTime);
+                data.put("date", qiniuPutTimeToEpochMillis(item.putTime));
                 data.put("url", buildPublicUrl(config.getDomain(), key));
                 result.add(data);
             }
@@ -190,6 +202,8 @@ public class QiniuStorageService {
      * 2) 遍历 key 分段时，`.keep` 仍用于创建/补齐目录节点；
      * 3) 但 `.keep` 不写入 files，不计入 fileCount/totalSize，避免污染业务统计；
      * 4) 七牛控制台「新建文件夹」的 key（以 {@code /} 结尾）只用于补全目录节点，不写入 files、不计入统计。
+     * <p>
+     * 树中 file 节点的 {@code date} 为上传时间的毫秒时间戳。
      */
     public Map<String, Object> listFileTree() throws QiniuException {
         QiniuConfig config = getQiniuConfig();
@@ -341,6 +355,9 @@ public class QiniuStorageService {
 
     /**
      * 删除目录：按前缀列举后批量删除对象。
+     * <p>
+     * 若前缀下存在<strong>真实文件</strong>（非 {@code .keep}、非控制台以 {@code /} 结尾的目录占位），则拒绝删除，
+     * 需先清空或移走业务文件。
      */
     public Map<String, Object> deleteDirectory(String dir) throws QiniuException {
         String prefix = normalizeDirectoryPath(dir);
@@ -349,6 +366,8 @@ public class QiniuStorageService {
                 new Configuration(Region.autoRegion()));
 
         List<String> keys = listKeysByPrefix(bucketManager, config.getBucketName(), prefix);
+        ensureDirectoryEmptyOfRealFiles(keys);
+
         int deleted = 0;
         for (String key : keys) {
             bucketManager.delete(config.getBucketName(), key);
@@ -376,6 +395,8 @@ public class QiniuStorageService {
 
     /**
      * 将七牛 {@link FileInfo} 转为树中的 file 节点（含 url、扩展名、父级 dir 等）。
+     * <p>
+     * {@code date} 为上传时间的毫秒时间戳。
      */
     private Map<String, Object> createFileNode(FileInfo item, String key, String basePath) {
         Map<String, Object> data = new LinkedHashMap<>();
@@ -386,13 +407,13 @@ public class QiniuStorageService {
             ext = name.substring(extIndex + 1).toLowerCase();
         }
         data.put("type", "file");
-        data.put("date", item.putTime);
         data.put("path", key);
         data.put("basePath", basePath);
         data.put("size", item.fsize);
         data.put("name", name);
         data.put("dir", key.contains("/") ? key.substring(0, key.lastIndexOf('/')) : "");
         data.put("ext", ext);
+        data.put("date", qiniuPutTimeToEpochMillis(item.putTime));
         data.put("url", basePath + key);
         return data;
     }
@@ -476,6 +497,20 @@ public class QiniuStorageService {
             throw new CustomException("目录不能为空");
         }
         return value;
+    }
+
+    /**
+     * 删除目录前校验：存在任意「真实对象」则不允许删除。
+     * <p>
+     * {@code .keep} 与应用内逻辑目录、控制台目录占位（{@link #isDirectoryMarkerKey}）不视为「有文件」，
+     * 仅这些时可删空目录（会一并删掉占位对象）。
+     */
+    private void ensureDirectoryEmptyOfRealFiles(List<String> keysUnderPrefix) {
+        for (String key : keysUnderPrefix) {
+            if (!isPlaceholderFileKey(key) && !isDirectoryMarkerKey(key)) {
+                throw new CustomException("目录内存在文件，请先删除文件后再删除目录");
+            }
+        }
     }
 
     /**
