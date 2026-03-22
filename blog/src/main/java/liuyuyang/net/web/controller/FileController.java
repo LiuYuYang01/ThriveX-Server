@@ -123,7 +123,6 @@ public class FileController {
         return Result.success(qiniuStorageService.listFiles(dir, page, size));
     }
 
-    @NoTokenRequired
     @GetMapping("/tree")
     @ApiOperation("获取文件目录树")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
