@@ -4,6 +4,7 @@ import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import com.qiniu.common.QiniuException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import liuyuyang.net.common.annotation.NoTokenRequired;
 import liuyuyang.net.common.storage.QiniuStorageService;
 import liuyuyang.net.common.execption.CustomException;
 import liuyuyang.net.common.utils.Result;
@@ -110,13 +111,6 @@ public class FileController {
         return Result.success(qiniuStorageService.getFileInfo(filePath));
     }
 
-    @GetMapping("/dir")
-    @ApiOperation("获取目录列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<List<Map<String, String>>> getDirList() throws QiniuException {
-        return Result.success(qiniuStorageService.listDirectories());
-    }
-
     @GetMapping("/list")
     @ApiOperation("获取指定目录中的文件")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
@@ -127,5 +121,47 @@ public class FileController {
         if (dir == null || dir.trim().isEmpty())
             throw new CustomException(400, "请指定一个目录");
         return Result.success(qiniuStorageService.listFiles(dir, page, size));
+    }
+
+    @NoTokenRequired
+    @GetMapping("/tree")
+    @ApiOperation("获取文件目录树")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
+    public Result<Map<String, Object>> getFileTree() throws QiniuException {
+        return Result.success(qiniuStorageService.listFileTree());
+    }
+
+    @PostMapping("/dir")
+    @ApiOperation("新增目录")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    public Result<Map<String, Object>> createDir(@RequestBody Map<String, String> body) throws IOException {
+        String dir = body == null ? null : body.get("dir");
+        if (dir == null || dir.trim().isEmpty()) {
+            throw new CustomException(400, "请指定一个目录");
+        }
+        return Result.success(qiniuStorageService.createDirectory(dir));
+    }
+
+    @PatchMapping("/dir")
+    @ApiOperation("重命名目录")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
+    public Result<Map<String, Object>> renameDir(@RequestBody Map<String, String> body) throws QiniuException {
+        String fromDir = body == null ? null : body.get("fromDir");
+        String toDir = body == null ? null : body.get("toDir");
+        if (fromDir == null || fromDir.trim().isEmpty() || toDir == null || toDir.trim().isEmpty()) {
+            throw new CustomException(400, "请指定原目录和新目录");
+        }
+        return Result.success(qiniuStorageService.renameDirectory(fromDir, toDir));
+    }
+
+    @DeleteMapping("/dir")
+    @ApiOperation("删除目录")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
+    public Result<Map<String, Object>> deleteDir(@RequestBody Map<String, String> body) throws QiniuException {
+        String dir = body == null ? null : body.get("dir");
+        if (dir == null || dir.trim().isEmpty()) {
+            throw new CustomException(400, "请指定一个目录");
+        }
+        return Result.success(qiniuStorageService.deleteDirectory(dir));
     }
 }
