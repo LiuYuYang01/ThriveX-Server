@@ -19,6 +19,7 @@ import liuyuyang.net.web.mapper.UserMapper;
 import liuyuyang.net.web.mapper.UserTokenMapper;
 import liuyuyang.net.web.service.UserService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
@@ -50,7 +51,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         User data = userMapper.selectOne(queryWrapper);
 
         // 判断用户是否存在
-        if (data != null) throw new CustomException(400, "该用户已存在：" + user.getUsername());
+        if (data != null)
+            throw new CustomException(400, "该用户已存在：" + user.getUsername());
 
         // 密码加密
         user.setPassword(DigestUtils.md5DigestAsHex(user.getPassword().getBytes()));
@@ -64,7 +66,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public void del(Integer id) {
         User data = userMapper.selectById(id);
-        if (data == null) throw new CustomException(400, "该用户不存在");
+        if (data == null)
+            throw new CustomException(400, "该用户不存在");
         userMapper.deleteById(id);
     }
 
@@ -100,7 +103,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             user.setPassword("只有聪明的人才能看到密码");
         }
 
-        list = list.stream().sorted((o1, o2) -> o2.getCreateTime().compareTo(o1.getCreateTime())).collect(Collectors.toList());
+        list = list.stream().sorted((o1, o2) -> o2.getCreateTime().compareTo(o1.getCreateTime()))
+                .collect(Collectors.toList());
 
         return list;
     }
@@ -118,19 +122,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         queryWrapper.eq("password", DigestUtils.md5DigestAsHex(userDTO.getPassword().getBytes()));
 
         User user = userMapper.selectOne(queryWrapper);
-        if (user == null) throw new CustomException(400, "用户名或密码错误");
-
+        if (user == null)
+            throw new CustomException(400, "用户名或密码错误");
 
         Map<String, Object> result = new HashMap<>();
-        result.put("user", user);
         String token = JwtUtils.createJWT(result);
         result.put("token", token);
 
-        // 先删除用户的token
+        // 先删除用户旧的token
         LambdaQueryWrapper<UserToken> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
         userLambdaQueryWrapper.eq(UserToken::getUid, user.getId());
         userTokenMapper.delete(userLambdaQueryWrapper);
-        // 再存储用户的token
+        // 再存储用户当前的token
         UserToken userToken = new UserToken();
         userToken.setUid(user.getId());
         userToken.setToken(token);
@@ -157,13 +160,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public void check(String token) {
-        boolean isCheck = commonUtils.check(token);
+    public void checkToken() {
+        String token = CommonUtils.getHeader("Authorization");
+        boolean isCheck = commonUtils.checkToken(token);
 
         if (!isCheck) {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            HttpServletResponse response = attributes.getResponse();
-            response.setStatus(401);
+            // 获取当前HTTP请求的上下文信息
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder
+                    .getRequestAttributes();
+
+            HttpServletResponse response = null;
+            if (attributes != null) {
+                response = attributes.getResponse();
+
+                if (response != null) {
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value()); // 401
+                }
+            }
             throw new CustomException(400, "身份验证失败：无效或过期的Token");
         }
     }

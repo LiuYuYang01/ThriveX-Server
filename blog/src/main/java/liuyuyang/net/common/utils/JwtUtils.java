@@ -39,7 +39,6 @@ public class JwtUtils {
      * @param secretKey jwt秘钥
      * @param ttlMillis jwt过期时间(毫秒)
      * @param claims    设置的信息
-     * @return
      */
     public static String createJWT(String secretKey, long ttlMillis, Map<String, Object> claims) {
         // 指定签名的时候使用的签名算法，也就是header那部分
@@ -72,16 +71,16 @@ public class JwtUtils {
      * Token解密
      *
      * @param token 加密后的token
-     * @return
      */
     public static Claims parseJWT(String token) {
         // 得到DefaultJwtParser
-        Claims claims = Jwts.parser()
+        // 设置签名的秘钥
+        // 设置需要解析的jwt
+        return Jwts.parser()
                 // 设置签名的秘钥
                 .setSigningKey(getSigningKey())
                 // 设置需要解析的jwt
                 .parseClaimsJws(token).getBody();
-        return claims;
     }
 
 }
