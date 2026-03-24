@@ -11,6 +11,7 @@ import liuyuyang.net.dto.user.UserInfoDTO;
 import liuyuyang.net.dto.user.UserLoginDTO;
 import liuyuyang.net.model.User;
 import liuyuyang.net.common.annotation.RateLimit;
+import liuyuyang.net.result.IPage;
 import liuyuyang.net.common.utils.Result;
 import liuyuyang.net.web.service.UserService;
 import liuyuyang.net.common.utils.Paging;
@@ -80,18 +81,18 @@ public class UserController {
     }
 
     @PostMapping("/paging")
-    @ApiOperation("分页查询用户列表")
+    @ApiOperation("查询用户列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result paging(UserFilterVo filterVo, PageVo pageVo) {
+    public Result<IPage<User>> paging(UserFilterVo filterVo, PageVo pageVo) {
         Page<User> data = userService.paging(filterVo, pageVo);
-        Map<String, Object> result = Paging.filter(data);
+        IPage<User> result = Paging.of(data);
         return Result.success(result);
     }
 
     @PostMapping("/login")
     @ApiOperation("用户登录")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
-    public Result<Map> login(@RequestBody UserLoginDTO user) {
+    public Result<Map<String, Object>> login(@RequestBody UserLoginDTO user) {
         Map<String, Object> result = userService.login(user);
         return Result.success("登录成功", result);
     }
@@ -107,8 +108,8 @@ public class UserController {
     @GetMapping("/check")
     @ApiOperation("校验当前用户Token是否有效")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 10)
-    public Result checkPrem(String token) {
-        userService.check(token);
+    public Result<String> checkToken() {
+        userService.checkToken();
         return Result.success();
     }
 

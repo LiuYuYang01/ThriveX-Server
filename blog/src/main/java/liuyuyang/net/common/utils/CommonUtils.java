@@ -17,7 +17,6 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Component
 public class CommonUtils {
@@ -26,7 +25,6 @@ public class CommonUtils {
 
     /**
      * 获取 HttpServletRequest
-     *
      * @return {HttpServletRequest}
      */
     public static HttpServletRequest getRequest() {
@@ -36,13 +34,12 @@ public class CommonUtils {
 
     /**
      * 获取Header的值
-     *
      * @param name 请求头名称
      * @return 请求头
      */
     public static String getHeader(String name) {
         HttpServletRequest request = getRequest();
-        return Objects.requireNonNull(request).getHeader(name);
+        return request == null ? null : request.getHeader(name);
     }
 
     /**
@@ -50,18 +47,22 @@ public class CommonUtils {
      */
     public static boolean isAdmin() {
         String token = getHeader("Authorization");
-        return isAdmin(token);
+        return parseAdminToken(token);
     }
 
-    // 鉴权：判断是否为超级管理员
-    public static boolean isAdmin(String token) {
-        if (token != null) {
+    // 统一管理员鉴权逻辑（仅供 isAdmin 调用）
+    private static boolean parseAdminToken(String token) {
+        if (token == null || token.isEmpty()) {
+            return false;
+        }
+
+        try {
             if (token.startsWith("Bearer ")) token = token.substring(7);
             Claims claims = JwtUtils.parseJWT(token);
             return claims != null;
+        } catch (Exception e) {
+            return false;
         }
-
-        return false;
     }
 
     /** 对内存列表做分页，返回 MyBatis-Plus Page（避免 start 超出列表长度） */
@@ -107,7 +108,7 @@ public class CommonUtils {
     }
 
     // 校验当前JWT是否有效
-    public boolean check(String token) {
+    public boolean checkToken(String token) {
         try {
             if (token != null) {
                 if (token.startsWith("Bearer ")) token = token.substring(7);

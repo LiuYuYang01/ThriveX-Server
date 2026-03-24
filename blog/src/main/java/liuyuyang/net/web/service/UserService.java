@@ -23,5 +23,5 @@ public interface UserService extends IService<User> {
     Page<User> paging(UserFilterVo filterVo, PageVo pageVo);
     Map<String, Object> login(UserLoginDTO user);
     void editPass(EditPassDTO data);
-    void check(String token);
+    void checkToken();
 }

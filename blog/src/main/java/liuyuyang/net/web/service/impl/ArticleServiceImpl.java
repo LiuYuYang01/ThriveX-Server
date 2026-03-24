@@ -227,10 +227,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         String description = data.getDescription();
         String content = data.getContent();
-        // todo ps by:laifeng 这里需要优化，
-        // 对于角色判断，请将角色逻辑移到controller层，不要在service中进行，而且可以通过aop进行操作，避免重复判断
-        String token = CommonUtils.getHeader("Authorization");
-        boolean isAdmin = !"".equals(token) && CommonUtils.isAdmin(token);
+        
+        boolean isAdmin = CommonUtils.isAdmin();
 
         ArticleConfig config = data.getConfig();
 
@@ -238,7 +236,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             throw new CustomException(610, "该文章不需要访问密码");
         }
 
-        // 管理员可以查看任何权限的文章
+        // 普通用户对特定的文章无权查看
         if (!isAdmin) {
             if (data.getConfig().getIsDel() == 1) {
                 throw new CustomException(404, "该文章已被删除");
@@ -314,7 +312,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     // 处理文章数据
     @Override
-    public List<Article> processArticleData(ArticleFilterVo filterVo, String token) {
+    public List<Article> processArticleData(ArticleFilterVo filterVo) {
         // 首先根据文章配置表的条件筛选出符合条件的文章ID
         QueryWrapper<ArticleConfig> configQueryWrapper = new QueryWrapper<>();
 
@@ -344,7 +342,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         queryWrapper.in("id", articleIds);
         List<Article> list = articleMapper.selectList(queryWrapper);
 
-        boolean isAdmin = CommonUtils.isAdmin(token);
+        boolean isAdmin = CommonUtils.isAdmin();
 
         // 绑定数据 + 统一的展示规则（过滤隐藏文章 + 处理加密文章）
         return list.stream()
@@ -355,9 +353,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Page<Article> getArticleList(ArticleFilterVo filterVo, String token) {
-        List<Article> list = processArticleData(filterVo, token);
-        boolean isAdmin = CommonUtils.isAdmin(token);
+    public Page<Article> getArticleList(ArticleFilterVo filterVo) {
+        List<Article> list = processArticleData(filterVo);
+        boolean isAdmin = CommonUtils.isAdmin();
         if (!isAdmin) {
             // 统一使用展示规则控制首页可见性
             list = list.stream()

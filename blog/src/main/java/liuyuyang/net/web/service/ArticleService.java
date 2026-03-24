@@ -26,9 +26,9 @@ public interface ArticleService extends IService<Article> {
 
     Article getArticleData(Integer id, String password);
 
-    List<Article> processArticleData(ArticleFilterVo filterVo, String token);
+    List<Article> processArticleData(ArticleFilterVo filterVo);
 
-    Page<Article> getArticleList(ArticleFilterVo filterVo, String token);
+    Page<Article> getArticleList(ArticleFilterVo filterVo);
 
     Page<Article> getCateArticleList(Integer id, PageVo pageVo);
 
