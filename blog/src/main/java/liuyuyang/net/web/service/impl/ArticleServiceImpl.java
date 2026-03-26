@@ -129,8 +129,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Override
     public void delArticleData(Integer id, Integer is_del) {
-        Article article = articleMapper.selectById(id);
-
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getArticleId, id);
         ArticleConfig articleConfig = articleConfigMapper.selectOne(articleConfigLambdaQueryWrapper);
@@ -402,15 +400,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         articleIds = articleConfigMapper.selectList(articleConfigLambdaQueryWrapper).stream()
                 .map(ArticleConfig::getArticleId).collect(Collectors.toList());
 
+        // 去重避免 IN 条件膨胀（理论上可能出现重复 article_id）
+        articleIds = articleIds.stream().distinct().collect(Collectors.toList());
+
         // 如果过滤后没有文章,直接返回空页
         if (articleIds.isEmpty()) {
             return new Page<>(p, s, 0);
         }
 
         // 构建文章查询条件
-        QueryWrapper<Article> queryWrapperArticle = new QueryWrapper<>();
-        queryWrapperArticle.in("id", articleIds);
-        queryWrapperArticle.orderByDesc("create_time");
+        QueryWrapper<Article> queryWrapperArticle = new QueryWrapper<Article>()
+                .in("id", articleIds)
+                .orderByDesc("create_time");
 
         // 查询文章列表
         Page<Article> page = new Page<>(p, s);
