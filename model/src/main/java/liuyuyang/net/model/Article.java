@@ -9,7 +9,6 @@ import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -30,7 +29,7 @@ public class Article extends ArticleFormDTO {
     private List<Tag> tagList = new ArrayList<>();
 
     @TableField(exist = false)
-    private Map prev;
+    private Article prev;
     @TableField(exist = false)
-    private Map next;
+    private Article next;
 }

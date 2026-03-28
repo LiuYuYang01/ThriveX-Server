@@ -4,13 +4,13 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import liuyuyang.net.common.annotation.NoTokenRequired;
-import liuyuyang.net.common.annotation.RateLimit;
+import liuyuyang.net.core.annotation.NoTokenRequired;
+import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.model.Tag;
-import liuyuyang.net.common.utils.Result;
+import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.vo.PageVo;
 import liuyuyang.net.web.service.TagService;
-import liuyuyang.net.common.utils.Paging;
+import liuyuyang.net.core.utils.Paging;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 

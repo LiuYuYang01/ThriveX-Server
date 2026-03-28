@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import liuyuyang.net.common.execption.CustomException;
+import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.web.mapper.FileDetailMapper;
 import liuyuyang.net.model.FileDetail;
 import lombok.SneakyThrows;

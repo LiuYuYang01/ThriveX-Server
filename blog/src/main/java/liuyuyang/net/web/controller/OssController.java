@@ -4,7 +4,7 @@ import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import liuyuyang.net.model.Oss;
-import liuyuyang.net.common.utils.Result;
+import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.web.service.OssService;
 import liuyuyang.net.vo.oss.OssVo;
 import lombok.AllArgsConstructor;
