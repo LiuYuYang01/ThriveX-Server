@@ -121,9 +121,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         articleConfig.setArticleId(article.getId());
         articleConfig.setStatus(config.getStatus() != null ? config.getStatus() : ArticleStatus.DEFAULT);
         articleConfig.setPassword(config.getPassword());
-        articleConfig.setIsDraft(article.getConfig().getIsDraft());
-        articleConfig.setIsEncrypt(article.getConfig().getIsEncrypt());
-        articleConfig.setIsDel(0);
+        articleConfig.setIsDraft(config.getIsDraft());
+        articleConfig.setIsEncrypt(config.getIsEncrypt());
+        articleConfig.setIsDel(false);
 
         articleConfigMapper.insert(articleConfig);
     }
@@ -145,7 +145,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 普通删除：更改 is_del 字段，到时候可以通过更改字段恢复
         if (is_del == 1) {
-            articleConfig.setIsDel(1);
+            articleConfig.setIsDel(true);
             articleConfigMapper.updateById(articleConfig);
         }
 
@@ -159,7 +159,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getArticleId, id);
         ArticleConfig articleConfig = articleConfigMapper.selectOne(articleConfigLambdaQueryWrapper);
-        articleConfig.setIsDel(0);
+        articleConfig.setIsDel(false);
         articleConfigMapper.updateById(articleConfig);
     }
 
@@ -209,9 +209,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         articleConfig.setArticleId(articleFormDTO.getId());
         articleConfig.setStatus(config.getStatus() != null ? config.getStatus() : ArticleStatus.DEFAULT);
         articleConfig.setPassword(config.getPassword());
-        articleConfig.setIsDraft(config.getIsDraft());
-        articleConfig.setIsEncrypt(config.getIsEncrypt());
-        articleConfig.setIsDel(0);
+        articleConfig.setIsDraft(Boolean.TRUE.equals(config.getIsDraft()));
+        articleConfig.setIsEncrypt(Boolean.TRUE.equals(config.getIsEncrypt()));
+        articleConfig.setIsDel(false);
         articleConfigMapper.insert(articleConfig);
 
         Article article = BeanUtil.copyProperties(articleFormDTO, Article.class);
@@ -231,13 +231,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         ArticleConfig config = data.getConfig();
 
-        if (data.getConfig().getIsEncrypt() == 0 && !password.isEmpty()) {
+        if (!Boolean.TRUE.equals(data.getConfig().getIsEncrypt()) && !password.isEmpty()) {
             throw new CustomException(610, "该文章不需要访问密码");
         }
 
         // 普通用户对特定的文章无权查看
         if (!isAdmin) {
-            if (data.getConfig().getIsDel() == 1) {
+            if (Boolean.TRUE.equals(data.getConfig().getIsDel())) {
                 throw new CustomException(404, "该文章已被删除");
             }
 
@@ -246,7 +246,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             }
 
             // 如果有密码就必须通过密码才能查看
-            if (data.getConfig().getIsEncrypt() == 1) {
+            if (Boolean.TRUE.equals(data.getConfig().getIsEncrypt())) {
                 // 如果需要访问密码且没有传递密码参数
                 if (password.isEmpty()) {
                     throw new CustomException(612, "请输入文章访问密码");
@@ -276,7 +276,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (prevArticle != null) {
             // 检查文章配置
             QueryWrapper<ArticleConfig> prevConfigWrapper = new QueryWrapper<>();
-            prevConfigWrapper.eq("article_id", prevArticle.getId()).eq("is_del", 0);
+            prevConfigWrapper.eq("article_id", prevArticle.getId()).eq("is_del", false);
             ArticleConfig prevConfig = articleConfigMapper.selectOne(prevConfigWrapper);
 
             if (prevConfig != null) {
@@ -295,7 +295,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (nextArticle != null) {
             // 检查文章配置
             QueryWrapper<ArticleConfig> nextConfigWrapper = new QueryWrapper<>();
-            nextConfigWrapper.eq("article_id", nextArticle.getId()).eq("is_del", 0);
+            nextConfigWrapper.eq("article_id", nextArticle.getId()).eq("is_del", false);
             ArticleConfig nextConfig = articleConfigMapper.selectOne(nextConfigWrapper);
 
             if (nextConfig != null) {
@@ -396,8 +396,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
         articleConfigLambdaQueryWrapper.in(ArticleConfig::getArticleId, articleIds);
-        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDraft, 0);
-        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDel, 0);
+        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDraft, false);
+        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDel, false);
         articleIds = articleConfigMapper.selectList(articleConfigLambdaQueryWrapper).stream()
                 .map(ArticleConfig::getArticleId).collect(Collectors.toList());
 
@@ -441,8 +441,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
         articleConfigLambdaQueryWrapper.in(ArticleConfig::getArticleId, articleIds);
-        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDraft, 0);
-        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDel, 0);
+        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDraft, false);
+        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDel, false);
         articleIds = articleConfigMapper.selectList(articleConfigLambdaQueryWrapper).stream()
                 .map(ArticleConfig::getArticleId).collect(Collectors.toList());
 
@@ -513,7 +513,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
      */
     private Article maskIfEncrypted(Article article) {
         ArticleConfig config = article.getConfig();
-        if (config != null && config.getIsEncrypt() == 1) {
+        if (config != null && Boolean.TRUE.equals(config.getIsEncrypt())) {
             article.setDescription("该文章是加密的");
             article.setContent("该文章是加密的");
         }
@@ -524,8 +524,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     public List<Article> getRandomArticleList(Integer count) {
         // 一次性从配置表筛选出符合条件的文章ID，避免 N+1 查询
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
-        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDraft, 0);
-        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDel, 0);
+        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDraft, false);
+        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDel, false);
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getStatus, ArticleStatus.DEFAULT);
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getPassword, "");
 
@@ -752,9 +752,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             ArticleConfig config = new ArticleConfig();
             config.setStatus(ArticleStatus.DEFAULT);
             config.setPassword("");
-            config.setIsDraft(0);
-            config.setIsEncrypt(0);
-            config.setIsDel(0);
+            config.setIsDraft(false);
+            config.setIsEncrypt(false);
+            config.setIsDel(false);
             article.setConfig(config);
 
             // 保存文章
