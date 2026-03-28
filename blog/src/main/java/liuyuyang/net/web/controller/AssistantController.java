@@ -3,7 +3,7 @@ package liuyuyang.net.web.controller;
 import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import liuyuyang.net.common.utils.Result;
+import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.model.Assistant;
 import liuyuyang.net.web.service.AssistantService;
 import org.springframework.transaction.annotation.Transactional;

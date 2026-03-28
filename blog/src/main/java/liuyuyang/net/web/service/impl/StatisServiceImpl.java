@@ -2,7 +2,7 @@ package liuyuyang.net.web.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import liuyuyang.net.common.execption.CustomException;
+import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.model.EnvConfig;
 import liuyuyang.net.web.service.StatisService;
 import liuyuyang.net.web.service.EnvConfigService;

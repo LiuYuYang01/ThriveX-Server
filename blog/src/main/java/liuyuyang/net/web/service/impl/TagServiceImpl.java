@@ -3,7 +3,7 @@ package liuyuyang.net.web.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import liuyuyang.net.common.execption.CustomException;
+import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.vo.PageVo;
 import liuyuyang.net.web.mapper.TagMapper;
 import liuyuyang.net.model.Tag;

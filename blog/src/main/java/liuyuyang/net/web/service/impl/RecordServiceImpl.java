@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.web.mapper.RecordMapper;
 import liuyuyang.net.model.Record;
 import liuyuyang.net.web.service.RecordService;
-import liuyuyang.net.common.utils.CommonUtils;
+import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.vo.FilterVo;
 import liuyuyang.net.vo.PageVo;
 import org.springframework.stereotype.Service;
