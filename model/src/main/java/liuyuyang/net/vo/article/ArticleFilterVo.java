@@ -10,8 +10,8 @@ public class ArticleFilterVo extends FilterVo {
     private Integer cateId;
     @ApiModelProperty(value = "根据标签进行筛选")
     private Integer tagId;
-    @ApiModelProperty(value = "是否为草稿, 默认：0 | 草稿：1", example = "0")
-    private Integer isDraft = 0;
-    @ApiModelProperty(value = "是否为严格删除, 默认：0 | 严格删除：1", example = "0")
-    private Integer isDel = 0;
+    @ApiModelProperty(value = "是否草稿：true 仅草稿；默认 false 仅非草稿", example = "false")
+    private Boolean isDraft = false;
+    @ApiModelProperty(value = "是否软删除：true 仅已删除；默认 false 仅未删除", example = "false")
+    private Boolean isDel = false;
 }

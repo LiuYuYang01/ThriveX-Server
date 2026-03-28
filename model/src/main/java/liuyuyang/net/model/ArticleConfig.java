@@ -20,14 +20,14 @@ public class ArticleConfig {
     @ApiModelProperty(value = "文章密码", example = "默认为空表示不加密")
     private String password;
 
-    @ApiModelProperty(value = "是否为文章草稿", example = "默认：0，草稿：1")
-    private Integer isDraft;
+    @ApiModelProperty(value = "是否为文章草稿", example = "false")
+    private Boolean isDraft;
 
-    @ApiModelProperty(value = "是否为加密文章", example = "默认：0，加密：1")
-    private Integer isEncrypt;
+    @ApiModelProperty(value = "是否为加密文章", example = "false")
+    private Boolean isEncrypt;
 
-    @ApiModelProperty(value = "是否严格删除", example = "默认：0，严格删除：1")
-    private Integer isDel;
+    @ApiModelProperty(value = "是否删除（可恢复）", example = "false")
+    private Boolean isDel;
 
     @ApiModelProperty(value = "文章ID", example = "1", required = true)
     private Integer articleId;
