@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModelProperty;
+import liuyuyang.net.core.enums.ArticleStatus;
 import lombok.Data;
 
 @Data
@@ -13,8 +14,8 @@ public class ArticleConfig {
     @ApiModelProperty(value = "ID")
     private Integer id;
 
-    @ApiModelProperty(value = "文章状态", example = "默认（default） 不在首页显示（no_home） 全站隐藏（hide）")
-    private String status;
+    @ApiModelProperty(value = "文章状态：1 正常，2 首页隐藏，3 全站隐藏", example = "1", allowableValues = "1, 2, 3")
+    private ArticleStatus status;
 
     @ApiModelProperty(value = "文章密码", example = "默认为空表示不加密")
     private String password;

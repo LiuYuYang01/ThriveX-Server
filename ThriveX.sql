@@ -80,7 +80,7 @@ DROP TABLE IF EXISTS `article_config`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `article_config` (
                                   `id` int NOT NULL AUTO_INCREMENT,
-                                  `status` enum('default','no_home','hide') DEFAULT 'default' COMMENT '文章状态',
+                                  `status` tinyint NOT NULL DEFAULT 1 COMMENT '文章状态：1 正常，2 首页隐藏，3 全站隐藏',
                                   `password` varchar(100) DEFAULT '' COMMENT '是否文章加密',
                                   `is_encrypt` tinyint DEFAULT '0' COMMENT '是否加密',
                                   `is_draft` tinyint DEFAULT '0' COMMENT '是否为草稿',
@@ -97,7 +97,7 @@ CREATE TABLE `article_config` (
 
 LOCK TABLES `article_config` WRITE;
 /*!40000 ALTER TABLE `article_config` DISABLE KEYS */;
-INSERT INTO `article_config` VALUES (1,'default','',0,0,0,1),(2,'default','',0,0,0,2),(18,'default','',0,0,0,5);
+INSERT INTO `article_config` VALUES (1,1,'',0,0,0,1),(2,1,'',0,0,0,2),(18,1,'',0,0,0,5);
 /*!40000 ALTER TABLE `article_config` ENABLE KEYS */;
 UNLOCK TABLES;
 

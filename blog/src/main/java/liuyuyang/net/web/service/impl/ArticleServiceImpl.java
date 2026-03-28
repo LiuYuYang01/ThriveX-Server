@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import liuyuyang.net.core.enums.ArticleStatus;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.article.ArticleFormDTO;
@@ -118,7 +119,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         ArticleConfig config = article.getConfig();
         ArticleConfig articleConfig = new ArticleConfig();
         articleConfig.setArticleId(article.getId());
-        articleConfig.setStatus(config.getStatus());
+        articleConfig.setStatus(config.getStatus() != null ? config.getStatus() : ArticleStatus.DEFAULT);
         articleConfig.setPassword(config.getPassword());
         articleConfig.setIsDraft(article.getConfig().getIsDraft());
         articleConfig.setIsEncrypt(article.getConfig().getIsEncrypt());
@@ -206,7 +207,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         ArticleConfig config = articleFormDTO.getConfig();
         ArticleConfig articleConfig = new ArticleConfig();
         articleConfig.setArticleId(articleFormDTO.getId());
-        articleConfig.setStatus(config.getStatus());
+        articleConfig.setStatus(config.getStatus() != null ? config.getStatus() : ArticleStatus.DEFAULT);
         articleConfig.setPassword(config.getPassword());
         articleConfig.setIsDraft(config.getIsDraft());
         articleConfig.setIsEncrypt(config.getIsEncrypt());
@@ -240,7 +241,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 throw new CustomException(404, "该文章已被删除");
             }
 
-            if ("hide".equals(config.getStatus())) {
+            if (ArticleStatus.HIDE.equals(config.getStatus())) {
                 throw new CustomException(611, "该文章已被隐藏");
             }
 
@@ -493,7 +494,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (isAdmin)
             return true;
         // 非管理员不能看到隐藏文章
-        return !Objects.equals(config.getStatus(), "hide");
+        return !Objects.equals(config.getStatus(), ArticleStatus.HIDE);
     }
 
     /**
@@ -504,7 +505,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (config == null) {
             return true;
         }
-        return !Objects.equals(config.getStatus(), "no_home");
+        return !Objects.equals(config.getStatus(), ArticleStatus.NO_HOME);
     }
 
     /**
@@ -525,7 +526,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDraft, 0);
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDel, 0);
-        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getStatus, "default");
+        articleConfigLambdaQueryWrapper.eq(ArticleConfig::getStatus, ArticleStatus.DEFAULT);
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getPassword, "");
 
         List<Integer> ids = articleConfigMapper.selectList(articleConfigLambdaQueryWrapper)
@@ -749,7 +750,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
             // 设置默认文章配置
             ArticleConfig config = new ArticleConfig();
-            config.setStatus("default");
+            config.setStatus(ArticleStatus.DEFAULT);
             config.setPassword("");
             config.setIsDraft(0);
             config.setIsEncrypt(0);
