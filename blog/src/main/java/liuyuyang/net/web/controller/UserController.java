@@ -15,7 +15,7 @@ import liuyuyang.net.result.IPage;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.web.service.UserService;
 import liuyuyang.net.core.utils.Paging;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.vo.user.UserFilterVo;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -83,8 +83,8 @@ public class UserController {
     @PostMapping("/paging")
     @ApiOperation("查询用户列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result<IPage<User>> paging(UserFilterVo filterVo, PageVo pageVo) {
-        Page<User> data = userService.paging(filterVo, pageVo);
+    public Result<IPage<User>> paging(UserFilterVo filterVo, PageDTO pageDto) {
+        Page<User> data = userService.paging(filterVo, pageDto);
         IPage<User> result = Paging.of(data);
         return Result.success(result);
     }

@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import liuyuyang.net.dto.article.ArticleFormDTO;
 import liuyuyang.net.model.Article;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.article.ArticleFilterDTO;
 import liuyuyang.net.vo.article.ArticleVO;
 import org.springframework.http.ResponseEntity;
@@ -31,9 +31,9 @@ public interface ArticleService extends IService<Article> {
 
     Page<ArticleVO> getArticleList(ArticleFilterDTO filterVo);
 
-    Page<ArticleVO> getCateArticleList(Integer id, PageVo pageVo);
+    Page<ArticleVO> getCateArticleList(Integer id, PageDTO pageDto);
 
-    Page<ArticleVO> getTagArticleList(Integer id, PageVo pageVo);
+    Page<ArticleVO> getTagArticleList(Integer id, PageDTO pageDto);
 
     List<ArticleVO> getRandomArticleList(Integer count);
 

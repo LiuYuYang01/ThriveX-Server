@@ -10,7 +10,7 @@ import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.article.ArticleFormDTO;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.article.ArticleFilterDTO;
 import liuyuyang.net.vo.article.ArticleVO;
 import liuyuyang.net.web.service.ArticleService;
@@ -99,8 +99,8 @@ public class ArticleController {
     @GetMapping("/cate/{cate_id}")
     @ApiOperation("获取指定分类的文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
-    public Result<Map<String, Object>> getCateArticleList(@PathVariable Integer cate_id, PageVo pageVo) {
-        Page<ArticleVO> list = articleService.getCateArticleList(cate_id, pageVo);
+    public Result<Map<String, Object>> getCateArticleList(@PathVariable Integer cate_id, PageDTO pageDto) {
+        Page<ArticleVO> list = articleService.getCateArticleList(cate_id, pageDto);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
@@ -110,8 +110,8 @@ public class ArticleController {
     @GetMapping("/tag/{tag_id}")
     @ApiOperation("获取指定标签的文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 10)
-    public Result<Map<String, Object>> getTagArticleList(@PathVariable Integer tag_id, PageVo pageVo) {
-        Page<ArticleVO> list = articleService.getTagArticleList(tag_id, pageVo);
+    public Result<Map<String, Object>> getTagArticleList(@PathVariable Integer tag_id, PageDTO pageDto) {
+        Page<ArticleVO> list = articleService.getTagArticleList(tag_id, pageDto);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }

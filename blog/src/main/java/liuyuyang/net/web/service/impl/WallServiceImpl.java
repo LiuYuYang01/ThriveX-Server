@@ -11,7 +11,7 @@ import liuyuyang.net.model.WallCate;
 import liuyuyang.net.web.service.WallService;
 import liuyuyang.net.core.utils.EmailUtils;
 import liuyuyang.net.core.utils.CommonUtils;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.vo.wall.WallFilterVo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,15 +66,15 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
     }
 
     @Override
-    public Page<Wall> paging(WallFilterVo filterVo, PageVo pageVo) {
+    public Page<Wall> paging(WallFilterVo filterVo, PageDTO pageDto) {
         List<Wall> list = list(filterVo);
-        return commonUtils.getPageData(pageVo, list);
+        return commonUtils.getPageData(pageDto, list);
     }
 
     @Override
-    public Page<Wall> getCateWallList(Integer cateId, PageVo pageVo) {
-        int p = pageVo.getPage() != null ? Math.max(1, pageVo.getPage()) : 1;
-        int s = pageVo.getSize() != null ? Math.max(1, pageVo.getSize()) : 5;
+    public Page<Wall> getCateWallList(Integer cateId, PageDTO pageDto) {
+        int p = pageDto.getPage() != null ? Math.max(1, pageDto.getPage()) : 1;
+        int s = pageDto.getSize() != null ? Math.max(1, pageDto.getSize()) : 5;
         WallCate wallCate = wallCateMapper.selectById(cateId);
 
         QueryWrapper<Wall> queryWrapper = new QueryWrapper<>();

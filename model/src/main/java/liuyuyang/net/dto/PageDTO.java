@@ -1,10 +1,10 @@
-package liuyuyang.net.vo;
+package liuyuyang.net.dto;
 
 import io.swagger.annotations.ApiParam;
 import lombok.Data;
 
 @Data
-public class PageVo {
+public class PageDTO {
     @ApiParam(value = "页码，不传时由业务决定：如文章列表返回全部，其余默认第1页")
     private Integer page;
     @ApiParam(value = "每页数量，不传时由业务决定：如文章列表返回全部，其余默认5条")

@@ -12,7 +12,7 @@ import liuyuyang.net.web.service.CommentService;
 import liuyuyang.net.web.service.WebConfigService;
 import liuyuyang.net.core.utils.EmailUtils;
 import liuyuyang.net.core.utils.CommonUtils;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.vo.comment.CommentFilterVo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -130,13 +130,13 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     }
 
     @Override
-    public Page<Comment> paging(CommentFilterVo filterVo, PageVo pageVo) {
+    public Page<Comment> paging(CommentFilterVo filterVo, PageDTO pageDto) {
         List<Comment> list = list(filterVo);
-        return commonUtils.getPageData(pageVo, list);
+        return commonUtils.getPageData(pageDto, list);
     }
 
     @Override
-    public Page<Comment> getArticleCommentList(Integer articleId, PageVo pageVo) {
+    public Page<Comment> getArticleCommentList(Integer articleId, PageDTO pageDto) {
         QueryWrapper<Comment> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("article_id", articleId);
         queryWrapper.eq("audit_status", 1);
@@ -148,7 +148,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         list = buildCommentTree(list, 0);
 
         // 分页处理
-        return commonUtils.getPageData(pageVo, list);
+        return commonUtils.getPageData(pageDto, list);
     }
 
     // 递归构建评论列表

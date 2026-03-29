@@ -8,7 +8,7 @@ import liuyuyang.net.model.Record;
 import liuyuyang.net.web.service.RecordService;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.vo.FilterVo;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,8 +31,8 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
     }
 
     @Override
-    public Page<Record> paging(FilterVo filterVo, PageVo pageVo) {
+    public Page<Record> paging(FilterVo filterVo, PageDTO pageDto) {
         List<Record> list = list(filterVo);
-        return commonUtils.getPageData(pageVo, list);
+        return commonUtils.getPageData(pageDto, list);
     }
 }
