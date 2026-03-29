@@ -2,7 +2,6 @@ package liuyuyang.net.web.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.core.enums.ArticleStatus;
@@ -64,22 +63,22 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private CommonUtils commonUtils;
 
     @NotNull
-    private static QueryWrapper<Article> getArticleQueryWrapper(ArticleFilterDTO filterVo) {
-        QueryWrapper<Article> queryWrapper = new QueryWrapper<>();
-        queryWrapper.orderByDesc("create_time");
+    private static LambdaQueryWrapper<Article> getArticleQueryWrapper(ArticleFilterDTO filterVo) {
+        LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByDesc(Article::getCreateTime);
 
         // 根据关键字通过标题过滤出对应文章数据
         if (filterVo.getKey() != null && !filterVo.getKey().isEmpty()) {
-            queryWrapper.like("title", "%" + filterVo.getKey() + "%");
+            queryWrapper.like(Article::getTitle, filterVo.getKey());
         }
 
         // 根据开始与结束时间过滤
         if (filterVo.getStartDate() != null && filterVo.getEndDate() != null) {
-            queryWrapper.between("create_time", filterVo.getStartDate(), filterVo.getEndDate());
+            queryWrapper.between(Article::getCreateTime, filterVo.getStartDate(), filterVo.getEndDate());
         } else if (filterVo.getStartDate() != null) {
-            queryWrapper.ge("create_time", filterVo.getStartDate());
+            queryWrapper.ge(Article::getCreateTime, filterVo.getStartDate());
         } else if (filterVo.getEndDate() != null) {
-            queryWrapper.le("create_time", filterVo.getEndDate());
+            queryWrapper.le(Article::getCreateTime, filterVo.getEndDate());
         }
         return queryWrapper;
     }
@@ -172,8 +171,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (ids == null || ids.isEmpty())
             return;
 
-        QueryWrapper<Article> queryWrapperArticle = new QueryWrapper<>();
-        queryWrapperArticle.in("id", ids);
+        LambdaQueryWrapper<Article> queryWrapperArticle = new LambdaQueryWrapper<>();
+        queryWrapperArticle.in(Article::getId, ids);
         articleMapper.delete(queryWrapperArticle);
     }
 
@@ -270,14 +269,14 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         String createTime = data.getCreateTime();
 
         // 查询上一篇文章
-        QueryWrapper<Article> prevQueryWrapper = new QueryWrapper<>();
-        prevQueryWrapper.lt("create_time", createTime).orderByDesc("create_time").last("LIMIT 1");
+        LambdaQueryWrapper<Article> prevQueryWrapper = new LambdaQueryWrapper<>();
+        prevQueryWrapper.lt(Article::getCreateTime, createTime).orderByDesc(Article::getCreateTime).last("LIMIT 1");
         Article prevArticle = articleMapper.selectOne(prevQueryWrapper);
 
         if (prevArticle != null) {
             // 检查文章配置
-            QueryWrapper<ArticleConfig> prevConfigWrapper = new QueryWrapper<>();
-            prevConfigWrapper.eq("article_id", prevArticle.getId()).eq("is_del", false);
+            LambdaQueryWrapper<ArticleConfig> prevConfigWrapper = new LambdaQueryWrapper<>();
+            prevConfigWrapper.eq(ArticleConfig::getArticleId, prevArticle.getId()).eq(ArticleConfig::getIsDel, false);
             ArticleConfig prevConfig = articleConfigMapper.selectOne(prevConfigWrapper);
 
             if (prevConfig != null) {
@@ -289,14 +288,14 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 查询下一篇文章
-        QueryWrapper<Article> nextQueryWrapper = new QueryWrapper<>();
-        nextQueryWrapper.gt("create_time", createTime).orderByAsc("create_time").last("LIMIT 1");
+        LambdaQueryWrapper<Article> nextQueryWrapper = new LambdaQueryWrapper<>();
+        nextQueryWrapper.gt(Article::getCreateTime, createTime).orderByAsc(Article::getCreateTime).last("LIMIT 1");
         Article nextArticle = articleMapper.selectOne(nextQueryWrapper);
 
         if (nextArticle != null) {
             // 检查文章配置
-            QueryWrapper<ArticleConfig> nextConfigWrapper = new QueryWrapper<>();
-            nextConfigWrapper.eq("article_id", nextArticle.getId()).eq("is_del", false);
+            LambdaQueryWrapper<ArticleConfig> nextConfigWrapper = new LambdaQueryWrapper<>();
+            nextConfigWrapper.eq(ArticleConfig::getArticleId, nextArticle.getId()).eq(ArticleConfig::getIsDel, false);
             ArticleConfig nextConfig = articleConfigMapper.selectOne(nextConfigWrapper);
 
             if (nextConfig != null) {
@@ -314,16 +313,16 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Override
     public List<ArticleVO> processArticleData(ArticleFilterDTO filterVo) {
         // 首先根据文章配置表的条件筛选出符合条件的文章ID
-        QueryWrapper<ArticleConfig> configQueryWrapper = new QueryWrapper<>();
+        LambdaQueryWrapper<ArticleConfig> configQueryWrapper = new LambdaQueryWrapper<>();
 
         // 根据草稿状态筛选
         if (filterVo.getIsDraft() != null) {
-            configQueryWrapper.eq("is_draft", filterVo.getIsDraft());
+            configQueryWrapper.eq(ArticleConfig::getIsDraft, filterVo.getIsDraft());
         }
 
         // 根据删除状态筛选
         if (filterVo.getIsDel() != null) {
-            configQueryWrapper.eq("is_del", filterVo.getIsDel());
+            configQueryWrapper.eq(ArticleConfig::getIsDel, filterVo.getIsDel());
         }
 
         // 获取符合条件的文章ID列表
@@ -338,8 +337,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 构建文章查询条件
-        QueryWrapper<Article> queryWrapper = queryWrapperArticle(filterVo);
-        queryWrapper.in("id", articleIds);
+        LambdaQueryWrapper<Article> queryWrapper = queryWrapperArticle(filterVo);
+        queryWrapper.in(Article::getId, articleIds);
         List<Article> list = articleMapper.selectList(queryWrapper);
 
         boolean isAdmin = CommonUtils.isAdmin();
@@ -385,8 +384,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         int s = pageDTO.getPageSize() != null ? Math.max(1, pageDTO.getPageSize()) : 5;
 
         // 通过分类 id 查询出所有文章id
-        QueryWrapper<ArticleCate> queryWrapperArticleCate = new QueryWrapper<>();
-        queryWrapperArticleCate.eq("cate_id", id); // 修改in为eq,因为只查询单个分类
+        LambdaQueryWrapper<ArticleCate> queryWrapperArticleCate = new LambdaQueryWrapper<>();
+        queryWrapperArticleCate.eq(ArticleCate::getCateId, id); // 修改in为eq,因为只查询单个分类
         List<Integer> articleIds = articleCateMapper.selectList(queryWrapperArticleCate).stream()
                 .map(ArticleCate::getArticleId)
                 .collect(Collectors.toList());
@@ -412,9 +411,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 构建文章查询条件
-        QueryWrapper<Article> queryWrapperArticle = new QueryWrapper<Article>()
-                .in("id", articleIds)
-                .orderByDesc("create_time");
+        LambdaQueryWrapper<Article> queryWrapperArticle = new LambdaQueryWrapper<Article>()
+                .in(Article::getId, articleIds)
+                .orderByDesc(Article::getCreateTime);
 
         // 查询文章列表
         Page<Article> page = new Page<>(p, s);
@@ -430,8 +429,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         int s = pageDTO.getPageSize() != null ? Math.max(1, pageDTO.getPageSize()) : 5;
 
         // 通过标签 id 查询出所有文章 id
-        QueryWrapper<ArticleTag> queryWrapperArticleTag = new QueryWrapper<>();
-        queryWrapperArticleTag.eq("tag_id", id);
+        LambdaQueryWrapper<ArticleTag> queryWrapperArticleTag = new LambdaQueryWrapper<>();
+        queryWrapperArticleTag.eq(ArticleTag::getTagId, id);
         List<Integer> articleIds = articleTagMapper.selectList(queryWrapperArticleTag).stream()
                 .map(ArticleTag::getArticleId)
                 .collect(Collectors.toList());
@@ -454,8 +453,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 构建文章查询条件
-        QueryWrapper<Article> queryWrapperArticle = new QueryWrapper<>();
-        queryWrapperArticle.in("id", articleIds).orderByDesc("create_time");
+        LambdaQueryWrapper<Article> queryWrapperArticle = new LambdaQueryWrapper<>();
+        queryWrapperArticle.in(Article::getId, articleIds).orderByDesc(Article::getCreateTime);
 
         // 查询文章列表
         Page<Article> page = new Page<>(p, s);
@@ -561,8 +560,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Override
     public List<ArticleVO> getHotArticleList(Integer count) {
-        QueryWrapper<Article> queryWrapper = new QueryWrapper<>();
-        queryWrapper.orderByDesc("view").last("LIMIT " + count);
+        LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByDesc(Article::getView).last("LIMIT " + count);
         return articleMapper.selectList(queryWrapper).stream()
                 .map(a -> bindingArticleData(a.getId()))
                 .collect(Collectors.toList());
@@ -587,28 +586,28 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         ArticleVO data = BeanUtil.copyProperties(entity, ArticleVO.class);
 
         // 查询当前文章的分类ID
-        QueryWrapper<ArticleCate> queryWrapperCateIds = new QueryWrapper<>();
-        queryWrapperCateIds.eq("article_id", id);
+        LambdaQueryWrapper<ArticleCate> queryWrapperCateIds = new LambdaQueryWrapper<>();
+        queryWrapperCateIds.eq(ArticleCate::getArticleId, id);
         List<Integer> cate_ids = articleCateMapper.selectList(queryWrapperCateIds).stream().map(ArticleCate::getCateId)
                 .collect(Collectors.toList());
 
         // 如果有分类，则绑定分类信息
         if (!cate_ids.isEmpty()) {
-            QueryWrapper<Cate> queryWrapperCateList = new QueryWrapper<>();
-            queryWrapperCateList.in("id", cate_ids);
+            LambdaQueryWrapper<Cate> queryWrapperCateList = new LambdaQueryWrapper<>();
+            queryWrapperCateList.in(Cate::getId, cate_ids);
             List<Cate> cates = cateService.buildCateTreeData(cateMapper.selectList(queryWrapperCateList), 0);
             data.setCateList(cates);
         }
 
         // 查询当前文章的标签ID
-        QueryWrapper<ArticleTag> queryWrapperTagIds = new QueryWrapper<>();
-        queryWrapperTagIds.eq("article_id", id);
+        LambdaQueryWrapper<ArticleTag> queryWrapperTagIds = new LambdaQueryWrapper<>();
+        queryWrapperTagIds.eq(ArticleTag::getArticleId, id);
         List<Integer> tag_ids = articleTagMapper.selectList(queryWrapperTagIds).stream().map(ArticleTag::getTagId)
                 .collect(Collectors.toList());
 
         if (!tag_ids.isEmpty()) {
-            QueryWrapper<Tag> queryWrapperTagList = new QueryWrapper<>();
-            queryWrapperTagList.in("id", tag_ids);
+            LambdaQueryWrapper<Tag> queryWrapperTagList = new LambdaQueryWrapper<>();
+            queryWrapperTagList.in(Tag::getId, tag_ids);
             List<Tag> tags = tagMapper.selectList(queryWrapperTagList);
             data.setTagList(tags);
         }
@@ -616,8 +615,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         data.setComment(commentMapper.getCommentList(id).size());
 
         // 查找文章配置
-        QueryWrapper<ArticleConfig> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("article_id", id);
+        LambdaQueryWrapper<ArticleConfig> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ArticleConfig::getArticleId, id);
         ArticleConfig articleConfig = articleConfigMapper.selectOne(queryWrapper);
         data.setConfig(articleConfig);
 
@@ -626,36 +625,36 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     // 过滤文章数据
     @Override
-    public QueryWrapper<Article> queryWrapperArticle(ArticleFilterDTO filterVo) {
-        QueryWrapper<Article> queryWrapper = getArticleQueryWrapper(filterVo);
+    public LambdaQueryWrapper<Article> queryWrapperArticle(ArticleFilterDTO filterVo) {
+        LambdaQueryWrapper<Article> queryWrapper = getArticleQueryWrapper(filterVo);
 
         // 根据分类id过滤
         if (filterVo.getCateId() != null) {
-            QueryWrapper<ArticleCate> queryWrapperArticleIds = new QueryWrapper<>();
-            queryWrapperArticleIds.eq("cate_id", filterVo.getCateId());
+            LambdaQueryWrapper<ArticleCate> queryWrapperArticleIds = new LambdaQueryWrapper<>();
+            queryWrapperArticleIds.eq(ArticleCate::getCateId, filterVo.getCateId());
             List<Integer> articleIds = articleCateMapper.selectList(queryWrapperArticleIds).stream()
                     .map(ArticleCate::getArticleId).collect(Collectors.toList());
 
             if (!articleIds.isEmpty()) {
-                queryWrapper.in("id", articleIds);
+                queryWrapper.in(Article::getId, articleIds);
             } else {
                 // 添加一个始终为假的条件
-                queryWrapper.in("id", -1); // -1 假设为不存在的ID
+                queryWrapper.in(Article::getId, -1); // -1 假设为不存在的ID
             }
         }
 
         // 根据标签id过滤
         if (filterVo.getTagId() != null) {
-            QueryWrapper<ArticleTag> queryWrapperArticleIds = new QueryWrapper<>();
-            queryWrapperArticleIds.eq("tag_id", filterVo.getTagId());
+            LambdaQueryWrapper<ArticleTag> queryWrapperArticleIds = new LambdaQueryWrapper<>();
+            queryWrapperArticleIds.eq(ArticleTag::getTagId, filterVo.getTagId());
             List<Integer> articleIds = articleTagMapper.selectList(queryWrapperArticleIds).stream()
                     .map(ArticleTag::getArticleId).collect(Collectors.toList());
 
             if (!articleIds.isEmpty()) {
-                queryWrapper.in("id", articleIds);
+                queryWrapper.in(Article::getId, articleIds);
             } else {
                 // 添加一个始终为假的条件
-                queryWrapper.in("id", -1); // -1 假设为不存在的ID
+                queryWrapper.in(Article::getId, -1); // -1 假设为不存在的ID
             }
         }
 
@@ -668,18 +667,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             return;
 
         // 删除绑定的分类
-        QueryWrapper<ArticleCate> queryWrapperCate = new QueryWrapper<>();
-        queryWrapperCate.in("article_id", ids);
+        LambdaQueryWrapper<ArticleCate> queryWrapperCate = new LambdaQueryWrapper<>();
+        queryWrapperCate.in(ArticleCate::getArticleId, ids);
         articleCateMapper.delete(queryWrapperCate);
 
         // 删除绑定的标签
-        QueryWrapper<ArticleTag> queryWrapperTag = new QueryWrapper<>();
-        queryWrapperTag.in("article_id", ids);
+        LambdaQueryWrapper<ArticleTag> queryWrapperTag = new LambdaQueryWrapper<>();
+        queryWrapperTag.in(ArticleTag::getArticleId, ids);
         articleTagMapper.delete(queryWrapperTag);
 
         // 删除文章配置
-        QueryWrapper<ArticleConfig> queryWrapperArticleConfig = new QueryWrapper<>();
-        queryWrapperArticleConfig.in("article_id", ids);
+        LambdaQueryWrapper<ArticleConfig> queryWrapperArticleConfig = new LambdaQueryWrapper<>();
+        queryWrapperArticleConfig.in(ArticleConfig::getArticleId, ids);
         articleConfigMapper.delete(queryWrapperArticleConfig);
     }
 
