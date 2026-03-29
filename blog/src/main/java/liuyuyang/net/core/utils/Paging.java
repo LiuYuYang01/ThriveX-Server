@@ -13,7 +13,7 @@ public class Paging {
     public static <T> IPage<T> of(Page<T> data) {
         return new IPage<>(
                 data.getCurrent(),
-                data.getSize(),
+                data.getPageSize(),
                 data.getPages(),
                 data.getCurrent() > 1,
                 data.getCurrent() < data.getPages(),
@@ -26,7 +26,7 @@ public class Paging {
     public static <T> Map<String, Object> filter(Page<T> data) {
         Map<String, Object> result = new HashMap<>();
         result.put("page", data.getCurrent()); // 当前页
-        result.put("size", data.getSize()); // 每页数量
+        result.put("size", data.getPageSize()); // 每页数量
         result.put("pages", data.getPages()); // 总页数
         result.put("prev", data.getCurrent() > 1); // 是否还有上一页
         result.put("next", data.getCurrent() < data.getPages()); // 是否还有下一页

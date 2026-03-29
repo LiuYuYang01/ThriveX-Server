@@ -73,8 +73,8 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
 
     @Override
     public Page<Wall> getCateWallList(Integer cateId, PageDTO pageDto) {
-        int p = pageDto.getPage() != null ? Math.max(1, pageDto.getPage()) : 1;
-        int s = pageDto.getSize() != null ? Math.max(1, pageDto.getSize()) : 5;
+        int p = pageDto.getPageNum() != null ? Math.max(1, pageDto.getPageNum()) : 1;
+        int s = pageDto.getPageSize() != null ? Math.max(1, pageDto.getPageSize()) : 5;
         WallCate wallCate = wallCateMapper.selectById(cateId);
 
         QueryWrapper<Wall> queryWrapper = new QueryWrapper<>();

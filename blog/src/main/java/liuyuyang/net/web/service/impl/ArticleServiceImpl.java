@@ -365,7 +365,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 不传 page/size 则返回全部
-        if (filterVo.getPage() == null || filterVo.getSize() == null) {
+        if (filterVo.getPageNum() == null || filterVo.getPageSize() == null) {
             Page<ArticleVO> result = new Page<>(1, list.size());
             result.setRecords(new ArrayList<>(list));
             result.setTotal(list.size());
@@ -373,16 +373,16 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         PageDTO pageDto = new PageDTO();
-        pageDto.setPage(Math.max(1, filterVo.getPage()));
-        pageDto.setSize(Math.max(1, filterVo.getSize()));
+        pageDto.setPage(Math.max(1, filterVo.getPageNum()));
+        pageDto.setSize(Math.max(1, filterVo.getPageSize()));
         return commonUtils.getPageData(pageDto, list);
     }
 
     // 获取指定分类中所有文章
     @Override
     public Page<ArticleVO> getCateArticleList(Integer id, PageDTO pageDto) {
-        int p = pageDto.getPage() != null ? Math.max(1, pageDto.getPage()) : 1;
-        int s = pageDto.getSize() != null ? Math.max(1, pageDto.getSize()) : 5;
+        int p = pageDto.getPageNum() != null ? Math.max(1, pageDto.getPageNum()) : 1;
+        int s = pageDto.getPageSize() != null ? Math.max(1, pageDto.getPageSize()) : 5;
 
         // 通过分类 id 查询出所有文章id
         QueryWrapper<ArticleCate> queryWrapperArticleCate = new QueryWrapper<>();
@@ -426,8 +426,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Override
     public Page<ArticleVO> getTagArticleList(Integer id, PageDTO pageDto) {
-        int p = pageDto.getPage() != null ? Math.max(1, pageDto.getPage()) : 1;
-        int s = pageDto.getSize() != null ? Math.max(1, pageDto.getSize()) : 5;
+        int p = pageDto.getPageNum() != null ? Math.max(1, pageDto.getPageNum()) : 1;
+        int s = pageDto.getPageSize() != null ? Math.max(1, pageDto.getPageSize()) : 5;
 
         // 通过标签 id 查询出所有文章 id
         QueryWrapper<ArticleTag> queryWrapperArticleTag = new QueryWrapper<>();
@@ -481,7 +481,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        Page<ArticleVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        Page<ArticleVO> result = new Page<>(page.getCurrent(), page.getPageSize(), page.getTotal());
         result.setRecords(records);
         return result;
     }
