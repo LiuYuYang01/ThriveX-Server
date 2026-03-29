@@ -63,6 +63,11 @@ dromara:
 file:
   dir: ./upload/
 
+# 使用 @EnumValue 与数据库整型互转（否则默认按枚举名映射会报错）
+mybatis-plus:
+  configuration:
+    default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
+
 # 限流注解配置
 blog:
   limit:

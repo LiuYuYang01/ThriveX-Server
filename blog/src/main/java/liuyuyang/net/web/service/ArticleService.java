@@ -6,7 +6,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import liuyuyang.net.dto.article.ArticleFormDTO;
 import liuyuyang.net.model.Article;
 import liuyuyang.net.vo.PageVo;
-import liuyuyang.net.vo.article.ArticleFilterVo;
+import liuyuyang.net.dto.article.ArticleFilterDTO;
+import liuyuyang.net.vo.article.ArticleVO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,27 +25,27 @@ public interface ArticleService extends IService<Article> {
 
     void editArticleData(ArticleFormDTO articleFormDTO);
 
-    Article getArticleData(Integer id, String password);
+    ArticleVO getArticleData(Integer id, String password);
 
-    List<Article> processArticleData(ArticleFilterVo filterVo);
+    List<ArticleVO> processArticleData(ArticleFilterDTO filterVo);
 
-    Page<Article> getArticleList(ArticleFilterVo filterVo);
+    Page<ArticleVO> getArticleList(ArticleFilterDTO filterVo);
 
-    Page<Article> getCateArticleList(Integer id, PageVo pageVo);
+    Page<ArticleVO> getCateArticleList(Integer id, PageVo pageVo);
 
-    Page<Article> getTagArticleList(Integer id, PageVo pageVo);
+    Page<ArticleVO> getTagArticleList(Integer id, PageVo pageVo);
 
-    List<Article> getRandomArticleList(Integer count);
+    List<ArticleVO> getRandomArticleList(Integer count);
 
-    List<Article> getHotArticleList(Integer count);
+    List<ArticleVO> getHotArticleList(Integer count);
 
     void recordViewArticleData(Integer id);
 
-    Article bindingArticleData(Integer id);
+    ArticleVO bindingArticleData(Integer id);
 
     void importArticleList(MultipartFile[] list) throws IOException;
 
     ResponseEntity<byte[]> exportArticleList(List<Integer> ids);
 
-    QueryWrapper<Article> queryWrapperArticle(ArticleFilterVo filterVo);
+    QueryWrapper<Article> queryWrapperArticle(ArticleFilterDTO filterVo);
 }

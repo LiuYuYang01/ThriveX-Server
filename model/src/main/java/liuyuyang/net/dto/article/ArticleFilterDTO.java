@@ -1,11 +1,11 @@
-package liuyuyang.net.vo.article;
+package liuyuyang.net.dto.article;
 
 import io.swagger.annotations.ApiModelProperty;
 import liuyuyang.net.vo.FilterVo;
 import lombok.Data;
 
 @Data
-public class ArticleFilterVo extends FilterVo {
+public class ArticleFilterDTO extends FilterVo {
     @ApiModelProperty(value = "根据分类进行筛选")
     private Integer cateId;
     @ApiModelProperty(value = "根据标签进行筛选")

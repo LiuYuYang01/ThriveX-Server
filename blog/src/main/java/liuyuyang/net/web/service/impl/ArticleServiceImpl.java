@@ -11,7 +11,8 @@ import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.article.ArticleFormDTO;
 import liuyuyang.net.model.*;
 import liuyuyang.net.vo.PageVo;
-import liuyuyang.net.vo.article.ArticleFilterVo;
+import liuyuyang.net.dto.article.ArticleFilterDTO;
+import liuyuyang.net.vo.article.ArticleVO;
 import liuyuyang.net.web.mapper.*;
 import liuyuyang.net.web.service.ArticleCateService;
 import liuyuyang.net.web.service.ArticleService;
@@ -63,7 +64,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private CommonUtils commonUtils;
 
     @NotNull
-    private static QueryWrapper<Article> getArticleQueryWrapper(ArticleFilterVo filterVo) {
+    private static QueryWrapper<Article> getArticleQueryWrapper(ArticleFilterDTO filterVo) {
         QueryWrapper<Article> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByDesc("create_time");
 
@@ -221,12 +222,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Article getArticleData(Integer id, String password) {
-        Article data = bindingArticleData(id);
+    public ArticleVO getArticleData(Integer id, String password) {
+        ArticleVO data = bindingArticleData(id);
 
         String description = data.getDescription();
         String content = data.getContent();
-        
+
         boolean isAdmin = CommonUtils.isAdmin();
 
         ArticleConfig config = data.getConfig();
@@ -311,7 +312,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     // 处理文章数据
     @Override
-    public List<Article> processArticleData(ArticleFilterVo filterVo) {
+    public List<ArticleVO> processArticleData(ArticleFilterDTO filterVo) {
         // 首先根据文章配置表的条件筛选出符合条件的文章ID
         QueryWrapper<ArticleConfig> configQueryWrapper = new QueryWrapper<>();
 
@@ -352,8 +353,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Page<Article> getArticleList(ArticleFilterVo filterVo) {
-        List<Article> list = processArticleData(filterVo);
+    public Page<ArticleVO> getArticleList(ArticleFilterDTO filterVo) {
+        List<ArticleVO> list = processArticleData(filterVo);
+
         boolean isAdmin = CommonUtils.isAdmin();
         if (!isAdmin) {
             // 统一使用展示规则控制首页可见性
@@ -364,7 +366,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 不传 page/size 则返回全部
         if (filterVo.getPage() == null || filterVo.getSize() == null) {
-            Page<Article> result = new Page<>(1, list.size());
+            Page<ArticleVO> result = new Page<>(1, list.size());
             result.setRecords(new ArrayList<>(list));
             result.setTotal(list.size());
             return result;
@@ -378,10 +380,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     // 获取指定分类中所有文章
     @Override
-    public Page<Article> getCateArticleList(Integer id, PageVo pageVo) {
+    public Page<ArticleVO> getCateArticleList(Integer id, PageVo pageVo) {
         int p = pageVo.getPage() != null ? Math.max(1, pageVo.getPage()) : 1;
         int s = pageVo.getSize() != null ? Math.max(1, pageVo.getSize()) : 5;
-        
+
         // 通过分类 id 查询出所有文章id
         QueryWrapper<ArticleCate> queryWrapperArticleCate = new QueryWrapper<>();
         queryWrapperArticleCate.eq("cate_id", id); // 修改in为eq,因为只查询单个分类
@@ -423,7 +425,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Page<Article> getTagArticleList(Integer id, PageVo pageVo) {
+    public Page<ArticleVO> getTagArticleList(Integer id, PageVo pageVo) {
         int p = pageVo.getPage() != null ? Math.max(1, pageVo.getPage()) : 1;
         int s = pageVo.getSize() != null ? Math.max(1, pageVo.getSize()) : 5;
 
@@ -466,26 +468,28 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     /**
      * 公共文章分页结果处理：绑定数据、处理加密文章、过滤隐藏文章
      */
-    private Page<Article> processArticlePage(Page<Article> page) {
-        page.setRecords(
-                page.getRecords().stream()
-                        .map(article -> {
-                            Article boundArticle = bindingArticleData(article.getId());
-                            // 分类/标签页默认按普通用户规则展示
-                            if (!shouldShowInList(boundArticle, false)) {
-                                return null;
-                            }
-                            return maskIfEncrypted(boundArticle);
-                        })
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList()));
-        return page;
+    private Page<ArticleVO> processArticlePage(Page<Article> page) {
+        List<ArticleVO> records = page.getRecords().stream()
+                .map(article -> {
+                    ArticleVO boundArticle = bindingArticleData(article.getId());
+                    // 分类/标签页默认按普通用户规则展示
+                    if (!shouldShowInList(boundArticle, false)) {
+                        return null;
+                    }
+                    return maskIfEncrypted(boundArticle);
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        Page<ArticleVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        result.setRecords(records);
+        return result;
     }
 
     /**
      * 是否在列表中展示（管理员可见所有，普通用户不展示隐藏文章）
      */
-    private boolean shouldShowInList(Article article, boolean isAdmin) {
+    private boolean shouldShowInList(ArticleVO article, boolean isAdmin) {
         ArticleConfig config = article.getConfig();
         // 如果没有配置就展示
         if (config == null)
@@ -500,7 +504,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     /**
      * 非管理员首页是否展示（在列表可见的基础上，再过滤 no_home）
      */
-    private boolean shouldShowOnHomeForNonAdmin(Article article) {
+    private boolean shouldShowOnHomeForNonAdmin(ArticleVO article) {
         ArticleConfig config = article.getConfig();
         if (config == null) {
             return true;
@@ -511,7 +515,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     /**
      * 如果文章是加密的，则打马赛克提示
      */
-    private Article maskIfEncrypted(Article article) {
+    private ArticleVO maskIfEncrypted(ArticleVO article) {
         ArticleConfig config = article.getConfig();
         if (config != null && Boolean.TRUE.equals(config.getIsEncrypt())) {
             article.setDescription("该文章是加密的");
@@ -521,7 +525,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public List<Article> getRandomArticleList(Integer count) {
+    public List<ArticleVO> getRandomArticleList(Integer count) {
         // 一次性从配置表筛选出符合条件的文章ID，避免 N+1 查询
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getIsDraft, false);
@@ -556,10 +560,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public List<Article> getHotArticleList(Integer count) {
+    public List<ArticleVO> getHotArticleList(Integer count) {
         QueryWrapper<Article> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByDesc("view").last("LIMIT " + count);
-        return articleMapper.selectList(queryWrapper);
+        return articleMapper.selectList(queryWrapper).stream()
+                .map(a -> bindingArticleData(a.getId()))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -573,11 +579,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     // 关联文章数据
     @Override
-    public Article bindingArticleData(Integer id) {
-        Article data = articleMapper.selectById(id);
-
-        if (data == null)
+    public ArticleVO bindingArticleData(Integer id) {
+        Article entity = articleMapper.selectById(id);
+        if (entity == null)
             throw new CustomException(400, "获取文章失败：该文章不存在");
+
+        ArticleVO data = BeanUtil.copyProperties(entity, ArticleVO.class);
 
         // 查询当前文章的分类ID
         QueryWrapper<ArticleCate> queryWrapperCateIds = new QueryWrapper<>();
@@ -619,7 +626,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     // 过滤文章数据
     @Override
-    public QueryWrapper<Article> queryWrapperArticle(ArticleFilterVo filterVo) {
+    public QueryWrapper<Article> queryWrapperArticle(ArticleFilterDTO filterVo) {
         QueryWrapper<Article> queryWrapper = getArticleQueryWrapper(filterVo);
 
         // 根据分类id过滤

@@ -1,18 +1,17 @@
-package liuyuyang.net.model;
+package liuyuyang.net.vo.article;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModelProperty;
-import liuyuyang.net.dto.article.ArticleFormDTO;
+import liuyuyang.net.model.ArticleConfig;
+import liuyuyang.net.model.Cate;
+import liuyuyang.net.model.Tag;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-@TableName("article")
-public class Article extends ArticleFormDTO {
-    @TableId(type = IdType.AUTO)
+public class ArticleVO {
     private Integer id;
 
     @ApiModelProperty(value = "文章标题", example = "示例文章标题", required = true)
@@ -27,6 +26,9 @@ public class Article extends ArticleFormDTO {
     @ApiModelProperty(value = "文章封面链接", example = "http://123.com/images/example.jpg")
     private String cover;
 
+    @ApiModelProperty(value = "文章配置项")
+    private ArticleConfig config;
+
     @ApiModelProperty(value = "创建时间", example = "1723533206613", required = true)
     private String createTime;
 
@@ -35,4 +37,15 @@ public class Article extends ArticleFormDTO {
 
     @ApiModelProperty(value = "文章评论数量", example = "20")
     private Integer comment;
+
+    @ApiModelProperty(value = "分类列表")
+    private List<Cate> cateList = new ArrayList<>();
+
+    @ApiModelProperty(value = "标签列表")
+    private List<Tag> tagList = new ArrayList<>();
+
+    @ApiModelProperty(value = "上一篇文章")
+    private Map<String, Object> prev;
+    @ApiModelProperty(value = "下一篇文章")
+    private Map<String, Object> next;
 }
