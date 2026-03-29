@@ -13,7 +13,7 @@ import liuyuyang.net.core.utils.EmailUtils;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.core.utils.UrlSecurityUtils;
 import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.link.LinkFilterVo;
+import liuyuyang.net.vo.link.LinkFilterDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -84,7 +84,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
     }
 
     @Override
-    public List<Link> list(LinkFilterVo filterVo) {
+    public List<Link> list(LinkFilterDTO filterVo) {
         QueryWrapper<Link> queryWrapper = commonUtils.queryWrapperFilter(filterVo);
         queryWrapper.eq("audit_status", filterVo.getStatus()); // 只显示审核成功的网站
 
@@ -103,10 +103,10 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
     }
 
     @Override
-    public Page<Link> paging(LinkFilterVo filterVo, PageDTO pageDto) {
+    public Page<Link> paging(LinkFilterDTO filterVo, PageDTO pageDTO) {
         List<Link> list = list(filterVo);
-        int p = pageDto.getPageNum() != null ? Math.max(1, pageDto.getPageNum()) : 1;
-        int s = pageDto.getPageSize() != null ? Math.max(1, pageDto.getPageSize()) : 5;
+        int p = pageDTO.getPageNum() != null ? Math.max(1, pageDTO.getPageNum()) : 1;
+        int s = pageDTO.getPageSize() != null ? Math.max(1, pageDTO.getPageSize()) : 5;
 
         // 分页处理
         int start = Math.min((p - 1) * s, list.size());

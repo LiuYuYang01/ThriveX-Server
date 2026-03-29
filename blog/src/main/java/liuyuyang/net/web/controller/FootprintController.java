@@ -8,7 +8,7 @@ import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.model.Footprint;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.web.service.FootprintService;
-import liuyuyang.net.vo.FilterVo;
+import liuyuyang.net.dto.FilterDTO;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -69,8 +69,8 @@ public class FootprintController {
     @PostMapping("/list")
     @ApiOperation("获取足迹列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<List<Footprint>> list(@RequestBody FilterVo filterVo) {
-        List<Footprint> data = footprintService.list(filterVo);
+    public Result<List<Footprint>> list(@RequestBody FilterDTO filterDTO) {
+        List<Footprint> data = footprintService.list(filterDTO);
         return Result.success(data);
     }
 }

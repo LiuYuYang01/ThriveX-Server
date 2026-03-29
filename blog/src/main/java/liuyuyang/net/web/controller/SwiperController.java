@@ -77,8 +77,8 @@ public class SwiperController {
     @GetMapping
     @ApiOperation(value = "获取轮播图列表", notes = "不传 page/size 返回全部，传则分页")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<Map<String, Object>> getSwiperList(PageDTO pageDto) {
-        Page<Swiper> data = swiperService.getSwiperList(pageDto);
+    public Result<Map<String, Object>> getSwiperList(PageDTO pageDTO) {
+        Page<Swiper> data = swiperService.getSwiperList(pageDTO);
         Map<String, Object> result = Paging.filter(data);
         return Result.success(result);
     }

@@ -6,5 +6,5 @@ import liuyuyang.net.model.Swiper;
 import liuyuyang.net.dto.PageDTO;
 
 public interface SwiperService extends IService<Swiper> {
-    Page<Swiper> getSwiperList(PageDTO pageDto);
+    Page<Swiper> getSwiperList(PageDTO pageDTO);
 }

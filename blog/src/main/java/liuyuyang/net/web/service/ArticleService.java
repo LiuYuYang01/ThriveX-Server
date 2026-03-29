@@ -31,9 +31,9 @@ public interface ArticleService extends IService<Article> {
 
     Page<ArticleVO> getArticleList(ArticleFilterDTO filterVo);
 
-    Page<ArticleVO> getCateArticleList(Integer id, PageDTO pageDto);
+    Page<ArticleVO> getCateArticleList(Integer id, PageDTO pageDTO);
 
-    Page<ArticleVO> getTagArticleList(Integer id, PageDTO pageDto);
+    Page<ArticleVO> getTagArticleList(Integer id, PageDTO pageDTO);
 
     List<ArticleVO> getRandomArticleList(Integer count);
 

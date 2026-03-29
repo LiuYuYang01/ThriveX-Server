@@ -14,7 +14,7 @@ import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.web.service.CommentService;
 import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.comment.CommentFilterVo;
+import liuyuyang.net.vo.comment.CommentFilterDTO;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -82,7 +82,7 @@ public class CommentController {
     @PostMapping("/list")
     @ApiOperation("获取评论列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<List<Comment>> list(@RequestBody CommentFilterVo filterVo) {
+    public Result<List<Comment>> list(@RequestBody CommentFilterDTO filterVo) {
         List<Comment> list = commentService.list(filterVo);
         return Result.success(list);
     }
@@ -92,8 +92,8 @@ public class CommentController {
     @PostMapping("/paging")
     @ApiOperation("分页查询评论列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result paging(@RequestBody CommentFilterVo filterVo, PageDTO pageDto) {
-        Page<Comment> list = commentService.paging(filterVo, pageDto);
+    public Result paging(@RequestBody CommentFilterDTO filterVo, PageDTO pageDTO) {
+        Page<Comment> list = commentService.paging(filterVo, pageDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
@@ -103,8 +103,8 @@ public class CommentController {
     @PostMapping("/article/{articleId}")
     @ApiOperation("获取指定文章中所有评论")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
-    public Result getArticleCommentList(@PathVariable Integer articleId, PageDTO pageDto) {
-        Page<Comment> list = commentService.getArticleCommentList(articleId, pageDto);
+    public Result getArticleCommentList(@PathVariable Integer articleId, PageDTO pageDTO) {
+        Page<Comment> list = commentService.getArticleCommentList(articleId, pageDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }

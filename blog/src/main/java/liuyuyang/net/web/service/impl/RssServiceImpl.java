@@ -139,9 +139,9 @@ public class RssServiceImpl implements RssService {
     }
 
     @Override
-    public Page<Rss> paging(PageDTO pageDto) {
+    public Page<Rss> paging(PageDTO pageDTO) {
         // 使用工具类进行分页
-        return commonUtils.getPageData(pageDto, list());
+        return commonUtils.getPageData(pageDTO, list());
     }
 
     /**

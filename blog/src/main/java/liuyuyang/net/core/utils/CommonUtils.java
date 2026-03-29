@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.jsonwebtoken.Claims;
 import liuyuyang.net.model.UserToken;
-import liuyuyang.net.vo.FilterVo;
+import liuyuyang.net.dto.FilterDTO;
 import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.web.mapper.UserTokenMapper;
 import org.springframework.stereotype.Component;
@@ -66,10 +66,10 @@ public class CommonUtils {
     }
 
     /** 对内存列表做分页，返回 MyBatis-Plus Page（避免 start 超出列表长度） */
-    public <T> Page<T> getPageData(PageDTO pageDto, List<T> list) {
+    public <T> Page<T> getPageData(PageDTO pageDTO, List<T> list) {
         // 下限保护：页码至少为 1，避免非法分页
-        int page = Math.max(1, pageDto.getPageNum() != null ? pageDto.getPageNum() : 1);
-        int size = Math.max(1, pageDto.getPageSize() != null ? pageDto.getPageSize() : 5);
+        int page = Math.max(1, pageDTO.getPageNum() != null ? pageDTO.getPageNum() : 1);
+        int size = Math.max(1, pageDTO.getPageSize() != null ? pageDTO.getPageSize() : 5);
         int total = list.size();
         int start = Math.min((page - 1) * size, total);
         int end = Math.min(start + size, total);
@@ -82,26 +82,26 @@ public class CommonUtils {
     }
 
     // 过滤数据
-    public <T> QueryWrapper<T> queryWrapperFilter(FilterVo filterVo) {
-        return queryWrapperFilter(filterVo, "title");
+    public <T> QueryWrapper<T> queryWrapperFilter(FilterDTO filterDTO) {
+        return queryWrapperFilter(filterDTO, "title");
     }
 
-    public <T> QueryWrapper<T> queryWrapperFilter(FilterVo filterVo, String key) {
+    public <T> QueryWrapper<T> queryWrapperFilter(FilterDTO filterDTO, String key) {
         QueryWrapper<T> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByDesc("create_time");
 
         // 根据关键字通过标题过滤出对应数据
-        if (filterVo.getKey() != null && !filterVo.getKey().isEmpty()) {
-            queryWrapper.like(key, "%" + filterVo.getKey() + "%");
+        if (filterDTO.getKey() != null && !filterDTO.getKey().isEmpty()) {
+            queryWrapper.like(key, "%" + filterDTO.getKey() + "%");
         }
 
         // 根据开始与结束时间过滤
-        if (filterVo.getStartDate() != null && filterVo.getEndDate() != null) {
-            queryWrapper.between("create_time", filterVo.getStartDate(), filterVo.getEndDate());
-        } else if (filterVo.getStartDate() != null) {
-            queryWrapper.ge("create_time", filterVo.getStartDate());
-        } else if (filterVo.getEndDate() != null) {
-            queryWrapper.le("create_time", filterVo.getEndDate());
+        if (filterDTO.getStartDate() != null && filterDTO.getEndDate() != null) {
+            queryWrapper.between("create_time", filterDTO.getStartDate(), filterDTO.getEndDate());
+        } else if (filterDTO.getStartDate() != null) {
+            queryWrapper.ge("create_time", filterDTO.getStartDate());
+        } else if (filterDTO.getEndDate() != null) {
+            queryWrapper.le("create_time", filterDTO.getEndDate());
         }
 
         return queryWrapper;

@@ -13,7 +13,7 @@ import liuyuyang.net.web.service.WebConfigService;
 import liuyuyang.net.core.utils.EmailUtils;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.comment.CommentFilterVo;
+import liuyuyang.net.vo.comment.CommentFilterDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
@@ -107,7 +107,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     }
 
     @Override
-    public List<Comment> list(CommentFilterVo filterVo) {
+    public List<Comment> list(CommentFilterDTO filterVo) {
         QueryWrapper<Comment> queryWrapper = commonUtils.queryWrapperFilter(filterVo, "name");
         queryWrapper.eq("audit_status", filterVo.getStatus());
         if (filterVo.getContent() != null && !filterVo.getContent().isEmpty()) {
@@ -130,13 +130,13 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     }
 
     @Override
-    public Page<Comment> paging(CommentFilterVo filterVo, PageDTO pageDto) {
+    public Page<Comment> paging(CommentFilterDTO filterVo, PageDTO pageDTO) {
         List<Comment> list = list(filterVo);
-        return commonUtils.getPageData(pageDto, list);
+        return commonUtils.getPageData(pageDTO, list);
     }
 
     @Override
-    public Page<Comment> getArticleCommentList(Integer articleId, PageDTO pageDto) {
+    public Page<Comment> getArticleCommentList(Integer articleId, PageDTO pageDTO) {
         QueryWrapper<Comment> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("article_id", articleId);
         queryWrapper.eq("audit_status", 1);
@@ -148,7 +148,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         list = buildCommentTree(list, 0);
 
         // 分页处理
-        return commonUtils.getPageData(pageDto, list);
+        return commonUtils.getPageData(pageDTO, list);
     }
 
     // 递归构建评论列表

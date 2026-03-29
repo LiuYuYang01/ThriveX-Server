@@ -77,8 +77,8 @@ public class TagController {
     @GetMapping
     @ApiOperation(value = "获取标签列表", notes = "不传 page/size 返回全部，传则分页")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result<Map<String, Object>> getTagPaging(PageDTO pageDto) {
-        Page<Tag> data = tagService.getTagList(pageDto);
+    public Result<Map<String, Object>> getTagPaging(PageDTO pageDTO) {
+        Page<Tag> data = tagService.getTagList(pageDTO);
         Map<String, Object> result = Paging.filter(data);
         return Result.success(result);
     }

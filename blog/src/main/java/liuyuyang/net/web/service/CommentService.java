@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import liuyuyang.net.model.Comment;
 import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.comment.CommentFilterVo;
+import liuyuyang.net.vo.comment.CommentFilterDTO;
 
 import java.util.List;
 
@@ -13,9 +13,9 @@ public interface CommentService extends IService<Comment> {
 
     Comment get(Integer id);
 
-    Page<Comment> getArticleCommentList(Integer articleId, PageDTO pageDto);
+    Page<Comment> getArticleCommentList(Integer articleId, PageDTO pageDTO);
 
-    List<Comment> list(CommentFilterVo filterVo);
+    List<Comment> list(CommentFilterDTO filterVo);
 
-    Page<Comment> paging(CommentFilterVo filterVo, PageDTO pageDto);
+    Page<Comment> paging(CommentFilterDTO filterVo, PageDTO pageDTO);
 }

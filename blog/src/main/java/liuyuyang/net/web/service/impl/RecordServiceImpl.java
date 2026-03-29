@@ -7,7 +7,7 @@ import liuyuyang.net.web.mapper.RecordMapper;
 import liuyuyang.net.model.Record;
 import liuyuyang.net.web.service.RecordService;
 import liuyuyang.net.core.utils.CommonUtils;
-import liuyuyang.net.vo.FilterVo;
+import liuyuyang.net.dto.FilterDTO;
 import liuyuyang.net.dto.PageDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,15 +24,15 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
     private CommonUtils commonUtils;
 
     @Override
-    public List<Record> list(FilterVo filterVo) {
-        QueryWrapper<Record> queryWrapper = commonUtils.queryWrapperFilter(filterVo, "content");
+    public List<Record> list(FilterDTO filterDTO) {
+        QueryWrapper<Record> queryWrapper = commonUtils.queryWrapperFilter(filterDTO, "content");
         List<Record> list = recordMapper.selectList(queryWrapper);
         return list;
     }
 
     @Override
-    public Page<Record> paging(FilterVo filterVo, PageDTO pageDto) {
-        List<Record> list = list(filterVo);
-        return commonUtils.getPageData(pageDto, list);
+    public Page<Record> paging(FilterDTO filterDTO, PageDTO pageDTO) {
+        List<Record> list = list(filterDTO);
+        return commonUtils.getPageData(pageDTO, list);
     }
 }

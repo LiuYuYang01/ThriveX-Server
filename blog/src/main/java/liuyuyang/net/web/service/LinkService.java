@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import liuyuyang.net.model.Link;
 import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.link.LinkFilterVo;
+import liuyuyang.net.vo.link.LinkFilterDTO;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ public interface LinkService extends IService<Link> {
 
     Link get(Integer cid);
 
-    List<Link> list(LinkFilterVo filterVo);
+    List<Link> list(LinkFilterDTO filterVo);
 
-    Page<Link> paging(LinkFilterVo filterVo, PageDTO pageDto);
+    Page<Link> paging(LinkFilterDTO filterVo, PageDTO pageDTO);
 }
