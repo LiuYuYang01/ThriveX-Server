@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class PageDTO {
     @ApiParam(value = "页码，不传时由业务决定：如文章列表返回全部，其余默认第1页")
-    private Integer page;
+    private Integer pageNum;
     @ApiParam(value = "每页数量，不传时由业务决定：如文章列表返回全部，其余默认5条")
-    private Integer size;
+    private Integer pageSize;
 }

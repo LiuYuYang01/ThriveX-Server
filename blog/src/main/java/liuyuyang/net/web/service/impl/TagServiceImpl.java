@@ -36,21 +36,21 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
         List<Tag> data = tagMapper.staticArticleCount();
 
         // 不传分页参数时返回全部（page/size 任意一个未传则全量）
-        if (pageDto == null || pageDto.getPage() == null || pageDto.getSize() == null) {
+        if (pageDto == null || pageDto.getPageNum() == null || pageDto.getPageSize() == null) {
             Page<Tag> result = new Page<>(1, data.size());
             result.setRecords(new ArrayList<>(data));
             result.setTotal((long) data.size());
             return result;
         }
 
-        if (pageDto.getPage() <= 0 || pageDto.getSize() <= 0) {
+        if (pageDto.getPageNum() <= 0 || pageDto.getPageSize() <= 0) {
             throw new CustomException(400, "分页参数 page/size 必须大于 0");
         }
 
         // 手动分页（数据源为统计查询结果）
-        Page<Tag> result = new Page<>(pageDto.getPage(), pageDto.getSize());
-        int start = (int) ((pageDto.getPage() - 1L) * pageDto.getSize());
-        int end = Math.min(start + pageDto.getSize(), data.size());
+        Page<Tag> result = new Page<>(pageDto.getPageNum(), pageDto.getPageSize());
+        int start = (int) ((pageDto.getPageNum() - 1L) * pageDto.getPageSize());
+        int end = Math.min(start + pageDto.getPageSize(), data.size());
         List<Tag> records = start >= data.size() ? new ArrayList<>() : data.subList(start, end);
         result.setRecords(new ArrayList<>(records));
         result.setTotal((long) data.size());

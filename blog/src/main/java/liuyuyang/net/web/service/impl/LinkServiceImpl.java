@@ -105,8 +105,8 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
     @Override
     public Page<Link> paging(LinkFilterVo filterVo, PageDTO pageDto) {
         List<Link> list = list(filterVo);
-        int p = pageDto.getPage() != null ? Math.max(1, pageDto.getPage()) : 1;
-        int s = pageDto.getSize() != null ? Math.max(1, pageDto.getSize()) : 5;
+        int p = pageDto.getPageNum() != null ? Math.max(1, pageDto.getPageNum()) : 1;
+        int s = pageDto.getPageSize() != null ? Math.max(1, pageDto.getPageSize()) : 5;
 
         // 分页处理
         int start = Math.min((p - 1) * s, list.size());
