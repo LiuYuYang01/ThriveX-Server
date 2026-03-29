@@ -31,8 +31,8 @@ public class UserController {
     @PatchMapping
     @ApiOperation("编辑管理员")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> edit(@RequestBody EditUserInfoDTO user) {
-        userService.edit(user);
+    public Result<String> editUserData(@RequestBody EditUserInfoDTO user) {
+        userService.editUserData(user);
         return Result.success();
     }
 
@@ -40,8 +40,8 @@ public class UserController {
     @ApiOperation("获取当前登录的管理员信息")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
     @NoTokenRequired
-    public Result<UserVO> get(String token) {
-        User user = userService.getByToken(token);
+    public Result<UserVO> getUserData(String token) {
+        User user = userService.getUserInfo(token);
         UserVO userVO = new UserVO();
         BeanUtils.copyProperties(user, userVO);
         return Result.success(userVO);
@@ -59,7 +59,7 @@ public class UserController {
     @ApiOperation("修改管理员密码")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
     public Result<String> editPass(@RequestBody EditUserPassDTO data) {
-        userService.editPass(data);
+        userService.editUserPass(data);
         return Result.success("密码修改成功");
     }
 
@@ -78,7 +78,7 @@ public class UserController {
     @ApiOperation("获取作者信息")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 11)
     public Result<AuthorVO> getAuthor() {
-        User user = userService.get(1);
+        User user = userService.getById(1);
         AuthorVO author = new AuthorVO();
         BeanUtils.copyProperties(user, author);
         return Result.success(author);

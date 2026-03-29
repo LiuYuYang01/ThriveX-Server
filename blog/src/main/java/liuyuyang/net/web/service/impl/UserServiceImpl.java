@@ -40,19 +40,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private UserTokenMapper userTokenMapper;
 
     @Override
-    public void edit(EditUserInfoDTO user) {
+    public void editUserData(EditUserInfoDTO user) {
         User data = userMapper.selectById(user.getId());
         BeanUtils.copyProperties(user, data);
         userMapper.updateById(data);
     }
 
     @Override
-    public User get(Integer id) {
-        return userMapper.selectById(id);
-    }
-
-    @Override
-    public User getByToken(String token) {
+    public User getUserInfo(String token) {
         if (token == null || token.trim().isEmpty()) {
             throw new CustomException(401, "请先登录");
         }
@@ -74,9 +69,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new CustomException(401, "无效或过期的 Token");
         }
 
-        Integer uid = userTokens.get(0).getUid();
-
-        return get(uid);
+        Integer id = userTokens.get(0).getUid();
+        return userMapper.selectById(id);
     }
 
     @Override
@@ -107,7 +101,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public void editPass(EditUserPassDTO data) {
+    public void editUserPass(EditUserPassDTO data) {
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("username", data.getOldUsername());
         queryWrapper.eq("password", DigestUtils.md5DigestAsHex(data.getOldPassword().getBytes()));

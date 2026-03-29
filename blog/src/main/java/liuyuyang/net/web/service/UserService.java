@@ -9,18 +9,13 @@ import liuyuyang.net.model.User;
 import java.util.Map;
 
 public interface UserService extends IService<User> {
-    User get(Integer id);
+    User getUserInfo(String token);
 
-    /**
-     * 根据请求头中的 Authorization（Bearer token）解析当前登录用户
-     */
-    User getByToken(String token);
-
-    void edit(EditUserInfoDTO data);
+    void editUserData(EditUserInfoDTO data);
 
     Map<String, Object> login(UserLoginDTO user);
 
-    void editPass(EditUserPassDTO data);
+    void editUserPass(EditUserPassDTO data);
 
     void checkToken();
 }
