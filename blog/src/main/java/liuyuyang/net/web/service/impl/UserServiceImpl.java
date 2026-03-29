@@ -2,19 +2,15 @@ package liuyuyang.net.web.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.JwtUtils;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.user.EditPassDTO;
-import liuyuyang.net.dto.user.UserDTO;
 import liuyuyang.net.dto.user.UserInfoDTO;
 import liuyuyang.net.dto.user.UserLoginDTO;
 import liuyuyang.net.model.User;
 import liuyuyang.net.model.UserToken;
-import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.user.UserFilterVo;
 import liuyuyang.net.web.mapper.UserMapper;
 import liuyuyang.net.web.mapper.UserTokenMapper;
 import liuyuyang.net.web.service.UserService;
@@ -31,7 +27,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -42,41 +37,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private UserMapper userMapper;
     @Resource
     private UserTokenMapper userTokenMapper;
-
-    @Override
-    public void add(UserDTO user) {
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("username", user.getUsername());
-
-        User data = userMapper.selectOne(queryWrapper);
-
-        // 判断用户是否存在
-        if (data != null)
-            throw new CustomException(400, "该用户已存在：" + user.getUsername());
-
-        // 密码加密
-        user.setPassword(DigestUtils.md5DigestAsHex(user.getPassword().getBytes()));
-
-        User temp = new User();
-        BeanUtils.copyProperties(user, temp);
-
-        userMapper.insert(temp);
-    }
-
-    @Override
-    public void del(Integer id) {
-        User data = userMapper.selectById(id);
-        if (data == null)
-            throw new CustomException(400, "该用户不存在");
-        userMapper.deleteById(id);
-    }
-
-    @Override
-    public void delBatch(List<Integer> ids) {
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.in("id", ids);
-        userMapper.delete(queryWrapper);
-    }
 
     @Override
     public void edit(UserInfoDTO user) {
@@ -94,25 +54,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public List<User> list(UserFilterVo filterVo) {
-        QueryWrapper<User> queryWrapper = commonUtils.queryWrapperFilter(filterVo, "name");
-
-        List<User> list = userMapper.selectList(queryWrapper);
-
-        for (User user : list) {
-            user.setPassword("只有聪明的人才能看到密码");
+    public User getByToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new CustomException(401, "请先登录");
+        }
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        if (token.trim().isEmpty()) {
+            throw new CustomException(401, "无效或过期的 Token");
         }
 
-        list = list.stream().sorted((o1, o2) -> o2.getCreateTime().compareTo(o1.getCreateTime()))
-                .collect(Collectors.toList());
-
-        return list;
-    }
-
-    @Override
-    public Page<User> paging(UserFilterVo filterVo, PageDTO pageDto) {
-        List<User> list = list(filterVo);
-        return commonUtils.getPageData(pageDto, list);
+        LambdaQueryWrapper<UserToken> w = new LambdaQueryWrapper<>();
+        w.eq(UserToken::getToken, token);
+        List<UserToken> userTokens = userTokenMapper.selectList(w);
+        if (userTokens == null || userTokens.isEmpty()) {
+            throw new CustomException(401, "该账号已在另一台设备登录");
+        }
+        Integer uid = userTokens.get(0).getUid();
+        return get(uid);
     }
 
     @Override
