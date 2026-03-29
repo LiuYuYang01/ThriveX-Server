@@ -12,7 +12,7 @@ import liuyuyang.net.web.mapper.LinkMapper;
 import liuyuyang.net.web.mapper.LinkTypeMapper;
 import liuyuyang.net.model.Link;
 import liuyuyang.net.model.Rss;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.web.service.RssService;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -139,9 +139,9 @@ public class RssServiceImpl implements RssService {
     }
 
     @Override
-    public Page<Rss> paging(PageVo pageVo) {
+    public Page<Rss> paging(PageDTO pageDto) {
         // 使用工具类进行分页
-        return commonUtils.getPageData(pageVo, list());
+        return commonUtils.getPageData(pageDto, list());
     }
 
     /**

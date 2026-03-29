@@ -12,7 +12,7 @@ import liuyuyang.net.model.WallCate;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.web.service.WallService;
 import liuyuyang.net.core.utils.Paging;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.vo.wall.WallFilterVo;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -89,8 +89,8 @@ public class WallController {
     @PostMapping("/paging")
     @ApiOperation("分页查询留言列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result paging(@RequestBody WallFilterVo filterVo, PageVo pageVo) {
-        Page<Wall> list = wallService.paging(filterVo, pageVo);
+    public Result paging(@RequestBody WallFilterVo filterVo, PageDTO pageDto) {
+        Page<Wall> list = wallService.paging(filterVo, pageDto);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
@@ -100,8 +100,8 @@ public class WallController {
     @PostMapping("/cate/{cateId}")
     @ApiOperation("获取指定分类中所有留言")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
-    public Result getCateWallList(@PathVariable Integer cateId, PageVo pageVo) {
-        Page<Wall> list = wallService.getCateWallList(cateId, pageVo);
+    public Result getCateWallList(@PathVariable Integer cateId, PageDTO pageDto) {
+        Page<Wall> list = wallService.getCateWallList(cateId, pageDto);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }

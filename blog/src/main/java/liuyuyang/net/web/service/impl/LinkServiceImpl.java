@@ -12,7 +12,7 @@ import liuyuyang.net.web.service.LinkService;
 import liuyuyang.net.core.utils.EmailUtils;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.core.utils.UrlSecurityUtils;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.vo.link.LinkFilterVo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -103,10 +103,10 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
     }
 
     @Override
-    public Page<Link> paging(LinkFilterVo filterVo, PageVo pageVo) {
+    public Page<Link> paging(LinkFilterVo filterVo, PageDTO pageDto) {
         List<Link> list = list(filterVo);
-        int p = pageVo.getPage() != null ? Math.max(1, pageVo.getPage()) : 1;
-        int s = pageVo.getSize() != null ? Math.max(1, pageVo.getSize()) : 5;
+        int p = pageDto.getPage() != null ? Math.max(1, pageDto.getPage()) : 1;
+        int s = pageDto.getSize() != null ? Math.max(1, pageDto.getSize()) : 5;
 
         // 分页处理
         int start = Math.min((p - 1) * s, list.size());

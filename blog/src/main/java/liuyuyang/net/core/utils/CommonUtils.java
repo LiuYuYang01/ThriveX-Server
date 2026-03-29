@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.jsonwebtoken.Claims;
 import liuyuyang.net.model.UserToken;
 import liuyuyang.net.vo.FilterVo;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.web.mapper.UserTokenMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestAttributes;
@@ -66,10 +66,10 @@ public class CommonUtils {
     }
 
     /** 对内存列表做分页，返回 MyBatis-Plus Page（避免 start 超出列表长度） */
-    public <T> Page<T> getPageData(PageVo pageVo, List<T> list) {
+    public <T> Page<T> getPageData(PageDTO pageDto, List<T> list) {
         // 下限保护：页码至少为 1，避免非法分页
-        int page = Math.max(1, pageVo.getPage() != null ? pageVo.getPage() : 1);
-        int size = Math.max(1, pageVo.getSize() != null ? pageVo.getSize() : 5);
+        int page = Math.max(1, pageDto.getPage() != null ? pageDto.getPage() : 1);
+        int size = Math.max(1, pageDto.getSize() != null ? pageDto.getSize() : 5);
         int total = list.size();
         int start = Math.min((page - 1) * size, total);
         int end = Math.min(start + size, total);

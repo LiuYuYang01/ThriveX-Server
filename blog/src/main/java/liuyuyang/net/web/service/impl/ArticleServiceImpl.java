@@ -10,7 +10,7 @@ import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.article.ArticleFormDTO;
 import liuyuyang.net.model.*;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.article.ArticleFilterDTO;
 import liuyuyang.net.vo.article.ArticleVO;
 import liuyuyang.net.web.mapper.*;
@@ -372,17 +372,17 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             return result;
         }
 
-        PageVo pageVo = new PageVo();
-        pageVo.setPage(Math.max(1, filterVo.getPage()));
-        pageVo.setSize(Math.max(1, filterVo.getSize()));
-        return commonUtils.getPageData(pageVo, list);
+        PageDTO pageDto = new PageDTO();
+        pageDto.setPage(Math.max(1, filterVo.getPage()));
+        pageDto.setSize(Math.max(1, filterVo.getSize()));
+        return commonUtils.getPageData(pageDto, list);
     }
 
     // 获取指定分类中所有文章
     @Override
-    public Page<ArticleVO> getCateArticleList(Integer id, PageVo pageVo) {
-        int p = pageVo.getPage() != null ? Math.max(1, pageVo.getPage()) : 1;
-        int s = pageVo.getSize() != null ? Math.max(1, pageVo.getSize()) : 5;
+    public Page<ArticleVO> getCateArticleList(Integer id, PageDTO pageDto) {
+        int p = pageDto.getPage() != null ? Math.max(1, pageDto.getPage()) : 1;
+        int s = pageDto.getSize() != null ? Math.max(1, pageDto.getSize()) : 5;
 
         // 通过分类 id 查询出所有文章id
         QueryWrapper<ArticleCate> queryWrapperArticleCate = new QueryWrapper<>();
@@ -425,9 +425,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Page<ArticleVO> getTagArticleList(Integer id, PageVo pageVo) {
-        int p = pageVo.getPage() != null ? Math.max(1, pageVo.getPage()) : 1;
-        int s = pageVo.getSize() != null ? Math.max(1, pageVo.getSize()) : 5;
+    public Page<ArticleVO> getTagArticleList(Integer id, PageDTO pageDto) {
+        int p = pageDto.getPage() != null ? Math.max(1, pageDto.getPage()) : 1;
+        int s = pageDto.getSize() != null ? Math.max(1, pageDto.getSize()) : 5;
 
         // 通过标签 id 查询出所有文章 id
         QueryWrapper<ArticleTag> queryWrapperArticleTag = new QueryWrapper<>();

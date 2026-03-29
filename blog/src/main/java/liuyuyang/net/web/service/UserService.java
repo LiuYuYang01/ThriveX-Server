@@ -7,7 +7,7 @@ import liuyuyang.net.dto.user.UserDTO;
 import liuyuyang.net.dto.user.UserInfoDTO;
 import liuyuyang.net.dto.user.UserLoginDTO;
 import liuyuyang.net.model.User;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.vo.user.UserFilterVo;
 
 import java.util.List;
@@ -20,7 +20,7 @@ public interface UserService extends IService<User> {
     void delBatch(List<Integer> ids);
     void edit(UserInfoDTO data);
     List<User> list(UserFilterVo filterVo);
-    Page<User> paging(UserFilterVo filterVo, PageVo pageVo);
+    Page<User> paging(UserFilterVo filterVo, PageDTO pageDto);
     Map<String, Object> login(UserLoginDTO user);
     void editPass(EditPassDTO data);
     void checkToken();

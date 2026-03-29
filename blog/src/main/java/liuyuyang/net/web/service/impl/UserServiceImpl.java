@@ -13,7 +13,7 @@ import liuyuyang.net.dto.user.UserInfoDTO;
 import liuyuyang.net.dto.user.UserLoginDTO;
 import liuyuyang.net.model.User;
 import liuyuyang.net.model.UserToken;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.vo.user.UserFilterVo;
 import liuyuyang.net.web.mapper.UserMapper;
 import liuyuyang.net.web.mapper.UserTokenMapper;
@@ -110,9 +110,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public Page<User> paging(UserFilterVo filterVo, PageVo pageVo) {
+    public Page<User> paging(UserFilterVo filterVo, PageDTO pageDto) {
         List<User> list = list(filterVo);
-        return commonUtils.getPageData(pageVo, list);
+        return commonUtils.getPageData(pageDto, list);
     }
 
     @Override

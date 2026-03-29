@@ -10,7 +10,7 @@ import liuyuyang.net.web.mapper.ArticleCateMapper;
 import liuyuyang.net.web.mapper.CateMapper;
 import liuyuyang.net.model.Cate;
 import liuyuyang.net.result.cate.CateArticleCount;
-import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.web.service.CateService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -126,10 +126,10 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
             return result;
         }
 
-        PageVo pageVo = new PageVo();
-        pageVo.setPage(Math.max(1, page));
-        pageVo.setSize(Math.max(1, size));
-        return commonUtils.getPageData(pageVo, arr);
+        PageDTO pageDto = new PageDTO();
+        pageDto.setPage(Math.max(1, page));
+        pageDto.setSize(Math.max(1, size));
+        return commonUtils.getPageData(pageDto, arr);
     }
 
     @Override
