@@ -127,8 +127,8 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         }
 
         PageDTO pageDto = new PageDTO();
-        pageDto.setPage(Math.max(1, page));
-        pageDto.setSize(Math.max(1, size));
+        pageDto.setPageNum(Math.max(1, page));
+        pageDto.setPageSize(Math.max(1, size));
         return commonUtils.getPageData(pageDto, arr);
     }
 
