@@ -99,8 +99,8 @@ public class ArticleController {
     @GetMapping("/cate/{cate_id}")
     @ApiOperation("获取指定分类的文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
-    public Result<Map<String, Object>> getCateArticleList(@PathVariable Integer cate_id, PageDTO pageDto) {
-        Page<ArticleVO> list = articleService.getCateArticleList(cate_id, pageDto);
+    public Result<Map<String, Object>> getCateArticleList(@PathVariable Integer cate_id, PageDTO pageDTO) {
+        Page<ArticleVO> list = articleService.getCateArticleList(cate_id, pageDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
@@ -110,8 +110,8 @@ public class ArticleController {
     @GetMapping("/tag/{tag_id}")
     @ApiOperation("获取指定标签的文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 10)
-    public Result<Map<String, Object>> getTagArticleList(@PathVariable Integer tag_id, PageDTO pageDto) {
-        Page<ArticleVO> list = articleService.getTagArticleList(tag_id, pageDto);
+    public Result<Map<String, Object>> getTagArticleList(@PathVariable Integer tag_id, PageDTO pageDTO) {
+        Page<ArticleVO> list = articleService.getTagArticleList(tag_id, pageDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }

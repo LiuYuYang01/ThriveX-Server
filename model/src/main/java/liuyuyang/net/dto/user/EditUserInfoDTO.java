@@ -4,12 +4,9 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 @Data
-public class UserInfoDTO {
+public class EditUserInfoDTO {
     @ApiModelProperty(value = "用户ID")
     private Integer id;
-
-    @ApiModelProperty(value = "用户账号", example = "liuyuyang", required = true)
-    private String username;
 
     @ApiModelProperty(value = "用户名称", example = "宇阳", required = true)
     private String name;

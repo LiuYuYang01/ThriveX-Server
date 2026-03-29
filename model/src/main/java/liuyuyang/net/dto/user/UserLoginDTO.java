@@ -6,9 +6,9 @@ import lombok.Data;
 
 @Data
 public class UserLoginDTO {
-    @ApiModelProperty(value = "用户账号", example = "liuyuyang", required = true)
+    @ApiModelProperty(value = "用户账号", example = "admin", required = true)
     private String username;
 
-    @ApiModelProperty(value = "用户密码", required = true)
+    @ApiModelProperty(value = "用户密码", example = "123456", required = true)
     private String password;
 }

@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import liuyuyang.net.model.Wall;
 import liuyuyang.net.model.WallCate;
 import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.wall.WallFilterVo;
+import liuyuyang.net.vo.wall.WallFilterDTO;
 
 import java.util.List;
 
@@ -14,13 +14,13 @@ public interface WallService extends IService<Wall> {
 
     Wall get(Integer id);
 
-    Page<Wall> getCateWallList(Integer cateId, PageDTO pageDto);
+    Page<Wall> getCateWallList(Integer cateId, PageDTO pageDTO);
 
     List<WallCate> getCateList();
 
-    List<Wall> list(WallFilterVo filterVo);
+    List<Wall> list(WallFilterDTO filterVo);
 
-    Page<Wall> paging(WallFilterVo filterVo, PageDTO pageDto);
+    Page<Wall> paging(WallFilterDTO filterVo, PageDTO pageDTO);
 
     void updateChoice(Integer id);
 }

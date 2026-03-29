@@ -6,11 +6,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.JwtUtils;
 import liuyuyang.net.core.utils.CommonUtils;
-import liuyuyang.net.dto.user.EditPassDTO;
-import liuyuyang.net.dto.user.UserInfoDTO;
+import liuyuyang.net.dto.user.EditUserPassDTO;
+import liuyuyang.net.dto.user.EditUserInfoDTO;
 import liuyuyang.net.dto.user.UserLoginDTO;
 import liuyuyang.net.model.User;
 import liuyuyang.net.model.UserToken;
+import liuyuyang.net.vo.user.UserVO;
 import liuyuyang.net.web.mapper.UserMapper;
 import liuyuyang.net.web.mapper.UserTokenMapper;
 import liuyuyang.net.web.service.UserService;
@@ -39,7 +40,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private UserTokenMapper userTokenMapper;
 
     @Override
-    public void edit(UserInfoDTO user) {
+    public void edit(EditUserInfoDTO user) {
         User data = userMapper.selectById(user.getId());
         BeanUtils.copyProperties(user, data);
         userMapper.updateById(data);
@@ -47,10 +48,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public User get(Integer id) {
-        User data = userMapper.selectById(id);
-        data.setPassword("只有聪明的人才能看到密码");
-
-        return data;
+        return userMapper.selectById(id);
     }
 
     @Override
@@ -61,9 +59,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (token.startsWith("Bearer ")) {
             token = token.substring(7);
         }
-        if (token.trim().isEmpty()) {
-            throw new CustomException(401, "无效或过期的 Token");
-        }
 
         LambdaQueryWrapper<UserToken> w = new LambdaQueryWrapper<>();
         w.eq(UserToken::getToken, token);
@@ -71,7 +66,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (userTokens == null || userTokens.isEmpty()) {
             throw new CustomException(401, "该账号已在另一台设备登录");
         }
+
+        // 校验token是否有效
+        try {
+            JwtUtils.parseJWT(token);
+        } catch (Exception e) {
+            throw new CustomException(401, "无效或过期的 Token");
+        }
+
         Integer uid = userTokens.get(0).getUid();
+
         return get(uid);
     }
 
@@ -103,7 +107,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public void editPass(EditPassDTO data) {
+    public void editPass(EditUserPassDTO data) {
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("username", data.getOldUsername());
         queryWrapper.eq("password", DigestUtils.md5DigestAsHex(data.getOldPassword().getBytes()));

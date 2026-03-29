@@ -9,5 +9,5 @@ import java.util.List;
 public interface RssService {
     List<Rss> list();
     
-    Page<Rss> paging(PageDTO pageDto);
+    Page<Rss> paging(PageDTO pageDTO);
 }

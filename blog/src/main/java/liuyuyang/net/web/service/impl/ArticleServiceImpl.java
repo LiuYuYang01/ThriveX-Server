@@ -372,17 +372,17 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             return result;
         }
 
-        PageDTO pageDto = new PageDTO();
-        pageDto.setPageNum(Math.max(1, filterVo.getPageNum()));
-        pageDto.setPageSize(Math.max(1, filterVo.getPageSize()));
-        return commonUtils.getPageData(pageDto, list);
+        PageDTO pageDTO = new PageDTO();
+        pageDTO.setPageNum(Math.max(1, filterVo.getPageNum()));
+        pageDTO.setPageSize(Math.max(1, filterVo.getPageSize()));
+        return commonUtils.getPageData(pageDTO, list);
     }
 
     // 获取指定分类中所有文章
     @Override
-    public Page<ArticleVO> getCateArticleList(Integer id, PageDTO pageDto) {
-        int p = pageDto.getPageNum() != null ? Math.max(1, pageDto.getPageNum()) : 1;
-        int s = pageDto.getPageSize() != null ? Math.max(1, pageDto.getPageSize()) : 5;
+    public Page<ArticleVO> getCateArticleList(Integer id, PageDTO pageDTO) {
+        int p = pageDTO.getPageNum() != null ? Math.max(1, pageDTO.getPageNum()) : 1;
+        int s = pageDTO.getPageSize() != null ? Math.max(1, pageDTO.getPageSize()) : 5;
 
         // 通过分类 id 查询出所有文章id
         QueryWrapper<ArticleCate> queryWrapperArticleCate = new QueryWrapper<>();
@@ -425,9 +425,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Page<ArticleVO> getTagArticleList(Integer id, PageDTO pageDto) {
-        int p = pageDto.getPageNum() != null ? Math.max(1, pageDto.getPageNum()) : 1;
-        int s = pageDto.getPageSize() != null ? Math.max(1, pageDto.getPageSize()) : 5;
+    public Page<ArticleVO> getTagArticleList(Integer id, PageDTO pageDTO) {
+        int p = pageDTO.getPageNum() != null ? Math.max(1, pageDTO.getPageNum()) : 1;
+        int s = pageDTO.getPageSize() != null ? Math.max(1, pageDTO.getPageSize()) : 5;
 
         // 通过标签 id 查询出所有文章 id
         QueryWrapper<ArticleTag> queryWrapperArticleTag = new QueryWrapper<>();

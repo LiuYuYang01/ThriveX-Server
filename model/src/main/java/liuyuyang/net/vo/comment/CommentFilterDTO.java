@@ -1,11 +1,11 @@
 package liuyuyang.net.vo.comment;
 
 import io.swagger.annotations.ApiModelProperty;
-import liuyuyang.net.vo.FilterVo;
+import liuyuyang.net.dto.FilterDTO;
 import lombok.Data;
 
 @Data
-public class CommentFilterVo extends FilterVo {
+public class CommentFilterDTO extends FilterDTO {
     @ApiModelProperty(value = "默认为树形结构，如果设置了list模式，则查询列表结构")
     private String pattern;
 

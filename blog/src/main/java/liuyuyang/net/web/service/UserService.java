@@ -1,8 +1,8 @@
 package liuyuyang.net.web.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import liuyuyang.net.dto.user.EditPassDTO;
-import liuyuyang.net.dto.user.UserInfoDTO;
+import liuyuyang.net.dto.user.EditUserPassDTO;
+import liuyuyang.net.dto.user.EditUserInfoDTO;
 import liuyuyang.net.dto.user.UserLoginDTO;
 import liuyuyang.net.model.User;
 
@@ -16,11 +16,11 @@ public interface UserService extends IService<User> {
      */
     User getByToken(String token);
 
-    void edit(UserInfoDTO data);
+    void edit(EditUserInfoDTO data);
 
     Map<String, Object> login(UserLoginDTO user);
 
-    void editPass(EditPassDTO data);
+    void editPass(EditUserPassDTO data);
 
     void checkToken();
 }

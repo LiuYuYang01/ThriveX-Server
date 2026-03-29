@@ -4,7 +4,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 @Data
-public class EditPassDTO {
+public class EditUserPassDTO {
     @ApiModelProperty(value = "旧账号", example = "admin", required = true)
     private String oldUsername;
     @ApiModelProperty(value = "新账号", example = "thrivex666", required = true)

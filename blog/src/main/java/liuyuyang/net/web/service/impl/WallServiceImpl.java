@@ -12,7 +12,7 @@ import liuyuyang.net.web.service.WallService;
 import liuyuyang.net.core.utils.EmailUtils;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.wall.WallFilterVo;
+import liuyuyang.net.vo.wall.WallFilterDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +47,7 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
     }
 
     @Override
-    public List<Wall> list(WallFilterVo filterVo) {
+    public List<Wall> list(WallFilterDTO filterVo) {
         QueryWrapper<Wall> queryWrapper = commonUtils.queryWrapperFilter(filterVo, "content");
         queryWrapper.eq("audit_status", filterVo.getStatus());
 
@@ -66,15 +66,15 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
     }
 
     @Override
-    public Page<Wall> paging(WallFilterVo filterVo, PageDTO pageDto) {
+    public Page<Wall> paging(WallFilterDTO filterVo, PageDTO pageDTO) {
         List<Wall> list = list(filterVo);
-        return commonUtils.getPageData(pageDto, list);
+        return commonUtils.getPageData(pageDTO, list);
     }
 
     @Override
-    public Page<Wall> getCateWallList(Integer cateId, PageDTO pageDto) {
-        int p = pageDto.getPageNum() != null ? Math.max(1, pageDto.getPageNum()) : 1;
-        int s = pageDto.getPageSize() != null ? Math.max(1, pageDto.getPageSize()) : 5;
+    public Page<Wall> getCateWallList(Integer cateId, PageDTO pageDTO) {
+        int p = pageDTO.getPageNum() != null ? Math.max(1, pageDTO.getPageNum()) : 1;
+        int s = pageDTO.getPageSize() != null ? Math.max(1, pageDTO.getPageSize()) : 5;
         WallCate wallCate = wallCateMapper.selectById(cateId);
 
         QueryWrapper<Wall> queryWrapper = new QueryWrapper<>();

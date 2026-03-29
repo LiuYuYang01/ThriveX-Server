@@ -8,5 +8,5 @@ import liuyuyang.net.dto.PageDTO;
 public interface TagService extends IService<Tag> {
     boolean addTagData(Tag tag);
 
-    Page<Tag> getTagList(PageDTO pageDto);
+    Page<Tag> getTagList(PageDTO pageDTO);
 }

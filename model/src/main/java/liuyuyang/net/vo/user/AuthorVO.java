@@ -1,17 +1,12 @@
-package liuyuyang.net.model;
+package liuyuyang.net.vo.user;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 @Data
-@TableName("user")
-public class User extends BaseModel {
-    @ApiModelProperty(value = "用户账号", example = "liuyuyang", required = true)
-    private String username;
-
-    @ApiModelProperty(value = "用户密码", required = true)
-    private String password;
+public class AuthorVO {
+    @ApiModelProperty(value = "用户ID")
+    private Integer id;
 
     @ApiModelProperty(value = "用户名称", example = "宇阳", required = true)
     private String name;
