@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
@@ -19,5 +20,6 @@ public class Tag {
 
     @TableField(exist = false)
     @ApiModelProperty(value = "文章数量")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer count;
 }
