@@ -186,7 +186,7 @@ public class FileController {
             data.put("dir", dir);
             data.put("path", item.getBasePath() + item.getPath() + item.getFilename());
             data.put("name", item.getFilename());
-            data.put("size", item.getPageSize());
+            data.put("size", item.getSize());
             data.put("type", item.getExt());
             data.put("date", item.getLastModified());
 

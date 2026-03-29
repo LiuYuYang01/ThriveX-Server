@@ -373,8 +373,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         PageDTO pageDto = new PageDTO();
-        pageDto.setPage(Math.max(1, filterVo.getPageNum()));
-        pageDto.setSize(Math.max(1, filterVo.getPageSize()));
+        pageDto.setPageNum(Math.max(1, filterVo.getPageNum()));
+        pageDto.setPageSize(Math.max(1, filterVo.getPageSize()));
         return commonUtils.getPageData(pageDto, list);
     }
 
@@ -481,7 +481,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        Page<ArticleVO> result = new Page<>(page.getCurrent(), page.getPageSize(), page.getTotal());
+        Page<ArticleVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         result.setRecords(records);
         return result;
     }
