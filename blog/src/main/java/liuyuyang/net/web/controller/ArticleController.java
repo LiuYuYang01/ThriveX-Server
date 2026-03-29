@@ -10,9 +10,9 @@ import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.article.ArticleFormDTO;
-import liuyuyang.net.model.Article;
 import liuyuyang.net.vo.PageVo;
-import liuyuyang.net.vo.article.ArticleFilterVo;
+import liuyuyang.net.dto.article.ArticleFilterDTO;
+import liuyuyang.net.vo.article.ArticleVO;
 import liuyuyang.net.web.service.ArticleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,9 +77,9 @@ public class ArticleController {
     @GetMapping("/{id}")
     @ApiOperation("获取文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<Article> getArticleData(@PathVariable Integer id, @RequestParam(defaultValue = "") String password) {
+    public Result<ArticleVO> getArticleData(@PathVariable Integer id, @RequestParam(defaultValue = "") String password) {
         password = !password.isEmpty() ? password : "";
-        Article data = articleService.getArticleData(id, password);
+        ArticleVO data = articleService.getArticleData(id, password);
         return Result.success(data);
     }
 
@@ -88,8 +88,8 @@ public class ArticleController {
     @GetMapping
     @ApiOperation(value = "获取文章列表", notes = "不传 page/size 返回全部，传则分页（来自 filterVo）")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
-    public Result<Map<String, Object>> getArticleList(ArticleFilterVo filterVo) {
-        Page<Article> list = articleService.getArticleList(filterVo);
+    public Result<Map<String, Object>> getArticleList(ArticleFilterDTO filterVo) {
+        Page<ArticleVO> list = articleService.getArticleList(filterVo);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
@@ -100,7 +100,7 @@ public class ArticleController {
     @ApiOperation("获取指定分类的文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
     public Result<Map<String, Object>> getCateArticleList(@PathVariable Integer cate_id, PageVo pageVo) {
-        Page<Article> list = articleService.getCateArticleList(cate_id, pageVo);
+        Page<ArticleVO> list = articleService.getCateArticleList(cate_id, pageVo);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
@@ -111,7 +111,7 @@ public class ArticleController {
     @ApiOperation("获取指定标签的文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 10)
     public Result<Map<String, Object>> getTagArticleList(@PathVariable Integer tag_id, PageVo pageVo) {
-        Page<Article> list = articleService.getTagArticleList(tag_id, pageVo);
+        Page<ArticleVO> list = articleService.getTagArticleList(tag_id, pageVo);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
@@ -121,8 +121,8 @@ public class ArticleController {
     @GetMapping("/hot")
     @ApiOperation("获取热门文章数据")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 12)
-    public Result<List<Article>> getHotArticleList(@ApiParam(value = "默认浏览量最高的5篇文章，可以通过count指定数量") @RequestParam(defaultValue = "5") Integer count) {
-        List<Article> data = articleService.getHotArticleList(count);
+    public Result<List<ArticleVO>> getHotArticleList(@ApiParam(value = "默认浏览量最高的5篇文章，可以通过count指定数量") @RequestParam(defaultValue = "5") Integer count) {
+        List<ArticleVO> data = articleService.getHotArticleList(count);
         return Result.success(data);
     }
 
@@ -131,8 +131,8 @@ public class ArticleController {
     @GetMapping("/random")
     @ApiOperation("随机获取文章数据")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 11)
-    public Result<List<Article>> getRandomArticlesList(@ApiParam(value = "默认随机获取5篇文章，可以通过count指定数量") @RequestParam(defaultValue = "5") Integer count) {
-        List<Article> data = articleService.getRandomArticleList(count);
+    public Result<List<ArticleVO>> getRandomArticlesList(@ApiParam(value = "默认随机获取5篇文章，可以通过count指定数量") @RequestParam(defaultValue = "5") Integer count) {
+        List<ArticleVO> data = articleService.getRandomArticleList(count);
         return Result.success(data);
     }
 
