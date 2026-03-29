@@ -1,27 +1,20 @@
 package liuyuyang.net.web.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.dto.user.EditPassDTO;
-import liuyuyang.net.dto.user.UserDTO;
 import liuyuyang.net.dto.user.UserInfoDTO;
 import liuyuyang.net.dto.user.UserLoginDTO;
 import liuyuyang.net.model.User;
 import liuyuyang.net.core.annotation.RateLimit;
-import liuyuyang.net.result.IPage;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.web.service.UserService;
-import liuyuyang.net.core.utils.Paging;
-import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.user.UserFilterVo;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import java.util.List;
 import java.util.Map;
 
 @Api(tags = "用户管理")
@@ -32,65 +25,24 @@ public class UserController {
     @Resource
     private UserService userService;
 
-    @PostMapping
-    @ApiOperation("新增用户")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> add(@RequestBody UserDTO user) {
-        userService.add(user);
-        return Result.success();
-    }
-
-    @DeleteMapping("/{id}")
-    @ApiOperation("删除用户")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
-    public Result<String> del(@PathVariable Integer id) {
-        userService.del(id);
-        return Result.success();
-    }
-
-    @DeleteMapping("/batch")
-    @ApiOperation("批量删除用户")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result<String> batchDel(@RequestBody List<Integer> ids) {
-        userService.delBatch(ids);
-        return Result.success();
-    }
-
     @PatchMapping
-    @ApiOperation("编辑用户")
+    @ApiOperation("编辑管理员")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
     public Result<String> edit(@RequestBody UserInfoDTO user) {
         userService.edit(user);
         return Result.success();
     }
 
-    @GetMapping("/{id}")
-    @ApiOperation("获取用户")
+    @GetMapping("/info")
+    @ApiOperation("获取当前登录的管理员信息（请求头 Authorization: Bearer <token>）")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<User> get(@PathVariable Integer id) {
-        User data = userService.get(id);
+    public Result<User> get(String token) {
+        User data = userService.getByToken(token);
         return Result.success(data);
     }
 
-    @PostMapping("/list")
-    @ApiOperation("获取用户列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<List<User>> list(@RequestBody UserFilterVo filterVo) {
-        List<User> list = userService.list(filterVo);
-        return Result.success(list);
-    }
-
-    @PostMapping("/paging")
-    @ApiOperation("查询用户列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result<IPage<User>> paging(UserFilterVo filterVo, PageDTO pageDto) {
-        Page<User> data = userService.paging(filterVo, pageDto);
-        IPage<User> result = Paging.of(data);
-        return Result.success(result);
-    }
-
     @PostMapping("/login")
-    @ApiOperation("用户登录")
+    @ApiOperation("管理员登录")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
     public Result<Map<String, Object>> login(@RequestBody UserLoginDTO user) {
         Map<String, Object> result = userService.login(user);
@@ -98,7 +50,7 @@ public class UserController {
     }
 
     @PatchMapping("/pass")
-    @ApiOperation("修改用户密码")
+    @ApiOperation("修改管理员密码")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
     public Result<String> editPass(@RequestBody EditPassDTO data) {
         userService.editPass(data);
@@ -106,7 +58,7 @@ public class UserController {
     }
 
     @GetMapping("/check")
-    @ApiOperation("校验当前用户Token是否有效")
+    @ApiOperation("校验当前管理员Token是否有效")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 10)
     public Result<String> checkToken() {
         userService.checkToken();
