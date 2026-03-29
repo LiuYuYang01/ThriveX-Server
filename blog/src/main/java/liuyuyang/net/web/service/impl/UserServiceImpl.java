@@ -1,7 +1,6 @@
 package liuyuyang.net.web.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.JwtUtils;
@@ -11,7 +10,6 @@ import liuyuyang.net.dto.user.EditUserInfoDTO;
 import liuyuyang.net.dto.user.UserLoginDTO;
 import liuyuyang.net.model.User;
 import liuyuyang.net.model.UserToken;
-import liuyuyang.net.vo.user.UserVO;
 import liuyuyang.net.web.mapper.UserMapper;
 import liuyuyang.net.web.mapper.UserTokenMapper;
 import liuyuyang.net.web.service.UserService;
@@ -75,9 +73,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public Map<String, Object> login(UserLoginDTO userDTO) {
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("username", userDTO.getUsername());
-        queryWrapper.eq("password", DigestUtils.md5DigestAsHex(userDTO.getPassword().getBytes()));
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getUsername, userDTO.getUsername());
+        queryWrapper.eq(User::getPassword, DigestUtils.md5DigestAsHex(userDTO.getPassword().getBytes()));
 
         User user = userMapper.selectOne(queryWrapper);
         if (user == null)
@@ -102,9 +100,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public void editUserPass(EditUserPassDTO data) {
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("username", data.getOldUsername());
-        queryWrapper.eq("password", DigestUtils.md5DigestAsHex(data.getOldPassword().getBytes()));
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getUsername, data.getOldUsername());
+        queryWrapper.eq(User::getPassword, DigestUtils.md5DigestAsHex(data.getOldPassword().getBytes()));
 
         User user = userMapper.selectOne(queryWrapper);
 
