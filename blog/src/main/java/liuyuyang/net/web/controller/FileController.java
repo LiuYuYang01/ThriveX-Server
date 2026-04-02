@@ -4,19 +4,14 @@ import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import com.qiniu.common.QiniuException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import liuyuyang.net.core.execption.CustomException;
-import liuyuyang.net.core.utils.Result;
-import liuyuyang.net.core.utils.OssUtils;
-import org.dromara.x.file.storage.core.FileInfo;
-import org.dromara.x.file.storage.core.FileStorageService;
-import org.dromara.x.file.storage.core.get.ListFilesResult;
-import org.dromara.x.file.storage.core.get.RemoteDirInfo;
-import org.dromara.x.file.storage.core.get.RemoteFileInfo;
+import liuyuyang.net.common.annotation.NoTokenRequired;
+import liuyuyang.net.common.storage.QiniuStorageService;
+import liuyuyang.net.common.execption.CustomException;
+import liuyuyang.net.common.utils.Result;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -33,8 +28,11 @@ import java.util.*;
 @RequestMapping("/file")
 @Transactional
 public class FileController {
-    @Resource
-    private FileStorageService fileStorageService;
+    private final QiniuStorageService qiniuStorageService;
+
+    public FileController(QiniuStorageService qiniuStorageService) {
+        this.qiniuStorageService = qiniuStorageService;
+    }
 
     @PostMapping
     @ApiOperation("文件上传")
@@ -80,16 +78,7 @@ public class FileController {
                 throw new CustomException(400, "文件内容不是有效的图片");
             }
 
-            FileInfo result = fileStorageService.of(file)
-                    .setPlatform(OssUtils.getPlatform())
-                    .setPath(dir + '/')
-                    .upload();
-
-            if (result == null)
-                throw new CustomException("上传文件失败");
-
-            String url = result.getUrl();
-            urls.add(url.startsWith("https://") ? url : "https://" + url);
+            urls.add(qiniuStorageService.upload(dir, file));
         }
 
         return Result.success("文件上传成功：", urls);
@@ -98,18 +87,17 @@ public class FileController {
     @DeleteMapping
     @ApiOperation("删除文件")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
-    public Result<String> del(@RequestParam String filePath) {
-        String url = filePath.startsWith("https://") ? filePath : "https://" + filePath;
-        boolean delete = fileStorageService.delete(url);
+    public Result<String> del(@RequestParam String filePath) throws QiniuException {
+        boolean delete = qiniuStorageService.deleteByUrl(filePath);
         return Result.status(delete);
     }
 
     @DeleteMapping("/batch")
     @ApiOperation("批量删除文件")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result batchDel(@RequestBody String[] pathList) throws QiniuException {
+    public Result<String> batchDel(@RequestBody String[] pathList) throws QiniuException {
         for (String url : pathList) {
-            boolean delete = fileStorageService.delete(url.startsWith("https://") ? url : "https://" + url);
+            boolean delete = qiniuStorageService.deleteByUrl(url);
             if (!delete)
                 throw new CustomException("删除文件失败");
         }
@@ -119,31 +107,8 @@ public class FileController {
     @GetMapping("/info")
     @ApiOperation("获取文件信息")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<FileInfo> get(@RequestParam String filePath) throws QiniuException {
-        FileInfo fileInfo = fileStorageService.getFileInfoByUrl(filePath);
-        return Result.success(fileInfo);
-    }
-
-    @GetMapping("/dir")
-    @ApiOperation("获取目录列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<List<Map>> getDirList() {
-        ListFilesResult result = fileStorageService.listFiles()
-                .setPlatform(OssUtils.getPlatform())
-                .listFiles();
-
-        // 获取文件列表
-        List<Map> list = new ArrayList<>();
-        List<RemoteDirInfo> fileList = result.getDirList();
-
-        for (RemoteDirInfo item : fileList) {
-            Map<String, Object> data = new HashMap<>();
-            data.put("name", item.getName());
-            data.put("path", item.getOriginal());
-            list.add(data);
-        }
-
-        return Result.success(list);
+    public Result<Map<String, Object>> get(@RequestParam String filePath) throws QiniuException {
+        return Result.success(qiniuStorageService.getFileInfo(filePath));
     }
 
     @GetMapping("/list")
@@ -152,60 +117,50 @@ public class FileController {
     public Result<Map<String, Object>> getFileList(
             @RequestParam String dir,
             @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "20") Integer size) {
+            @RequestParam(defaultValue = "20") Integer size) throws QiniuException {
         if (dir == null || dir.trim().isEmpty())
             throw new CustomException(400, "请指定一个目录");
+        return Result.success(qiniuStorageService.listFiles(dir, page, size));
+    }
 
-        ListFilesResult result = fileStorageService.listFiles()
-                .setPlatform(OssUtils.getPlatform())
-                .setPath(dir + '/')
-                .listFiles();
+    @GetMapping("/tree")
+    @ApiOperation("获取文件目录树")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
+    public Result<Map<String, Object>> getFileTree() throws QiniuException {
+        return Result.success(qiniuStorageService.listFileTree());
+    }
 
-        // 获取文件列表
-        List<Map<String, Object>> fileList = new ArrayList<>();
-        List<RemoteFileInfo> remoteFileList = result.getFileList();
-
-        // 按lastModified时间降序排序（最新的在前）
-        remoteFileList.sort((a, b) -> b.getLastModified().compareTo(a.getLastModified()));
-
-        // 计算分页参数
-        int total = remoteFileList.size();
-        int startIndex = (page - 1) * size;
-        int endIndex = Math.min(startIndex + size, total);
-
-        // 分页处理
-        List<RemoteFileInfo> pageList = remoteFileList.subList(startIndex, endIndex);
-
-        for (RemoteFileInfo item : pageList) {
-            // 如果是目录就略过
-            if (Objects.equals(item.getExt(), ""))
-                continue;
-
-            Map<String, Object> data = new HashMap<>();
-            data.put("basePath", item.getBasePath());
-            data.put("dir", dir);
-            data.put("path", item.getBasePath() + item.getPath() + item.getFilename());
-            data.put("name", item.getFilename());
-            data.put("size", item.getSize());
-            data.put("type", item.getExt());
-            data.put("date", item.getLastModified());
-
-            String url = item.getUrl();
-            if (!url.startsWith("https://"))
-                url = "https://" + url;
-            data.put("url", url);
-
-            fileList.add(data);
+    @PostMapping("/dir")
+    @ApiOperation("新增目录")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    public Result<Map<String, Object>> createDir(@RequestBody Map<String, String> body) throws IOException {
+        String dir = body == null ? null : body.get("dir");
+        if (dir == null || dir.trim().isEmpty()) {
+            throw new CustomException(400, "请指定一个目录");
         }
+        return Result.success(qiniuStorageService.createDirectory(dir));
+    }
 
-        // 构建分页结果
-        Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("result", fileList);
-        resultMap.put("size", size);
-        resultMap.put("page", page);
-        resultMap.put("pages", (total + size - 1) / size);
-        resultMap.put("total", total);
+    @PatchMapping("/dir")
+    @ApiOperation("重命名目录")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
+    public Result<Map<String, Object>> renameDir(@RequestBody Map<String, String> body) throws QiniuException {
+        String fromDir = body == null ? null : body.get("fromDir");
+        String toDir = body == null ? null : body.get("toDir");
+        if (fromDir == null || fromDir.trim().isEmpty() || toDir == null || toDir.trim().isEmpty()) {
+            throw new CustomException(400, "请指定原目录和新目录");
+        }
+        return Result.success(qiniuStorageService.renameDirectory(fromDir, toDir));
+    }
 
-        return Result.success(resultMap);
+    @DeleteMapping("/dir")
+    @ApiOperation("删除目录")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
+    public Result<Map<String, Object>> deleteDir(@RequestBody Map<String, String> body) throws QiniuException {
+        String dir = body == null ? null : body.get("dir");
+        if (dir == null || dir.trim().isEmpty()) {
+            throw new CustomException(400, "请指定一个目录");
+        }
+        return Result.success(qiniuStorageService.deleteDirectory(dir));
     }
 }

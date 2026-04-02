@@ -1,6 +1,5 @@
 package liuyuyang.net.web.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -18,7 +17,7 @@ import liuyuyang.net.web.service.ArticleService;
 import liuyuyang.net.web.service.ArticleTagService;
 import liuyuyang.net.web.service.CateService;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -85,7 +84,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Override
     public void addArticleData(ArticleFormDTO articleFormDTO) {
-        Article article = BeanUtil.copyProperties(articleFormDTO, Article.class);
+        Article article = new Article();
+        BeanUtils.copyProperties(articleFormDTO, article);
         articleMapper.insert(article);
 
         // 新增分类
@@ -214,7 +214,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         articleConfig.setIsDel(false);
         articleConfigMapper.insert(articleConfig);
 
-        Article article = BeanUtil.copyProperties(articleFormDTO, Article.class);
+        Article article = new Article();
+        BeanUtils.copyProperties(articleFormDTO, article);
 
         // 修改文章
         articleMapper.updateById(article);
