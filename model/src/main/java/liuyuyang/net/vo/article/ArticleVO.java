@@ -37,9 +37,6 @@ public class ArticleVO {
     @ApiModelProperty(value = "文章配置项")
     private ArticleConfig config;
 
-    @ApiModelProperty(value = "创建时间", example = "1723533206613", required = true)
-    private String createTime;
-
     @ApiModelProperty(value = "文章浏览量", example = "100")
     private Integer view;
 
@@ -59,4 +56,7 @@ public class ArticleVO {
     @ApiModelProperty(value = "下一篇文章")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Map<String, Object> next;
+
+    @ApiModelProperty(value = "创建时间", example = "1723533206613", required = true)
+    private Long createTime;
 }
