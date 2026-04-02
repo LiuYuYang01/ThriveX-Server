@@ -11,7 +11,7 @@ import liuyuyang.net.dto.cate.CateFilterDTO;
 import liuyuyang.net.dto.cate.CateFormDTO;
 import liuyuyang.net.model.Cate;
 import liuyuyang.net.core.utils.Result;
-import liuyuyang.net.result.cate.CateArticleCount;
+import liuyuyang.net.vo.cate.CateVO;
 import liuyuyang.net.web.service.CateService;
 import liuyuyang.net.core.utils.Paging;
 import org.springframework.beans.BeanUtils;
@@ -72,21 +72,11 @@ public class CateController {
 
     @NoTokenRequired
     @RateLimit
-    @GetMapping("/article/count")
-    @ApiOperation("获取每个分类中的文章数量")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<List<CateArticleCount>> getCateArticleCount() {
-        List<CateArticleCount> list = cateService.getCateArticleCount();
-        return Result.success(list);
-    }
-
-    @NoTokenRequired
-    @RateLimit
     @GetMapping
-    @ApiOperation(value = "获取分类列表", notes = "pattern: list 扁平 | tree 树形；不传 page/size 返回全部，传则分页")
+    @ApiOperation(value = "获取分类列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
     public Result<Map<String, Object>> getCateList(CateFilterDTO cateFilterDTO) {
-        Page<Cate> list = cateService.getCateList(cateFilterDTO);
+        Page<CateVO> list = cateService.getCateList(cateFilterDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
