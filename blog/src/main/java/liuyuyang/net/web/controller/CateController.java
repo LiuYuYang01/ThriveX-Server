@@ -1,24 +1,26 @@
 package liuyuyang.net.web.controller;
 
-import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
-import liuyuyang.net.core.execption.CustomException;
-import liuyuyang.net.dto.cate.CateFormDTO;
-import liuyuyang.net.model.Cate;
-import liuyuyang.net.core.utils.Result;
-import liuyuyang.net.result.cate.CateArticleCount;
-import liuyuyang.net.web.service.CateService;
 import liuyuyang.net.core.utils.Paging;
+import liuyuyang.net.core.utils.Result;
+import liuyuyang.net.dto.cate.CateFilterDTO;
+import liuyuyang.net.dto.cate.CateFormDTO;
+import liuyuyang.net.dto.cate.CateSortDTO;
+import liuyuyang.net.validation.ValidationGroups;
+import liuyuyang.net.vo.cate.CateVO;
+import liuyuyang.net.web.service.CateService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +28,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/cate")
 @Transactional
+@Validated
 public class CateController {
     @Resource
     private CateService cateService;
@@ -33,70 +36,62 @@ public class CateController {
     @PostMapping
     @ApiOperation("新增分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addArticleData(@RequestBody CateFormDTO cateFormDTO) {
-        Cate cate = BeanUtil.copyProperties(cateFormDTO, Cate.class);
-        cateService.save(cate);
-        return Result.success();
-    }
-
-    @DeleteMapping("/batch")
-    @ApiOperation("批量删除分类")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
-    public Result<String> batchDelCateData(@RequestBody List<Integer> ids) {
-        if (ids == null || ids.isEmpty()) {
-            throw new CustomException(400, "请提供要删除的分类 ID");
-        }
-        cateService.batchDelCateData(ids);
+    public Result<String> addCateData(@RequestBody @Validated(ValidationGroups.Create.class) CateFormDTO cateFormDTO) {
+        cateFormDTO.setId(null);
+        cateService.addCateData(cateFormDTO);
         return Result.success();
     }
 
     @DeleteMapping("/{id}")
     @ApiOperation("删除分类")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
     public Result<String> delCateData(@PathVariable Integer id) {
         cateService.delCateData(id);
+        return Result.success();
+    }
+
+    @DeleteMapping("/batch")
+    @ApiOperation("批量删除分类")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
+    public Result<String> batchDelCateData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
+        cateService.batchDelCateData(ids);
         return Result.success();
     }
 
     @PatchMapping
     @ApiOperation("编辑分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> editArticleData(@RequestBody CateFormDTO cateFormDTO) {
-        Cate cate = BeanUtil.copyProperties(cateFormDTO, Cate.class);
-        cateService.updateById(cate);
+    public Result<String> editCateData(@RequestBody @Validated(ValidationGroups.Update.class) CateFormDTO cateFormDTO) {
+        cateService.editCateData(cateFormDTO);
         return Result.success();
     }
 
     @NoTokenRequired
     @RateLimit
-    @GetMapping("/article/count")
-    @ApiOperation("获取每个分类中的文章数量")
+    @GetMapping("/{id}")
+    @ApiOperation("获取分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<List<CateArticleCount>> getCateArticleCount() {
-        List<CateArticleCount> list = cateService.getCateArticleCount();
-        return Result.success(list);
+    public Result<CateVO> getCateData(@PathVariable Integer id) {
+        CateVO data = cateService.getCateData(id);
+        return Result.success(data);
     }
 
-    @RateLimit
     @NoTokenRequired
+    @RateLimit
     @GetMapping
-    @ApiOperation(value = "获取分类列表", notes = "pattern: list 扁平 | tree 树形；不传 page/size 返回全部，传则分页")
+    @ApiOperation(value = "获取分类列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<Map<String, Object>> getCateList(
-            @ApiParam(value = "list: 扁平数组 | tree: 树形结构") @RequestParam(required = false, defaultValue = "list") String pattern,
-            @ApiParam(value = "页码，不传则返回全部") @RequestParam(required = false) Integer page,
-            @ApiParam(value = "每页数量，不传则返回全部") @RequestParam(required = false) Integer size) {
-        Page<Cate> list = cateService.list(pattern, page, size);
+    public Result<Map<String, Object>> getCateList(CateFilterDTO cateFilterDTO) {
+        Page<CateVO> list = cateService.getCateList(cateFilterDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
 
-    @RateLimit
-    @GetMapping("/{id}")
-    @ApiOperation("获取分类")
+    @PatchMapping("/sort")
+    @ApiOperation("分类同级拖拽排序")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result<Cate> getCateData(@PathVariable Integer id) {
-        Cate data = cateService.getCateData(id);
-        return Result.success(data);
+    public Result<String> sortCateData(@RequestBody @Valid CateSortDTO cateSortDTO) {
+        cateService.sortCateData(cateSortDTO);
+        return Result.success();
     }
 }
