@@ -84,7 +84,7 @@ public class RssServiceImpl implements RssService {
 
         // 按发布时间降序排序后返回
         return rssList.stream()
-                .sorted(Comparator.comparingLong(r -> -Long.parseLong(r.getCreateTime())))
+                .sorted(Comparator.comparingLong(Rss::getCreateTime))
                 .collect(Collectors.toList());
     }
 
@@ -124,7 +124,7 @@ public class RssServiceImpl implements RssService {
                             rss.setTitle(data.getTitle());
                             rss.setDescription(data.getDescription() != null ? data.getDescription().getValue() : "");
                             rss.setUrl(data.getLink());
-                            rss.setCreateTime(String.valueOf(data.getPublishedDate().getTime()));
+                            rss.setCreateTime(data.getPublishedDate().getTime());
                             return rss;
                         })
                         .collect(Collectors.toList());

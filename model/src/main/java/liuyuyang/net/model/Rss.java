@@ -20,5 +20,5 @@ public class Rss {
     @ApiModelProperty(value = "网站链接", example = "/")
     private String url;
     @ApiModelProperty(value = "网站创建时间", example = "1723533206613")
-    private String createTime;
+    private Long createTime;
 }
