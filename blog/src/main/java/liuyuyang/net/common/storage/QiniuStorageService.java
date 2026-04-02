@@ -9,7 +9,7 @@ import com.qiniu.storage.UploadManager;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.Auth;
-import liuyuyang.net.common.execption.CustomException;
+import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.model.EnvConfig;
 import liuyuyang.net.web.service.EnvConfigService;
 import lombok.AllArgsConstructor;

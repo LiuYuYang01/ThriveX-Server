@@ -14,7 +14,6 @@ import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.result.cate.CateArticleCount;
 import liuyuyang.net.web.service.CateService;
 import liuyuyang.net.core.utils.Paging;
-import liuyuyang.net.common.utils.Paging;
 import org.springframework.beans.BeanUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;

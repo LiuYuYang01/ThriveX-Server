@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotNull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -584,7 +585,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (entity == null)
             throw new CustomException(400, "获取文章失败：该文章不存在");
 
-        ArticleVO data = BeanUtil.copyProperties(entity, ArticleVO.class);
+        ArticleVO data = new ArticleVO();
+        BeanUtils.copyProperties(entity, data);
 
         // 查询当前文章的分类ID
         LambdaQueryWrapper<ArticleCate> queryWrapperCateIds = new LambdaQueryWrapper<>();
