@@ -8,11 +8,11 @@ import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.cate.CateFilterDTO;
 import liuyuyang.net.enums.cate.CatePatternEnum;
 import liuyuyang.net.model.ArticleCate;
-import liuyuyang.net.vo.cate.CateVo;
+import liuyuyang.net.vo.cate.CateVO;
 import liuyuyang.net.web.mapper.ArticleCateMapper;
 import liuyuyang.net.web.mapper.CateMapper;
 import liuyuyang.net.model.Cate;
-import liuyuyang.net.result.cate.CateArticleCount;
+import liuyuyang.net.vo.cate.CateArticleCountVO;
 import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.web.service.CateService;
 import org.springframework.beans.BeanUtils;
@@ -108,34 +108,50 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
             throw new CustomException(400, "该分类不存在");
         }
 
-        CateVo cateVo = new CateVo();
-        BeanUtils.copyProperties(cate, cateVo);
+        CateVO cateVO = new CateVO();
+        BeanUtils.copyProperties(cate, cateVO);
 
         LambdaQueryWrapper<Cate> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(Cate::getOrder);
         List<Cate> all = cateMapper.selectList(wrapper);
 
-        cateVo.setChildren(getCateTreeChildren(all, id));
+        cateVO.setChildren(getCateTreeChildren(all, id));
         return cate;
     }
 
     @Override
-    public Page<Cate> getCateList(CateFilterDTO cateFilterDTO) {
+    public Page<CateVO> getCateList(CateFilterDTO cateFilterDTO) {
         LambdaQueryWrapper<Cate> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(Cate::getOrder);
+
+        Map<Integer, Integer> articleCountByCateId = articleCateMapper
+                .getCateArticleCountByCateId()
+                .stream()
+                .collect(Collectors.toMap(
+                        CateArticleCountVO::getCid,
+                        CateArticleCountVO::getCount
+                ));
+
         List<Cate> raw = cateMapper.selectList(wrapper);
+        List<CateVO> listVos = raw.stream().map(cate -> {
+            CateVO cateVO = new CateVO();
+            BeanUtils.copyProperties(cate, cateVO);
+            cateVO.setCount(articleCountByCateId.getOrDefault(cate.getId(), 0));
+            return cateVO;
+        }).collect(Collectors.toList());
 
         // 如果是 tree 模式则构建树形结构，否则列表结构
-        List<Cate> arr;
+        List<CateVO> arr;
         if (cateFilterDTO.getPattern() == CatePatternEnum.LIST) {
-            arr = raw;
+            arr = listVos;
         } else {
             arr = new ArrayList<>(getCateTreeChildren(raw, 0));
+            fillTreeCount(arr, articleCountByCateId);
         }
 
         // 不传 page/size 则返回全部
         if (cateFilterDTO.getPageNum() == null || cateFilterDTO.getPageSize() == null) {
-            Page<Cate> result = new Page<>(1, arr.size());
+            Page<CateVO> result = new Page<>(1, arr.size());
             result.setRecords(new ArrayList<>(arr));
             result.setTotal(arr.size());
             return result;
@@ -147,23 +163,27 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         return commonUtils.getPageData(pageDTO, arr);
     }
 
-    @Override
-    public List<CateArticleCount> getCateArticleCount() {
-        return cateMapper.cateArticleCount();
-    }
-
     // 基于父级分类的 id 递归获取它的所有子分类
     @Override
-    public List<CateVo> getCateTreeChildren(List<Cate> list, Integer level) {
-        List<CateVo> children = new ArrayList<>();
+    public List<CateVO> getCateTreeChildren(List<Cate> list, Integer level) {
+        List<CateVO> children = new ArrayList<>();
         for (Cate cate : list) {
             if (Objects.equals(cate.getLevel(), level)) {
-                CateVo cateVo = new CateVo();
-                BeanUtils.copyProperties(cate, cateVo);
-                cateVo.setChildren(getCateTreeChildren(list, cate.getId()));
-                children.add(cateVo);
+                CateVO cateVO = new CateVO();
+                BeanUtils.copyProperties(cate, cateVO);
+                cateVO.setChildren(getCateTreeChildren(list, cate.getId()));
+                children.add(cateVO);
             }
         }
         return children;
+    }
+
+    private void fillTreeCount(List<CateVO> tree, Map<Integer, Integer> articleCountByCateId) {
+        for (CateVO node : tree) {
+            node.setCount(articleCountByCateId.getOrDefault(node.getId(), 0));
+            if (node.getChildren() != null && !node.getChildren().isEmpty()) {
+                fillTreeCount(node.getChildren(), articleCountByCateId);
+            }
+        }
     }
 }

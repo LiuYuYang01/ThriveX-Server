@@ -4,8 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import liuyuyang.net.dto.cate.CateFilterDTO;
 import liuyuyang.net.model.Cate;
-import liuyuyang.net.result.cate.CateArticleCount;
-import liuyuyang.net.vo.cate.CateVo;
+import liuyuyang.net.vo.cate.CateVO;
 
 import java.util.List;
 
@@ -22,9 +21,7 @@ public interface CateService extends IService<Cate> {
 
     Cate getCateData(Integer cid);
 
-    Page<Cate> getCateList(CateFilterDTO cateFilterDTO);
+    Page<CateVO> getCateList(CateFilterDTO cateFilterDTO);
 
-    List<CateArticleCount> getCateArticleCount();
-
-    List<CateVo> getCateTreeChildren(List<Cate> list, Integer id);
+    List<CateVO> getCateTreeChildren(List<Cate> list, Integer id);
 }

@@ -3,7 +3,7 @@ package liuyuyang.net.vo.article;
 import io.swagger.annotations.ApiModelProperty;
 import liuyuyang.net.model.ArticleConfig;
 import liuyuyang.net.model.Tag;
-import liuyuyang.net.vo.cate.CateVo;
+import liuyuyang.net.vo.cate.CateVO;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ public class ArticleVO {
     private Integer comment;
 
     @ApiModelProperty(value = "分类列表")
-    private List<CateVo> cateList = new ArrayList<>();
+    private List<CateVO> cateList = new ArrayList<>();
 
     @ApiModelProperty(value = "标签列表")
     private List<Tag> tagList = new ArrayList<>();
