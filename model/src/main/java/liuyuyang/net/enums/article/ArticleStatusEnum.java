@@ -1,11 +1,11 @@
-package liuyuyang.net.core.enums;
+package liuyuyang.net.enums.article;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
-public enum ArticleStatus {
+public enum ArticleStatusEnum {
     DEFAULT(1, "正常"),
     NO_HOME(2, "首页隐藏"),
     HIDE(3, "全站隐藏");
@@ -20,7 +20,7 @@ public enum ArticleStatus {
     @Getter
     private final String desc;
 
-    ArticleStatus(int value, String desc) {
+    ArticleStatusEnum(int value, String desc) {
         this.value = value;
         this.desc = desc;
     }
@@ -33,10 +33,10 @@ public enum ArticleStatus {
 
     // @JsonCreator：反序列化 JSON 时，根据整数值（1/2/3）找到对应的枚举实例
     @JsonCreator
-    public static ArticleStatus fromJson(Integer value) {
+    public static ArticleStatusEnum fromJson(Integer value) {
         if (value == null) return null;
 
-        for (ArticleStatus s : values()) {
+        for (ArticleStatusEnum s : values()) {
             if (s.value == value) {
                 return s;
             }

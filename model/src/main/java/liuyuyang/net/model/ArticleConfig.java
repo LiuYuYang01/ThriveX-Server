@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModelProperty;
-import liuyuyang.net.core.enums.ArticleStatus;
+import liuyuyang.net.enums.article.ArticleStatusEnum;
 import lombok.Data;
 
 @Data
@@ -15,7 +15,7 @@ public class ArticleConfig {
     private Integer id;
 
     @ApiModelProperty(value = "文章状态：1 正常，2 首页隐藏，3 全站隐藏", example = "1", allowableValues = "1, 2, 3")
-    private ArticleStatus status;
+    private ArticleStatusEnum status;
 
     @ApiModelProperty(value = "文章密码", example = "默认为空表示不加密")
     private String password;

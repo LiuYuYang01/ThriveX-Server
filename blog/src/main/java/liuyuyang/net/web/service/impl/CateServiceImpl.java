@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.cate.CateFilterDTO;
+import liuyuyang.net.enums.cate.CatePatternEnum;
 import liuyuyang.net.model.ArticleCate;
 import liuyuyang.net.vo.cate.CateVo;
 import liuyuyang.net.web.mapper.ArticleCateMapper;
@@ -75,14 +76,17 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
 
         // 批量校验：存在子分类的父级 ID（使用 BaseMapper 的 selectList）
         List<Cate> children = cateMapper.selectList(new LambdaQueryWrapper<Cate>().in(Cate::getLevel, ids));
-        Map<Integer, Long> childrenByParent = children.stream().collect(Collectors.groupingBy(Cate::getLevel, Collectors.counting()));
+        Map<Integer, Long> childrenByParent = children.stream()
+                .collect(Collectors.groupingBy(Cate::getLevel, Collectors.counting()));
         for (Map.Entry<Integer, Long> e : childrenByParent.entrySet()) {
             throw new CustomException(400, "ID为：" + e.getKey() + "的分类中有 " + e.getValue() + " 个二级分类，请解绑后重试");
         }
 
         // 批量校验：存在文章的分类 ID（使用 BaseMapper 的 selectList）
-        List<ArticleCate> articles = articleCateMapper.selectList(new LambdaQueryWrapper<ArticleCate>().in(ArticleCate::getCateId, ids));
-        Map<Integer, Long> articlesByCate = articles.stream().collect(Collectors.groupingBy(ArticleCate::getCateId, Collectors.counting()));
+        List<ArticleCate> articles = articleCateMapper
+                .selectList(new LambdaQueryWrapper<ArticleCate>().in(ArticleCate::getCateId, ids));
+        Map<Integer, Long> articlesByCate = articles.stream()
+                .collect(Collectors.groupingBy(ArticleCate::getCateId, Collectors.counting()));
         for (Map.Entry<Integer, Long> e : articlesByCate.entrySet()) {
             throw new CustomException(400, "ID为：" + e.getKey() + "的分类中有 " + e.getValue() + " 篇文章，请删除后重试");
         }
@@ -123,7 +127,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
 
         // 如果是 tree 模式则构建树形结构，否则列表结构
         List<Cate> arr;
-        if (Objects.equals(cateFilterDTO.getPattern(), "list")) {
+        if (cateFilterDTO.getPattern() == CatePatternEnum.LIST) {
             arr = raw;
         } else {
             arr = new ArrayList<>(getCateTreeChildren(raw, 0));

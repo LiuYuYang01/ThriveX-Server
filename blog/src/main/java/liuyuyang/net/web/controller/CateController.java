@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.core.execption.CustomException;
@@ -81,8 +80,8 @@ public class CateController {
         return Result.success(list);
     }
 
-    @RateLimit
     @NoTokenRequired
+    @RateLimit
     @GetMapping
     @ApiOperation(value = "获取分类列表", notes = "pattern: list 扁平 | tree 树形；不传 page/size 返回全部，传则分页")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
