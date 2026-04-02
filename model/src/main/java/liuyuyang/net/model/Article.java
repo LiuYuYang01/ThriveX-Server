@@ -1,21 +1,12 @@
 package liuyuyang.net.model;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModelProperty;
-import liuyuyang.net.dto.article.ArticleFormDTO;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-
-import java.time.LocalDateTime;
 
 @Data
 @TableName("article")
-public class Article {
-    @TableId(type = IdType.AUTO)
-    private Integer id;
-
+public class Article extends BaseModel {
     @ApiModelProperty(value = "文章标题", example = "示例文章标题", required = true)
     private String title;
 
@@ -33,7 +24,4 @@ public class Article {
 
     @ApiModelProperty(value = "文章评论数量", example = "20")
     private Integer comment;
-
-    @ApiModelProperty(value = "创建时间", example = "1723533206613", required = true)
-    private Long createTime;
 }
