@@ -27,7 +27,6 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
         lambdaQueryWrapper.eq(Tag::getName, tag.getName());
         Tag data = tagMapper.selectOne(lambdaQueryWrapper);
         if (data != null) throw new RuntimeException("该标签已存在");
-
         return this.save(tag);
     }
 

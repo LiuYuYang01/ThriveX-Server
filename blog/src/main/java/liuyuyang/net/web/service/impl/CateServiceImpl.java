@@ -5,13 +5,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.CommonUtils;
+import liuyuyang.net.dto.cate.CateFilterDTO;
 import liuyuyang.net.model.ArticleCate;
+import liuyuyang.net.vo.cate.CateVo;
 import liuyuyang.net.web.mapper.ArticleCateMapper;
 import liuyuyang.net.web.mapper.CateMapper;
 import liuyuyang.net.model.Cate;
 import liuyuyang.net.result.cate.CateArticleCount;
 import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.web.service.CateService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,28 +35,26 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
     @Resource
     private CommonUtils commonUtils;
 
-    // 判断是否存在二级分类
+    // 判断是否存在二级分类，如果有就抛出异常提示先解绑二级分类
     @Override
-    public Boolean isExistTwoCate(Integer id) {
+    public void isExistTwoCate(Integer id) {
         LambdaQueryWrapper<Cate> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(Cate::getLevel, id);
         List<Cate> data = cateMapper.selectList(lambdaQueryWrapper);
         if (!data.isEmpty()) {
             throw new CustomException(400, "ID为：" + id + "的分类中有 " + data.size() + " 个二级分类，请解绑后重试");
         }
-        return true;
     }
 
     // 判断该分类中是否有文章
     @Override
-    public Boolean isCateArticleCount(Integer id) {
+    public void isCateArticleCount(Integer id) {
         LambdaQueryWrapper<ArticleCate> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(ArticleCate::getCateId, id);
         List<ArticleCate> data = articleCateMapper.selectList(lambdaQueryWrapper);
         if (!data.isEmpty()) {
             throw new CustomException(400, "ID为：" + id + "的分类中有 " + data.size() + " 篇文章，请删除后重试");
         }
-        return true;
     }
 
     @Override
@@ -102,24 +103,34 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         if (cate == null) {
             throw new CustomException(400, "该分类不存在");
         }
+
+        CateVo cateVo = new CateVo();
+        BeanUtils.copyProperties(cate, cateVo);
+
         LambdaQueryWrapper<Cate> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(Cate::getOrder);
         List<Cate> all = cateMapper.selectList(wrapper);
-        cate.setChildren(buildCateTreeData(all, id));
+
+        cateVo.setChildren(getCateTreeChildren(all, id));
         return cate;
     }
 
     @Override
-    public Page<Cate> list(String pattern, Integer page, Integer size) {
+    public Page<Cate> getCateList(CateFilterDTO cateFilterDTO) {
         LambdaQueryWrapper<Cate> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(Cate::getOrder);
         List<Cate> raw = cateMapper.selectList(wrapper);
 
-        // 如果是 tree 模式则构建树形，否则用扁平列表
-        List<Cate> arr = Objects.equals(pattern, "tree") ? buildCateTreeData(raw, 0) : raw;
+        // 如果是 tree 模式则构建树形结构，否则列表结构
+        List<Cate> arr;
+        if (Objects.equals(cateFilterDTO.getPattern(), "list")) {
+            arr = raw;
+        } else {
+            arr = new ArrayList<>(getCateTreeChildren(raw, 0));
+        }
 
         // 不传 page/size 则返回全部
-        if (page == null || size == null) {
+        if (cateFilterDTO.getPageNum() == null || cateFilterDTO.getPageSize() == null) {
             Page<Cate> result = new Page<>(1, arr.size());
             result.setRecords(new ArrayList<>(arr));
             result.setTotal(arr.size());
@@ -127,8 +138,8 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         }
 
         PageDTO pageDTO = new PageDTO();
-        pageDTO.setPageNum(Math.max(1, page));
-        pageDTO.setPageSize(Math.max(1, size));
+        pageDTO.setPageNum(Math.max(1, cateFilterDTO.getPageNum()));
+        pageDTO.setPageSize(Math.max(1, cateFilterDTO.getPageSize()));
         return commonUtils.getPageData(pageDTO, arr);
     }
 
@@ -137,13 +148,16 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         return cateMapper.cateArticleCount();
     }
 
+    // 基于父级分类的 id 递归获取它的所有子分类
     @Override
-    public List<Cate> buildCateTreeData(List<Cate> list, Integer level) {
-        List<Cate> children = new ArrayList<>();
+    public List<CateVo> getCateTreeChildren(List<Cate> list, Integer level) {
+        List<CateVo> children = new ArrayList<>();
         for (Cate cate : list) {
             if (Objects.equals(cate.getLevel(), level)) {
-                cate.setChildren(buildCateTreeData(list, cate.getId()));
-                children.add(cate);
+                CateVo cateVo = new CateVo();
+                BeanUtils.copyProperties(cate, cateVo);
+                cateVo.setChildren(getCateTreeChildren(list, cate.getId()));
+                children.add(cateVo);
             }
         }
         return children;
