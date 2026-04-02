@@ -8,10 +8,11 @@ import liuyuyang.net.dto.article.ArticleFormDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDateTime;
+
 @Data
-@EqualsAndHashCode(callSuper = true)
 @TableName("article")
-public class Article extends ArticleFormDTO {
+public class Article {
     @TableId(type = IdType.AUTO)
     private Integer id;
 
@@ -27,12 +28,12 @@ public class Article extends ArticleFormDTO {
     @ApiModelProperty(value = "文章封面链接", example = "http://123.com/images/example.jpg")
     private String cover;
 
-    @ApiModelProperty(value = "创建时间", example = "1723533206613", required = true)
-    private String createTime;
-
     @ApiModelProperty(value = "文章浏览量", example = "100")
     private Integer view;
 
     @ApiModelProperty(value = "文章评论数量", example = "20")
     private Integer comment;
+
+    @ApiModelProperty(value = "创建时间", example = "1723533206613", required = true)
+    private Long createTime;
 }

@@ -90,7 +90,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         articleMapper.insert(article);
 
         // 新增分类
-        List<Integer> cateIdList = article.getCateIds();
+        List<Integer> cateIdList = articleFormDTO.getCateIds();
         if (!cateIdList.isEmpty()) {
             ArrayList<ArticleCate> cateArrayList = new ArrayList<>(cateIdList.size());
             for (Integer id : cateIdList) {
@@ -103,7 +103,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 新增标签
-        List<Integer> tagIdList = article.getTagIds();
+        List<Integer> tagIdList = articleFormDTO.getTagIds();
 
         if (tagIdList != null && !tagIdList.isEmpty()) {
             ArrayList<ArticleTag> tagArrayList = new ArrayList<>(tagIdList.size());
@@ -117,7 +117,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 新增文章配置
-        ArticleConfig config = article.getConfig();
+        ArticleConfig config = articleFormDTO.getConfig();
         ArticleConfig articleConfig = new ArticleConfig();
         articleConfig.setArticleId(article.getId());
         articleConfig.setStatus(config.getStatus() != null ? config.getStatus() : ArticleStatus.DEFAULT);
@@ -268,7 +268,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 获取当前文章的创建时间
-        String createTime = data.getCreateTime();
+        Long createTime = data.getCreateTime();
 
         // 查询上一篇文章
         LambdaQueryWrapper<Article> prevQueryWrapper = new LambdaQueryWrapper<>();
@@ -752,7 +752,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             article.setTitle(title);
             article.setDescription(description);
             article.setContent(articleContent.toString().trim());
-            article.setCreateTime(String.valueOf(LocalDateTime.now()));
+            article.setCreateTime(System.currentTimeMillis());
 
             // 设置默认分类（这里假设使用 ID 为 1 的分类）
             article.setCateIds(Collections.singletonList(1));
@@ -891,3 +891,4 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         return fileName.replaceAll("[\\\\/:*?\"<>|]", "_");
     }
 }
+
