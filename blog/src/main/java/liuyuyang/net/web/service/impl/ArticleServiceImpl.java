@@ -11,6 +11,7 @@ import liuyuyang.net.model.*;
 import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.article.ArticleFilterDTO;
 import liuyuyang.net.vo.article.ArticleVO;
+import liuyuyang.net.vo.cate.CateVo;
 import liuyuyang.net.web.mapper.*;
 import liuyuyang.net.web.service.ArticleCateService;
 import liuyuyang.net.web.service.ArticleService;
@@ -598,7 +599,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (!cate_ids.isEmpty()) {
             LambdaQueryWrapper<Cate> queryWrapperCateList = new LambdaQueryWrapper<>();
             queryWrapperCateList.in(Cate::getId, cate_ids);
-            List<Cate> cates = cateService.buildCateTreeData(cateMapper.selectList(queryWrapperCateList), 0);
+            List<CateVo> cates = cateService.getCateTreeChildren(cateMapper.selectList(null),0);
             data.setCateList(cates);
         }
 

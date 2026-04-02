@@ -36,6 +36,7 @@ public class ArticleController {
     @ApiOperation("新增文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
     public Result<String> addArticleData(@RequestBody ArticleFormDTO articledFormDTO) {
+        articledFormDTO.setId(null);
         articleService.addArticleData(articledFormDTO);
         return Result.success();
     }

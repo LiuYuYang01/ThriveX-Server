@@ -8,6 +8,7 @@ import io.swagger.annotations.ApiParam;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.core.execption.CustomException;
+import liuyuyang.net.dto.cate.CateFilterDTO;
 import liuyuyang.net.dto.cate.CateFormDTO;
 import liuyuyang.net.model.Cate;
 import liuyuyang.net.core.utils.Result;
@@ -34,6 +35,7 @@ public class CateController {
     @ApiOperation("新增分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
     public Result<String> addArticleData(@RequestBody CateFormDTO cateFormDTO) {
+        cateFormDTO.setId(null);
         Cate cate = new Cate();
         BeanUtils.copyProperties(cateFormDTO, cate);
         cateService.save(cate);
@@ -84,11 +86,8 @@ public class CateController {
     @GetMapping
     @ApiOperation(value = "获取分类列表", notes = "pattern: list 扁平 | tree 树形；不传 page/size 返回全部，传则分页")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<Map<String, Object>> getCateList(
-            @ApiParam(value = "list: 扁平数组 | tree: 树形结构") @RequestParam(required = false, defaultValue = "list") String pattern,
-            @ApiParam(value = "页码，不传则返回全部") @RequestParam(required = false) Integer page,
-            @ApiParam(value = "每页数量，不传则返回全部") @RequestParam(required = false) Integer size) {
-        Page<Cate> list = cateService.list(pattern, page, size);
+    public Result<Map<String, Object>> getCateList(CateFilterDTO cateFilterDTO) {
+        Page<Cate> list = cateService.getCateList(cateFilterDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
