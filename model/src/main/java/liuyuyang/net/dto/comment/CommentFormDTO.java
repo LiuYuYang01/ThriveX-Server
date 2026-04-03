@@ -25,13 +25,13 @@ public class CommentFormDTO {
     @ApiModelProperty(value = "评论内容", example = "这是一段评论内容", required = true)
     private String content;
 
-    @ApiModelProperty(value = "该评论所绑定的文章ID", example = "1", required = true)
+    @ApiModelProperty(value = "文章ID", example = "1", required = true)
     private Integer articleId;
 
-    @ApiModelProperty(value = "二级评论", example = "2", required = true)
+    @ApiModelProperty(value = "父评论ID", example = "2", required = true)
     private Integer commentId;
 
-    @ApiModelProperty(value = "评论是否审核通过", example = "1")
+    @ApiModelProperty(value = "审核状态：0 待审核（默认），1 审核通过", example = "1")
     private Integer auditStatus;
 
     @ApiModelProperty(value = "创建时间", example = "1723533206613", required = true)

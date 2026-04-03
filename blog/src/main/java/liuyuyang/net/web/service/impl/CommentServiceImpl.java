@@ -4,16 +4,19 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.core.execption.CustomException;
+import liuyuyang.net.dto.PageDTO;
+import liuyuyang.net.dto.comment.CommentFilterDTO;
+import liuyuyang.net.dto.comment.CommentFormDTO;
+import liuyuyang.net.model.Article;
 import liuyuyang.net.model.Comment;
+import liuyuyang.net.vo.comment.CommentVO;
 import liuyuyang.net.web.mapper.ArticleMapper;
 import liuyuyang.net.web.mapper.CommentMapper;
-import liuyuyang.net.model.Article;
 import liuyuyang.net.web.service.CommentService;
 import liuyuyang.net.web.service.WebConfigService;
 import liuyuyang.net.core.utils.EmailUtils;
 import liuyuyang.net.core.utils.CommonUtils;
-import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.comment.CommentFilterDTO;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
@@ -25,6 +28,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -43,7 +47,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     private WebConfigService configService;
 
     @Override
-    public void add(Comment comment) throws Exception {
+    public void addCommentData(CommentFormDTO commentFormDTO) throws Exception {
+        Comment comment = new Comment();
+        BeanUtils.copyProperties(commentFormDTO, comment);
         commentMapper.insert(comment);
 
         // 文章标题
@@ -88,7 +94,31 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     }
 
     @Override
-    public Comment get(Integer id) {
+    public void delCommentData(Integer id) {
+        Comment data = commentMapper.selectById(id);
+        if (data == null) {
+            throw new CustomException("该评论不存在");
+        }
+        commentMapper.deleteById(id);
+    }
+
+    @Override
+    public void batchDelCommentData(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        removeByIds(ids);
+    }
+
+    @Override
+    public void editCommentData(CommentFormDTO commentFormDTO) {
+        Comment comment = new Comment();
+        BeanUtils.copyProperties(commentFormDTO, comment);
+        commentMapper.updateById(comment);
+    }
+
+    @Override
+    public CommentVO getCommentData(Integer id) {
         Comment data = commentMapper.selectById(id);
 
         if (data == null) {
@@ -103,11 +133,59 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         // 构建评论树
         data.setChildren(buildCommentTree(list, data.getId()));
 
-        return data;
+        return toCommentVO(data);
     }
 
     @Override
-    public List<Comment> list(CommentFilterDTO filterVo) {
+    public Page<CommentVO> getCommentList(CommentFilterDTO filterVo) {
+        List<Comment> list = listCommentEntities(filterVo);
+        List<CommentVO> vos = list.stream().map(this::toCommentVO).collect(Collectors.toList());
+
+        // 不传 page/size 则返回全部
+        if (filterVo.getPageNum() == null || filterVo.getPageSize() == null) {
+            Page<CommentVO> result = new Page<>(1, vos.size());
+            result.setRecords(new ArrayList<>(vos));
+            result.setTotal(vos.size());
+            return result;
+        }
+
+        PageDTO pageDTO = new PageDTO();
+        pageDTO.setPageNum(Math.max(1, filterVo.getPageNum()));
+        pageDTO.setPageSize(Math.max(1, filterVo.getPageSize()));
+        return commonUtils.getPageData(pageDTO, vos);
+    }
+
+    @Override
+    public Page<CommentVO> getArticleCommentList(Integer articleId, PageDTO pageDTO) {
+        QueryWrapper<Comment> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("article_id", articleId);
+        queryWrapper.eq("audit_status", 1);
+        queryWrapper.orderByDesc("create_time");
+
+        List<Comment> list = commentMapper.selectList(queryWrapper);
+
+        // 构建评论树
+        list = buildCommentTree(list, 0);
+
+        List<CommentVO> vos = list.stream().map(this::toCommentVO).collect(Collectors.toList());
+
+        // 分页处理
+        return commonUtils.getPageData(pageDTO, vos);
+    }
+
+    @Override
+    public void auditCommentData(Integer id) {
+        Comment data = commentMapper.selectById(id);
+
+        if (data == null) {
+            throw new CustomException("该评论不存在");
+        }
+
+        data.setAuditStatus(1);
+        commentMapper.updateById(data);
+    }
+
+    private List<Comment> listCommentEntities(CommentFilterDTO filterVo) {
         QueryWrapper<Comment> queryWrapper = commonUtils.queryWrapperFilter(filterVo, "name");
         queryWrapper.eq("audit_status", filterVo.getStatus());
         if (filterVo.getContent() != null && !filterVo.getContent().isEmpty()) {
@@ -119,36 +197,33 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         for (Comment data : list) {
             // 绑定对应的数据
             Article article = articleMapper.selectById(data.getArticleId());
-            if (article != null) data.setArticleTitle(article.getTitle());
+            if (article != null) {
+                data.setArticleTitle(article.getTitle());
+            }
         }
 
         // 查询的结构格式
-        if (Objects.equals(filterVo.getPattern(), "list")) return list;
+        if (Objects.equals(filterVo.getPattern(), "list")) {
+            return list;
+        }
 
         // 构建多级评论
         return buildCommentTree(list, 0);
     }
 
-    @Override
-    public Page<Comment> paging(CommentFilterDTO filterVo, PageDTO pageDTO) {
-        List<Comment> list = list(filterVo);
-        return commonUtils.getPageData(pageDTO, list);
-    }
-
-    @Override
-    public Page<Comment> getArticleCommentList(Integer articleId, PageDTO pageDTO) {
-        QueryWrapper<Comment> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("article_id", articleId);
-        queryWrapper.eq("audit_status", 1);
-        queryWrapper.orderByDesc("create_time");
-
-        List<Comment> list = commentMapper.selectList(queryWrapper);
-
-        // 构建评论树
-        list = buildCommentTree(list, 0);
-
-        // 分页处理
-        return commonUtils.getPageData(pageDTO, list);
+    private CommentVO toCommentVO(Comment c) {
+        if (c == null) {
+            return null;
+        }
+        CommentVO vo = new CommentVO();
+        BeanUtils.copyProperties(c, vo);
+        vo.setChildren(new ArrayList<>());
+        if (c.getChildren() != null && !c.getChildren().isEmpty()) {
+            for (Comment child : c.getChildren()) {
+                vo.getChildren().add(toCommentVO(child));
+            }
+        }
+        return vo;
     }
 
     // 递归构建评论列表

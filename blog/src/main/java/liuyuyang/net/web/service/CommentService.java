@@ -2,20 +2,28 @@ package liuyuyang.net.web.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import liuyuyang.net.model.Comment;
 import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.comment.CommentFilterDTO;
+import liuyuyang.net.dto.comment.CommentFilterDTO;
+import liuyuyang.net.dto.comment.CommentFormDTO;
+import liuyuyang.net.model.Comment;
+import liuyuyang.net.vo.comment.CommentVO;
 
 import java.util.List;
 
 public interface CommentService extends IService<Comment> {
-    void add(Comment comment) throws Exception;
+    void addCommentData(CommentFormDTO commentFormDTO) throws Exception;
 
-    Comment get(Integer id);
+    void delCommentData(Integer id);
 
-    Page<Comment> getArticleCommentList(Integer articleId, PageDTO pageDTO);
+    void batchDelCommentData(List<Integer> ids);
 
-    List<Comment> list(CommentFilterDTO filterVo);
+    void editCommentData(CommentFormDTO commentFormDTO);
 
-    Page<Comment> paging(CommentFilterDTO filterVo, PageDTO pageDTO);
+    CommentVO getCommentData(Integer id);
+
+    Page<CommentVO> getCommentList(CommentFilterDTO filterVo);
+
+    Page<CommentVO> getArticleCommentList(Integer articleId, PageDTO pageDTO);
+
+    void auditCommentData(Integer id);
 }
