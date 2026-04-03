@@ -3,8 +3,10 @@ package liuyuyang.net.model;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("article")
 public class Article extends BaseModel {
     @ApiModelProperty(value = "文章标题", example = "示例文章标题", required = true)
