@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.cate.CateFilterDTO;
+import liuyuyang.net.dto.cate.CateFormDTO;
 import liuyuyang.net.enums.cate.CatePatternEnum;
 import liuyuyang.net.model.ArticleCate;
 import liuyuyang.net.vo.cate.CateVO;
@@ -59,6 +60,20 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
     }
 
     @Override
+    public void addCateData(CateFormDTO cateFormDTO) {
+        Cate cate = new Cate();
+        BeanUtils.copyProperties(cateFormDTO, cate);
+        this.save(cate);
+    }
+
+    @Override
+    public void editCateData(CateFormDTO cateFormDTO) {
+        Cate cate = new Cate();
+        BeanUtils.copyProperties(cateFormDTO, cate);
+        this.updateById(cate);
+    }
+
+    @Override
     public void delCateData(Integer id) {
         isExistTwoCate(id);
         isCateArticleCount(id);
@@ -102,7 +117,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
     }
 
     @Override
-    public Cate getCateData(Integer id) {
+    public CateVO getCateData(Integer id) {
         Cate cate = cateMapper.selectById(id);
         if (cate == null) {
             throw new CustomException("该分类不存在");
@@ -115,8 +130,20 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         wrapper.orderByAsc(Cate::getOrder);
         List<Cate> all = cateMapper.selectList(wrapper);
 
+        // 子分类树（原逻辑已组装到 cateVO，此前误返回实体 cate，导致前端拿不到 children）
         cateVO.setChildren(getCateTreeChildren(all, id));
-        return cate;
+
+        // 与列表接口一致：附带该分类下的文章数量
+        Map<Integer, Integer> articleCountByCateId = articleCateMapper
+                .getCateArticleCountByCateId()
+                .stream()
+                .collect(Collectors.toMap(
+                        CateArticleCountVO::getCid,
+                        CateArticleCountVO::getCount
+                ));
+        cateVO.setCount(articleCountByCateId.getOrDefault(id, 0));
+
+        return cateVO;
     }
 
     @Override

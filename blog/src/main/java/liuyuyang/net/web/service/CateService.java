@@ -3,6 +3,7 @@ package liuyuyang.net.web.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import liuyuyang.net.dto.cate.CateFilterDTO;
+import liuyuyang.net.dto.cate.CateFormDTO;
 import liuyuyang.net.model.Cate;
 import liuyuyang.net.vo.cate.CateVO;
 
@@ -15,11 +16,15 @@ public interface CateService extends IService<Cate> {
     // 判断该分类中是否有文章
     void isCateArticleCount(Integer cid);
 
+    void addCateData(CateFormDTO cateFormDTO);
+
     void delCateData(Integer cid);
 
     void batchDelCateData(List<Integer> ids);
 
-    Cate getCateData(Integer cid);
+    void editCateData(CateFormDTO cateFormDTO);
+
+    CateVO getCateData(Integer cid);
 
     Page<CateVO> getCateList(CateFilterDTO cateFilterDTO);
 
