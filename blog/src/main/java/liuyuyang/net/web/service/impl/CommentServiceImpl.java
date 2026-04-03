@@ -59,7 +59,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         StringBuilder content = new StringBuilder();
         // 判断是否还有上一条评论
         Comment prev_comment = null;
-        if (comment.getCommentId() != 0) {
+        if (comment.getCommentId() != null && comment.getCommentId() != 0) {
             prev_comment = commentMapper.selectById(comment.getCommentId());
             content.append(prev_comment.getName()).append("：").append(prev_comment.getContent()).append("<br>");
         }
@@ -131,15 +131,16 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         List<Comment> list = commentMapper.selectList(queryWrapper);
 
         // 构建评论树
-        data.setChildren(buildCommentTree(list, data.getId()));
-
-        return toCommentVO(data);
+        List<CommentVO> children = buildCommentTreeVO(list, data.getId());
+        CommentVO vo = toCommentVO(data);
+        vo.setArticleTitle(articleTitleOf(data.getArticleId()));
+        vo.setChildren(children);
+        return vo;
     }
 
     @Override
     public Page<CommentVO> getCommentList(CommentFilterDTO filterVo) {
-        List<Comment> list = listCommentEntities(filterVo);
-        List<CommentVO> vos = list.stream().map(this::toCommentVO).collect(Collectors.toList());
+        List<CommentVO> vos = buildCommentVOList(filterVo);
 
         // 不传 page/size 则返回全部
         if (filterVo.getPageNum() == null || filterVo.getPageSize() == null) {
@@ -165,9 +166,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         List<Comment> list = commentMapper.selectList(queryWrapper);
 
         // 构建评论树
-        list = buildCommentTree(list, 0);
-
-        List<CommentVO> vos = list.stream().map(this::toCommentVO).collect(Collectors.toList());
+        List<CommentVO> vos = buildCommentTreeVO(list, 0);
+        fillArticleTitles(vos);
 
         // 分页处理
         return commonUtils.getPageData(pageDTO, vos);
@@ -185,30 +185,46 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         commentMapper.updateById(data);
     }
 
-    private List<Comment> listCommentEntities(CommentFilterDTO filterVo) {
+    private List<Comment> queryFlatComments(CommentFilterDTO filterVo) {
         QueryWrapper<Comment> queryWrapper = commonUtils.queryWrapperFilter(filterVo, "name");
         queryWrapper.eq("audit_status", filterVo.getStatus());
         if (filterVo.getContent() != null && !filterVo.getContent().isEmpty()) {
             queryWrapper.like("content", filterVo.getContent());
         }
 
-        List<Comment> list = commentMapper.selectList(queryWrapper);
+        return commentMapper.selectList(queryWrapper);
+    }
 
-        for (Comment data : list) {
-            // 绑定对应的数据
-            Article article = articleMapper.selectById(data.getArticleId());
-            if (article != null) {
-                data.setArticleTitle(article.getTitle());
-            }
-        }
+    private List<CommentVO> buildCommentVOList(CommentFilterDTO filterVo) {
+        List<Comment> flat = queryFlatComments(filterVo);
 
         // 查询的结构格式
         if (Objects.equals(filterVo.getPattern(), "list")) {
-            return list;
+            return flat.stream().map(c -> {
+                CommentVO vo = toCommentVO(c);
+                vo.setArticleTitle(articleTitleOf(c.getArticleId()));
+                return vo;
+            }).collect(Collectors.toList());
         }
 
         // 构建多级评论
-        return buildCommentTree(list, 0);
+        List<CommentVO> tree = buildCommentTreeVO(flat, 0);
+        fillArticleTitles(tree);
+        return tree;
+    }
+
+    private void fillArticleTitles(List<CommentVO> nodes) {
+        for (CommentVO vo : nodes) {
+            vo.setArticleTitle(articleTitleOf(vo.getArticleId()));
+            if (vo.getChildren() != null && !vo.getChildren().isEmpty()) {
+                fillArticleTitles(vo.getChildren());
+            }
+        }
+    }
+
+    private String articleTitleOf(Integer articleId) {
+        Article article = articleMapper.selectById(articleId);
+        return article != null ? article.getTitle() : null;
     }
 
     private CommentVO toCommentVO(Comment c) {
@@ -217,23 +233,18 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         }
         CommentVO vo = new CommentVO();
         BeanUtils.copyProperties(c, vo);
-        vo.setChildren(new ArrayList<>());
-        if (c.getChildren() != null && !c.getChildren().isEmpty()) {
-            for (Comment child : c.getChildren()) {
-                vo.getChildren().add(toCommentVO(child));
-            }
-        }
         return vo;
     }
 
     // 递归构建评论列表
-    private List<Comment> buildCommentTree(List<Comment> list, Integer cid) {
-        List<Comment> children = new ArrayList<>();
+    private List<CommentVO> buildCommentTreeVO(List<Comment> flat, Integer parentId) {
+        List<CommentVO> children = new ArrayList<>();
 
-        for (Comment data : list) {
-            if (data.getCommentId().equals(cid)) {
-                data.setChildren(buildCommentTree(list, data.getId()));
-                children.add(data);
+        for (Comment data : flat) {
+            if (Objects.equals(data.getCommentId(), parentId)) {
+                CommentVO vo = toCommentVO(data);
+                vo.setChildren(buildCommentTreeVO(flat, data.getId()));
+                children.add(vo);
             }
         }
         return children;
