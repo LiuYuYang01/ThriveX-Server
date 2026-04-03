@@ -35,7 +35,7 @@ public class SwiperServiceImpl extends ServiceImpl<SwiperMapper, Swiper> impleme
         }
 
         if (pageDTO.getPageNum() <= 0 || pageDTO.getPageSize() <= 0) {
-            throw new CustomException(400, "分页参数 page/size 必须大于 0");
+            throw new CustomException("分页参数 page/size 必须大于 0");
         }
 
         // 分页查询

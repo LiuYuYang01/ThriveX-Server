@@ -43,7 +43,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         lambdaQueryWrapper.eq(Cate::getLevel, id);
         List<Cate> data = cateMapper.selectList(lambdaQueryWrapper);
         if (!data.isEmpty()) {
-            throw new CustomException(400, "ID为：" + id + "的分类中有 " + data.size() + " 个二级分类，请解绑后重试");
+            throw new CustomException("ID为：" + id + "的分类中有 " + data.size() + " 个二级分类，请解绑后重试");
         }
     }
 
@@ -54,7 +54,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         lambdaQueryWrapper.eq(ArticleCate::getCateId, id);
         List<ArticleCate> data = articleCateMapper.selectList(lambdaQueryWrapper);
         if (!data.isEmpty()) {
-            throw new CustomException(400, "ID为：" + id + "的分类中有 " + data.size() + " 篇文章，请删除后重试");
+            throw new CustomException("ID为：" + id + "的分类中有 " + data.size() + " 篇文章，请删除后重试");
         }
     }
 
@@ -64,7 +64,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         isCateArticleCount(id);
         int affected = cateMapper.deleteById(id);
         if (affected == 0) {
-            throw new CustomException(400, "该分类不存在");
+            throw new CustomException("该分类不存在");
         }
     }
 
@@ -79,7 +79,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         Map<Integer, Long> childrenByParent = children.stream()
                 .collect(Collectors.groupingBy(Cate::getLevel, Collectors.counting()));
         for (Map.Entry<Integer, Long> e : childrenByParent.entrySet()) {
-            throw new CustomException(400, "ID为：" + e.getKey() + "的分类中有 " + e.getValue() + " 个二级分类，请解绑后重试");
+            throw new CustomException("ID为：" + e.getKey() + "的分类中有 " + e.getValue() + " 个二级分类，请解绑后重试");
         }
 
         // 批量校验：存在文章的分类 ID（使用 BaseMapper 的 selectList）
@@ -88,13 +88,13 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         Map<Integer, Long> articlesByCate = articles.stream()
                 .collect(Collectors.groupingBy(ArticleCate::getCateId, Collectors.counting()));
         for (Map.Entry<Integer, Long> e : articlesByCate.entrySet()) {
-            throw new CustomException(400, "ID为：" + e.getKey() + "的分类中有 " + e.getValue() + " 篇文章，请删除后重试");
+            throw new CustomException("ID为：" + e.getKey() + "的分类中有 " + e.getValue() + " 篇文章，请删除后重试");
         }
 
         // 校验要删除的分类是否都存在
         long existCount = count(new LambdaQueryWrapper<Cate>().in(Cate::getId, ids));
         if (existCount != ids.size()) {
-            throw new CustomException(400, "有 " + (ids.size() - (int) existCount) + " 个分类不存在");
+            throw new CustomException("有 " + (ids.size() - (int) existCount) + " 个分类不存在");
         }
 
         // 批量删除
@@ -105,7 +105,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
     public Cate getCateData(Integer id) {
         Cate cate = cateMapper.selectById(id);
         if (cate == null) {
-            throw new CustomException(400, "该分类不存在");
+            throw new CustomException("该分类不存在");
         }
 
         CateVO cateVO = new CateVO();

@@ -42,7 +42,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
         if (token == null || token.isEmpty()) {
             // 添加之前先判断所选的网站类型是否为当前用户可选的
             Integer isAdmin = linkTypeMapper.selectById(link.getTypeId()).getIsAdmin();
-            if (isAdmin == 1) throw new CustomException(400, "该类型需要管理员权限才能添加");
+            if (isAdmin == 1) throw new CustomException("该类型需要管理员权限才能添加");
             linkMapper.insert(link);
 
             // 邮件提醒
@@ -74,7 +74,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
         Link data = linkMapper.selectById(id);
 
         if (data == null) {
-            throw new CustomException(400, "该网站不存在");
+            throw new CustomException("该网站不存在");
         }
 
         // 获取网站类型
