@@ -122,7 +122,7 @@ public class WallController {
     public Result auditWall(@PathVariable Integer id) {
         Wall data = wallService.getById(id);
 
-        if (data == null) throw new CustomException(400, "该留言不存在");
+        if (data == null) throw new CustomException("该留言不存在");
 
         data.setAuditStatus(1);
         wallService.updateById(data);

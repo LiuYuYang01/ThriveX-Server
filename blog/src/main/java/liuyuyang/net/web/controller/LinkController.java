@@ -114,7 +114,7 @@ public class LinkController {
     public Result auditWeb(@PathVariable Integer id) {
         Link data = linkService.getById(id);
 
-        if (data == null) throw new CustomException(400, "该网站不存在");
+        if (data == null) throw new CustomException("该网站不存在");
 
         data.setAuditStatus(1);
         linkService.updateById(data);

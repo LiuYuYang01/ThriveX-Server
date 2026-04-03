@@ -117,7 +117,7 @@ public class CommentController {
     public Result auditComment(@PathVariable Integer id) {
         Comment data = commentService.getById(id);
 
-        if (data == null) throw new CustomException(400, "该评论不存在");
+        if (data == null) throw new CustomException("该评论不存在");
 
         data.setAuditStatus(1);
         commentService.updateById(data);

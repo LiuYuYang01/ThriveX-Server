@@ -41,22 +41,22 @@ public class CateController {
         return Result.success();
     }
 
-    @DeleteMapping("/batch")
-    @ApiOperation("批量删除分类")
+    @DeleteMapping("/{id}")
+    @ApiOperation("删除分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
-    public Result<String> batchDelCateData(@RequestBody List<Integer> ids) {
-        if (ids == null || ids.isEmpty()) {
-            throw new CustomException(400, "请提供要删除的分类 ID");
-        }
-        cateService.batchDelCateData(ids);
+    public Result<String> delCateData(@PathVariable Integer id) {
+        cateService.delCateData(id);
         return Result.success();
     }
 
-    @DeleteMapping("/{id}")
-    @ApiOperation("删除分类")
+    @DeleteMapping("/batch")
+    @ApiOperation("批量删除分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result<String> delCateData(@PathVariable Integer id) {
-        cateService.delCateData(id);
+    public Result<String> batchDelCateData(@RequestBody List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new CustomException("请提供要删除的分类 ID");
+        }
+        cateService.batchDelCateData(ids);
         return Result.success();
     }
 

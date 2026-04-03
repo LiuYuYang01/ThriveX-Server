@@ -92,7 +92,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         Comment data = commentMapper.selectById(id);
 
         if (data == null) {
-            throw new CustomException(400, "该评论不存在");
+            throw new CustomException("该评论不存在");
         }
 
         // 获取所有相关评论

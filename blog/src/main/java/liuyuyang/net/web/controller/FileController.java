@@ -39,14 +39,14 @@ public class FileController {
     public Result<Object> add(@RequestParam(defaultValue = "") String dir, @RequestParam MultipartFile[] files)
             throws IOException {
         if (dir == null || dir.trim().isEmpty())
-            throw new CustomException(400, "请指定一个目录");
+            throw new CustomException("请指定一个目录");
 
         List<String> urls = new ArrayList<>();
 
         for (MultipartFile file : files) {
             // 校验文件是否为空
             if (file.isEmpty()) {
-                throw new CustomException(400, "文件不能为空");
+                throw new CustomException("文件不能为空");
             }
 
             // 只允许的图片扩展名
@@ -58,7 +58,7 @@ public class FileController {
             }
 
             if (!allowedExt.contains(ext)) {
-                throw new CustomException(400, "仅支持上传图片类型文件（jpg、jpeg、png、webp）");
+                throw new CustomException("仅支持上传图片类型文件（jpg、jpeg、png、webp）");
             }
 
             // 只允许的图片 MIME 类型
@@ -68,13 +68,13 @@ public class FileController {
                     "image/webp"));
             String contentType = file.getContentType();
             if (contentType == null || !allowedContentTypes.contains(contentType.toLowerCase())) {
-                throw new CustomException(400, "文件类型不合法，仅支持上传图片类型文件");
+                throw new CustomException("文件类型不合法，仅支持上传图片类型文件");
             }
 
             // 解码校验，防止伪装成图片的恶意文件
             BufferedImage image = ImageIO.read(file.getInputStream());
             if (image == null) {
-                throw new CustomException(400, "文件内容不是有效的图片");
+                throw new CustomException("文件内容不是有效的图片");
             }
 
             urls.add(qiniuStorageService.upload(dir, file));
@@ -118,7 +118,7 @@ public class FileController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer size) throws QiniuException {
         if (dir == null || dir.trim().isEmpty())
-            throw new CustomException(400, "请指定一个目录");
+            throw new CustomException("请指定一个目录");
         return Result.success(qiniuStorageService.listFiles(dir, page, size));
     }
 
@@ -135,7 +135,7 @@ public class FileController {
     public Result<Map<String, Object>> createDir(@RequestBody Map<String, String> body) throws IOException {
         String dir = body == null ? null : body.get("dir");
         if (dir == null || dir.trim().isEmpty()) {
-            throw new CustomException(400, "请指定一个目录");
+            throw new CustomException("请指定一个目录");
         }
         return Result.success(qiniuStorageService.createDirectory(dir));
     }
@@ -147,7 +147,7 @@ public class FileController {
         String fromDir = body == null ? null : body.get("fromDir");
         String toDir = body == null ? null : body.get("toDir");
         if (fromDir == null || fromDir.trim().isEmpty() || toDir == null || toDir.trim().isEmpty()) {
-            throw new CustomException(400, "请指定原目录和新目录");
+            throw new CustomException("请指定原目录和新目录");
         }
         return Result.success(qiniuStorageService.renameDirectory(fromDir, toDir));
     }
@@ -158,7 +158,7 @@ public class FileController {
     public Result<Map<String, Object>> deleteDir(@RequestBody Map<String, String> body) throws QiniuException {
         String dir = body == null ? null : body.get("dir");
         if (dir == null || dir.trim().isEmpty()) {
-            throw new CustomException(400, "请指定一个目录");
+            throw new CustomException("请指定一个目录");
         }
         return Result.success(qiniuStorageService.deleteDirectory(dir));
     }

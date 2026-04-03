@@ -79,7 +79,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         User user = userMapper.selectOne(queryWrapper);
         if (user == null)
-            throw new CustomException(400, "用户名或密码错误");
+            throw new CustomException("用户名或密码错误");
 
         Map<String, Object> result = new HashMap<>();
         String token = JwtUtils.createJWT(result);
@@ -107,7 +107,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         User user = userMapper.selectOne(queryWrapper);
 
         if (user == null) {
-            throw new CustomException(400, "用户名或旧密码错误");
+            throw new CustomException("用户名或旧密码错误");
         }
 
         user.setUsername(data.getNewUsername());
@@ -133,7 +133,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                     response.setStatus(HttpStatus.UNAUTHORIZED.value()); // 401
                 }
             }
-            throw new CustomException(400, "身份验证失败：无效或过期的Token");
+            throw new CustomException("身份验证失败：无效或过期的Token");
         }
     }
 }

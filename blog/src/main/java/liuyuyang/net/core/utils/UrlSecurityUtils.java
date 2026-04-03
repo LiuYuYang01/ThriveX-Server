@@ -42,30 +42,30 @@ public final class UrlSecurityUtils {
         URI uri = parseUri(rawUrl, fieldName);
         String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
         if (!"http".equals(scheme) && !"https".equals(scheme)) {
-            throw new CustomException(400, fieldName + " 仅支持 http/https 协议");
+            throw new CustomException(fieldName + " 仅支持 http/https 协议");
         }
 
         String host = uri.getHost();
         if (!StringUtils.hasText(host)) {
-            throw new CustomException(400, fieldName + " 地址非法");
+            throw new CustomException(fieldName + " 地址非法");
         }
 
         String lowerHost = host.toLowerCase(Locale.ROOT);
         if ("localhost".equals(lowerHost)) {
-            throw new CustomException(400, fieldName + " 不允许使用本地域名");
+            throw new CustomException(fieldName + " 不允许使用本地域名");
         }
 
         try {
             InetAddress[] addresses = InetAddress.getAllByName(host);
             for (InetAddress address : addresses) {
                 if (isInternalAddress(address)) {
-                    throw new CustomException(400, fieldName + " 不允许使用内网或本地地址");
+                    throw new CustomException(fieldName + " 不允许使用内网或本地地址");
                 }
             }
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
-            throw new CustomException(400, fieldName + " 域名解析失败");
+            throw new CustomException(fieldName + " 域名解析失败");
         }
     }
 
@@ -73,7 +73,7 @@ public final class UrlSecurityUtils {
         try {
             return URI.create(rawUrl.trim());
         } catch (Exception e) {
-            throw new CustomException(400, fieldName + " 地址格式错误");
+            throw new CustomException(fieldName + " 地址格式错误");
         }
     }
 

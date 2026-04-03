@@ -26,7 +26,8 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
         LambdaQueryWrapper<Tag> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(Tag::getName, tag.getName());
         Tag data = tagMapper.selectOne(lambdaQueryWrapper);
-        if (data != null) throw new RuntimeException("该标签已存在");
+        if (data != null)
+            throw new CustomException("该标签已存在");
         return this.save(tag);
     }
 
@@ -43,7 +44,7 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
         }
 
         if (pageDTO.getPageNum() <= 0 || pageDTO.getPageSize() <= 0) {
-            throw new CustomException(400, "分页参数 page/size 必须大于 0");
+            throw new CustomException("分页参数 page/size 必须大于 0");
         }
 
         // 手动分页（数据源为统计查询结果）

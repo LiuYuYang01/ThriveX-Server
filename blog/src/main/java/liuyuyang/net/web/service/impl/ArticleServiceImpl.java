@@ -152,7 +152,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         if (is_del != 0 && is_del != 1) {
-            throw new CustomException(400, "参数有误：请选择是否严格删除");
+            throw new CustomException("参数有误：请选择是否严格删除");
         }
     }
 
@@ -181,7 +181,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Override
     public void editArticleData(ArticleFormDTO articleFormDTO) {
         if (articleFormDTO.getCateIds() == null || articleFormDTO.getCateIds().isEmpty())
-            throw new CustomException(400, "编辑失败：请绑定分类");
+            throw new CustomException("编辑失败：请绑定分类");
 
         // 删除文章关联的数据
         delArticleCorrelationData(articleFormDTO.getId());
@@ -574,7 +574,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     public void recordViewArticleData(Integer id) {
         Article data = articleMapper.selectById(id);
         if (data == null)
-            throw new CustomException(400, "获取失败：该文章不存在");
+            throw new CustomException("获取失败：该文章不存在");
         data.setView(data.getView() + 1);
         articleMapper.updateById(data);
     }
@@ -584,7 +584,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     public ArticleVO bindingArticleData(Integer id) {
         Article entity = articleMapper.selectById(id);
         if (entity == null)
-            throw new CustomException(400, "获取文章失败：该文章不存在");
+            throw new CustomException("获取文章失败：该文章不存在");
 
         ArticleVO data = new ArticleVO();
         BeanUtils.copyProperties(entity, data);
@@ -695,12 +695,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Override
     public void importArticleList(MultipartFile[] list) throws IOException {
         if (list == null || list.length == 0)
-            throw new CustomException(400, "导入失败：文件列表为空");
+            throw new CustomException("导入失败：文件列表为空");
 
         // 验证所有文件格式
         for (MultipartFile file : list) {
             if (file == null || file.getOriginalFilename() == null || !file.getOriginalFilename().endsWith(".md")) {
-                throw new CustomException(400, "导入失败：请确保所有文件都是 .md 格式");
+                throw new CustomException("导入失败：请确保所有文件都是 .md 格式");
             }
         }
 
