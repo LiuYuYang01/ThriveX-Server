@@ -81,6 +81,7 @@ public class CateController {
         return Result.success(result);
     }
 
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/{id}")
     @ApiOperation("获取分类")
