@@ -1,4 +1,4 @@
-package liuyuyang.net.result;
+package liuyuyang.net.vo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class IPage<T> {
+public class IPageVO<T> {
     private Long page; // 当前页
     private Long size; // 每页数量
     private Long pages; // 总页数
