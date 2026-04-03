@@ -124,6 +124,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         LambdaQueryWrapper<Cate> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(Cate::getOrder);
 
+        // 获取文章数量
         Map<Integer, Integer> articleCountByCateId = articleCateMapper
                 .getCateArticleCountByCateId()
                 .stream()
@@ -132,10 +133,12 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
                         CateArticleCountVO::getCount
                 ));
 
+        // 获取分类列表
         List<Cate> raw = cateMapper.selectList(wrapper);
         List<CateVO> listVos = raw.stream().map(cate -> {
             CateVO cateVO = new CateVO();
             BeanUtils.copyProperties(cate, cateVO);
+            // 设置文章数量
             cateVO.setCount(articleCountByCateId.getOrDefault(cate.getId(), 0));
             return cateVO;
         }).collect(Collectors.toList());

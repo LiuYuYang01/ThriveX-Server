@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModelProperty;
+import liuyuyang.net.enums.cate.CateTypeEnum;
 import lombok.Data;
 
 @Data
@@ -21,8 +22,8 @@ public class Cate {
     private String mark;
     @ApiModelProperty(value = "分类级别", example = "0", required = true)
     private Integer level;
-    @ApiModelProperty(value = "类型", example = "cate | nav")
-    private String type;
+    @ApiModelProperty(value = "分类类型：cate 分类，nav 导航", example = "cate", required = true)
+    private CateTypeEnum type;
     @TableField("`order`")
     @ApiModelProperty(value = "分类顺序", example = "1")
     private Integer order;

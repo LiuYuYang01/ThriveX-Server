@@ -1,7 +1,7 @@
 package liuyuyang.net.core.utils;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import liuyuyang.net.result.IPage;
+import liuyuyang.net.vo.IPageVO;
 import lombok.Data;
 
 import java.util.HashMap;
@@ -10,8 +10,8 @@ import java.util.Map;
 @Data
 public class Paging {
     // 将分页数据转换为强类型分页结果
-    public static <T> IPage<T> of(Page<T> data) {
-        return new IPage<>(
+    public static <T> IPageVO<T> of(Page<T> data) {
+        return new IPageVO<>(
                 data.getCurrent(),
                 data.getSize(),
                 data.getPages(),
