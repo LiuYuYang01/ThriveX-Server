@@ -3,8 +3,10 @@ package liuyuyang.net.dto.article;
 import io.swagger.annotations.ApiModelProperty;
 import liuyuyang.net.dto.FilterDTO;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class ArticleFilterDTO extends FilterDTO {
     @ApiModelProperty(value = "根据分类进行筛选")
     private Integer cateId;

@@ -31,8 +31,8 @@ public class TagController {
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
     public Result<String> addTagData(@RequestBody Tag tag) {
         tag.setId(null);
-        boolean res = tagService.addTagData(tag);
-        return res ? Result.success() : Result.error();
+        tagService.addTagData(tag);
+        return Result.success();
     }
 
     @DeleteMapping("/{id}")
@@ -42,24 +42,24 @@ public class TagController {
         Tag data = tagService.getById(id);
         if (data == null) return Result.error("该数据不存在");
 
-        boolean res = tagService.removeById(id);
-        return res ? Result.success() : Result.error();
+        tagService.removeById(id);
+        return Result.success();
     }
 
     @DeleteMapping("/batch")
     @ApiOperation("批量删除标签")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
     public Result<String> batchDel(@RequestBody List<Integer> ids) {
-        boolean res = tagService.removeByIds(ids);
-        return res ? Result.success() : Result.error();
+        tagService.removeByIds(ids);
+        return Result.success();
     }
 
     @PatchMapping
     @ApiOperation("编辑标签")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
     public Result<String> editTagData(@RequestBody Tag tag) {
-        boolean res = tagService.updateById(tag);
-        return res ? Result.success() : Result.error();
+        tagService.updateById(tag);
+        return Result.success();
     }
 
     @RateLimit
