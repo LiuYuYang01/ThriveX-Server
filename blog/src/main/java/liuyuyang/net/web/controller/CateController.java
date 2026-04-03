@@ -6,15 +6,12 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
-import liuyuyang.net.core.execption.CustomException;
+import liuyuyang.net.core.utils.Paging;
+import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.cate.CateFilterDTO;
 import liuyuyang.net.dto.cate.CateFormDTO;
-import liuyuyang.net.model.Cate;
-import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.vo.cate.CateVO;
 import liuyuyang.net.web.service.CateService;
-import liuyuyang.net.core.utils.Paging;
-import org.springframework.beans.BeanUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,11 +30,9 @@ public class CateController {
     @PostMapping
     @ApiOperation("新增分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addArticleData(@RequestBody CateFormDTO cateFormDTO) {
+    public Result<String> addCateData(@RequestBody CateFormDTO cateFormDTO) {
         cateFormDTO.setId(null);
-        Cate cate = new Cate();
-        BeanUtils.copyProperties(cateFormDTO, cate);
-        cateService.save(cate);
+        cateService.addCateData(cateFormDTO);
         return Result.success();
     }
 
@@ -53,9 +48,6 @@ public class CateController {
     @ApiOperation("批量删除分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
     public Result<String> batchDelCateData(@RequestBody List<Integer> ids) {
-        if (ids == null || ids.isEmpty()) {
-            throw new CustomException("请提供要删除的分类 ID");
-        }
         cateService.batchDelCateData(ids);
         return Result.success();
     }
@@ -63,11 +55,19 @@ public class CateController {
     @PatchMapping
     @ApiOperation("编辑分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> editArticleData(@RequestBody CateFormDTO cateFormDTO) {
-        Cate cate = new Cate();
-        BeanUtils.copyProperties(cateFormDTO, cate);
-        cateService.updateById(cate);
+    public Result<String> editCateData(@RequestBody CateFormDTO cateFormDTO) {
+        cateService.editCateData(cateFormDTO);
         return Result.success();
+    }
+
+    @NoTokenRequired
+    @RateLimit
+    @GetMapping("/{id}")
+    @ApiOperation("获取分类")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
+    public Result<CateVO> getCateData(@PathVariable Integer id) {
+        CateVO data = cateService.getCateData(id);
+        return Result.success(data);
     }
 
     @NoTokenRequired
@@ -75,19 +75,9 @@ public class CateController {
     @GetMapping
     @ApiOperation(value = "获取分类列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<Map<String, Object>> getCateList(CateFilterDTO cateFilterDTO) {
-        Page<CateVO> list = cateService.getCateList(cateFilterDTO);
+    public Result<Map<String, Object>> getCateList(CateFilterDTO filterVo) {
+        Page<CateVO> list = cateService.getCateList(filterVo);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
-    }
-
-    @NoTokenRequired
-    @RateLimit
-    @GetMapping("/{id}")
-    @ApiOperation("获取分类")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result<Cate> getCateData(@PathVariable Integer id) {
-        Cate data = cateService.getCateData(id);
-        return Result.success(data);
     }
 }
