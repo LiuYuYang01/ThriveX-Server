@@ -64,22 +64,22 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private CommonUtils commonUtils;
 
     @NotNull
-    private static LambdaQueryWrapper<Article> getArticleQueryWrapper(ArticleFilterDTO filterVo) {
+    private static LambdaQueryWrapper<Article> getArticleQueryWrapper(ArticleFilterDTO articleFilterDTO) {
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.orderByDesc(Article::getCreateTime);
 
         // 根据关键字通过标题过滤出对应文章数据
-        if (filterVo.getTitle() != null && !filterVo.getTitle().isEmpty()) {
-            queryWrapper.like(Article::getTitle, filterVo.getTitle());
+        if (articleFilterDTO.getTitle() != null && !articleFilterDTO.getTitle().isEmpty()) {
+            queryWrapper.like(Article::getTitle, articleFilterDTO.getTitle());
         }
 
         // 根据开始与结束时间过滤
-        if (filterVo.getStartDate() != null && filterVo.getEndDate() != null) {
-            queryWrapper.between(Article::getCreateTime, filterVo.getStartDate(), filterVo.getEndDate());
-        } else if (filterVo.getStartDate() != null) {
-            queryWrapper.ge(Article::getCreateTime, filterVo.getStartDate());
-        } else if (filterVo.getEndDate() != null) {
-            queryWrapper.le(Article::getCreateTime, filterVo.getEndDate());
+        if (articleFilterDTO.getStartDate() != null && articleFilterDTO.getEndDate() != null) {
+            queryWrapper.between(Article::getCreateTime, articleFilterDTO.getStartDate(), articleFilterDTO.getEndDate());
+        } else if (articleFilterDTO.getStartDate() != null) {
+            queryWrapper.ge(Article::getCreateTime, articleFilterDTO.getStartDate());
+        } else if (articleFilterDTO.getEndDate() != null) {
+            queryWrapper.le(Article::getCreateTime, articleFilterDTO.getEndDate());
         }
         return queryWrapper;
     }
@@ -314,18 +314,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     // 处理文章数据
     @Override
-    public List<ArticleVO> processArticleData(ArticleFilterDTO filterVo) {
+    public List<ArticleVO> processArticleData(ArticleFilterDTO articleFilterDTO) {
         // 首先根据文章配置表的条件筛选出符合条件的文章ID
         LambdaQueryWrapper<ArticleConfig> configQueryWrapper = new LambdaQueryWrapper<>();
 
         // 根据草稿状态筛选
-        if (filterVo.getIsDraft() != null) {
-            configQueryWrapper.eq(ArticleConfig::getIsDraft, filterVo.getIsDraft());
+        if (articleFilterDTO.getIsDraft() != null) {
+            configQueryWrapper.eq(ArticleConfig::getIsDraft, articleFilterDTO.getIsDraft());
         }
 
         // 根据删除状态筛选
-        if (filterVo.getIsDel() != null) {
-            configQueryWrapper.eq(ArticleConfig::getIsDel, filterVo.getIsDel());
+        if (articleFilterDTO.getIsDel() != null) {
+            configQueryWrapper.eq(ArticleConfig::getIsDel, articleFilterDTO.getIsDel());
         }
 
         // 获取符合条件的文章ID列表
@@ -340,7 +340,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 构建文章查询条件
-        LambdaQueryWrapper<Article> queryWrapper = queryWrapperArticle(filterVo);
+        LambdaQueryWrapper<Article> queryWrapper = queryWrapperArticle(articleFilterDTO);
         queryWrapper.in(Article::getId, articleIds);
         List<Article> list = articleMapper.selectList(queryWrapper);
 
@@ -355,8 +355,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public Page<ArticleVO> getArticleList(ArticleFilterDTO filterVo) {
-        List<ArticleVO> list = processArticleData(filterVo);
+    public Page<ArticleVO> getArticleList(ArticleFilterDTO articleFilterDTO) {
+        List<ArticleVO> list = processArticleData(articleFilterDTO);
 
         boolean isAdmin = CommonUtils.isAdmin();
         if (!isAdmin) {
@@ -367,7 +367,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 不传 page/size 则返回全部
-        if (filterVo.getPageNum() == null || filterVo.getPageSize() == null) {
+        if (articleFilterDTO.getPageNum() == null || articleFilterDTO.getPageSize() == null) {
             Page<ArticleVO> result = new Page<>(1, list.size());
             result.setRecords(new ArrayList<>(list));
             result.setTotal(list.size());
@@ -375,8 +375,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         PageDTO pageDTO = new PageDTO();
-        pageDTO.setPageNum(Math.max(1, filterVo.getPageNum()));
-        pageDTO.setPageSize(Math.max(1, filterVo.getPageSize()));
+        pageDTO.setPageNum(Math.max(1, articleFilterDTO.getPageNum()));
+        pageDTO.setPageSize(Math.max(1, articleFilterDTO.getPageSize()));
         return commonUtils.getPageData(pageDTO, list);
     }
 
@@ -599,7 +599,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (!cate_ids.isEmpty()) {
             LambdaQueryWrapper<Cate> queryWrapperCateList = new LambdaQueryWrapper<>();
             queryWrapperCateList.in(Cate::getId, cate_ids);
-            List<CateVO> cates = cateService.getCateTreeChildren(cateMapper.selectList(null),0);
+            List<CateVO> cates = cateService.getCateTreeChildren(cateMapper.selectList(null), 0);
             data.setCateList(cates);
         }
 
@@ -629,13 +629,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     // 过滤文章数据
     @Override
-    public LambdaQueryWrapper<Article> queryWrapperArticle(ArticleFilterDTO filterVo) {
-        LambdaQueryWrapper<Article> queryWrapper = getArticleQueryWrapper(filterVo);
+    public LambdaQueryWrapper<Article> queryWrapperArticle(ArticleFilterDTO articleFilterDTO) {
+        LambdaQueryWrapper<Article> queryWrapper = getArticleQueryWrapper(articleFilterDTO);
 
         // 根据分类id过滤
-        if (filterVo.getCateId() != null) {
+        if (articleFilterDTO.getCateId() != null) {
             LambdaQueryWrapper<ArticleCate> queryWrapperArticleIds = new LambdaQueryWrapper<>();
-            queryWrapperArticleIds.eq(ArticleCate::getCateId, filterVo.getCateId());
+            queryWrapperArticleIds.eq(ArticleCate::getCateId, articleFilterDTO.getCateId());
             List<Integer> articleIds = articleCateMapper.selectList(queryWrapperArticleIds).stream()
                     .map(ArticleCate::getArticleId).collect(Collectors.toList());
 
@@ -648,9 +648,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         // 根据标签id过滤
-        if (filterVo.getTagId() != null) {
+        if (articleFilterDTO.getTagId() != null) {
             LambdaQueryWrapper<ArticleTag> queryWrapperArticleIds = new LambdaQueryWrapper<>();
-            queryWrapperArticleIds.eq(ArticleTag::getTagId, filterVo.getTagId());
+            queryWrapperArticleIds.eq(ArticleTag::getTagId, articleFilterDTO.getTagId());
             List<Integer> articleIds = articleTagMapper.selectList(queryWrapperArticleIds).stream()
                     .map(ArticleTag::getArticleId).collect(Collectors.toList());
 
@@ -892,4 +892,3 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         return fileName.replaceAll("[\\\\/:*?\"<>|]", "_");
     }
 }
-

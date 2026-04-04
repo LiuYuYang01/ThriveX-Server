@@ -87,10 +87,10 @@ public class ArticleController {
     @NoTokenRequired
     @RateLimit
     @GetMapping
-    @ApiOperation(value = "获取文章列表", notes = "不传 page/size 返回全部，传则分页（来自 filterVo）")
+    @ApiOperation(value = "获取文章列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
-    public Result<Map<String, Object>> getArticleList(ArticleFilterDTO filterVo) {
-        Page<ArticleVO> list = articleService.getArticleList(filterVo);
+    public Result<Map<String, Object>> getArticleList(ArticleFilterDTO articleFilterDTO) {
+        Page<ArticleVO> list = articleService.getArticleList(articleFilterDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }

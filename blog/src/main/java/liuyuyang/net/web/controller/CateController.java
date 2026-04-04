@@ -75,8 +75,8 @@ public class CateController {
     @GetMapping
     @ApiOperation(value = "获取分类列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<Map<String, Object>> getCateList(CateFilterDTO filterVo) {
-        Page<CateVO> list = cateService.getCateList(filterVo);
+    public Result<Map<String, Object>> getCateList(CateFilterDTO cateFilterDTO) {
+        Page<CateVO> list = cateService.getCateList(cateFilterDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }

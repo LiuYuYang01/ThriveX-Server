@@ -77,8 +77,8 @@ public class CommentController {
     @GetMapping
     @ApiOperation(value = "获取评论列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<Map<String, Object>> getCommentList(CommentFilterDTO filterVo) {
-        return Result.success(Paging.filter(commentService.getCommentList(filterVo)));
+    public Result<Map<String, Object>> getCommentList(CommentFilterDTO linkFilterDTO) {
+        return Result.success(Paging.filter(commentService.getCommentList(linkFilterDTO)));
     }
 
     @NoTokenRequired

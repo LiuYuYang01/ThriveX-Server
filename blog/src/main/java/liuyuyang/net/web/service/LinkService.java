@@ -13,7 +13,7 @@ public interface LinkService extends IService<Link> {
 
     Link get(Integer cid);
 
-    List<Link> list(LinkFilterDTO filterVo);
+    List<Link> list(LinkFilterDTO linkFilterDTO);
 
-    Page<Link> paging(LinkFilterDTO filterVo, PageDTO pageDTO);
+    Page<Link> paging(LinkFilterDTO linkFilterDTO, PageDTO pageDTO);
 }

@@ -139,11 +139,11 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     }
 
     @Override
-    public Page<CommentVO> getCommentList(CommentFilterDTO filterVo) {
-        List<CommentVO> vos = buildCommentVOList(filterVo);
+    public Page<CommentVO> getCommentList(CommentFilterDTO commentFilterDTO) {
+        List<CommentVO> vos = buildCommentVOList(commentFilterDTO);
 
         // 不传 page/size 则返回全部
-        if (filterVo.getPageNum() == null || filterVo.getPageSize() == null) {
+        if (commentFilterDTO.getPageNum() == null || commentFilterDTO.getPageSize() == null) {
             Page<CommentVO> result = new Page<>(1, vos.size());
             result.setRecords(new ArrayList<>(vos));
             result.setTotal(vos.size());
@@ -151,8 +151,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         }
 
         PageDTO pageDTO = new PageDTO();
-        pageDTO.setPageNum(Math.max(1, filterVo.getPageNum()));
-        pageDTO.setPageSize(Math.max(1, filterVo.getPageSize()));
+        pageDTO.setPageNum(Math.max(1, commentFilterDTO.getPageNum()));
+        pageDTO.setPageSize(Math.max(1, commentFilterDTO.getPageSize()));
         return commonUtils.getPageData(pageDTO, vos);
     }
 
@@ -185,22 +185,22 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         commentMapper.updateById(data);
     }
 
-    private List<Comment> queryFlatComments(CommentFilterDTO filterVo) {
-        QueryWrapper<Comment> queryWrapper = commonUtils.queryWrapperFilter(filterVo, "name");
-        queryWrapper.eq("audit_status", filterVo.getStatus());
+    private List<Comment> queryFlatComments(CommentFilterDTO commentFilterDTO) {
+        QueryWrapper<Comment> queryWrapper = commonUtils.queryWrapperFilter(commentFilterDTO, "name");
+        queryWrapper.eq("audit_status", commentFilterDTO.getStatus());
 
-        if (filterVo.getContent() != null) {
-            queryWrapper.like("content", filterVo.getContent());
+        if (commentFilterDTO.getContent() != null) {
+            queryWrapper.like("content", commentFilterDTO.getContent());
         }
 
         return commentMapper.selectList(queryWrapper);
     }
 
-    private List<CommentVO> buildCommentVOList(CommentFilterDTO filterVo) {
-        List<Comment> flat = queryFlatComments(filterVo);
+    private List<CommentVO> buildCommentVOList(CommentFilterDTO commentFilterDTO) {
+        List<Comment> flat = queryFlatComments(commentFilterDTO);
 
         // 查询的结构格式
-        if (Objects.equals(filterVo.getPattern(), "list")) {
+        if (Objects.equals(commentFilterDTO.getPattern(), "list")) {
             return flat.stream().map(c -> {
                 CommentVO vo = toCommentVO(c);
                 vo.setArticleTitle(articleTitleOf(c.getArticleId()));

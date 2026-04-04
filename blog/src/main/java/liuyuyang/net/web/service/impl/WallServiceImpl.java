@@ -47,12 +47,12 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
     }
 
     @Override
-    public List<Wall> list(WallFilterDTO filterVo) {
-        QueryWrapper<Wall> queryWrapper = commonUtils.queryWrapperFilter(filterVo, "content");
-        queryWrapper.eq("audit_status", filterVo.getStatus());
+    public List<Wall> list(WallFilterDTO wallFilterDTO) {
+        QueryWrapper<Wall> queryWrapper = commonUtils.queryWrapperFilter(wallFilterDTO, "content");
+        queryWrapper.eq("audit_status", wallFilterDTO.getStatus());
 
-        if (filterVo.getCateId() != null) {
-            queryWrapper.eq("cate_id", filterVo.getCateId());
+        if (wallFilterDTO.getCateId() != null) {
+            queryWrapper.eq("cate_id", wallFilterDTO.getCateId());
         }
 
         List<Wall> list = wallMapper.selectList(queryWrapper);
@@ -66,8 +66,8 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
     }
 
     @Override
-    public Page<Wall> paging(WallFilterDTO filterVo, PageDTO pageDTO) {
-        List<Wall> list = list(filterVo);
+    public Page<Wall> paging(WallFilterDTO wallFilterDTO, PageDTO pageDTO) {
+        List<Wall> list = list(wallFilterDTO);
         return commonUtils.getPageData(pageDTO, list);
     }
 

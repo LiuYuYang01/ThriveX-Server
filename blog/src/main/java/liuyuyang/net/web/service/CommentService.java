@@ -21,7 +21,7 @@ public interface CommentService extends IService<Comment> {
 
     CommentVO getCommentData(Integer id);
 
-    Page<CommentVO> getCommentList(CommentFilterDTO filterVo);
+    Page<CommentVO> getCommentList(CommentFilterDTO commentFilterDTO);
 
     Page<CommentVO> getArticleCommentList(Integer articleId, PageDTO pageDTO);
 
