@@ -1,4 +1,4 @@
-package liuyuyang.net.enums.cate;
+package liuyuyang.net.enums.comment;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -9,13 +9,13 @@ import liuyuyang.net.enums.CodeBackedEnum;
 import java.util.Objects;
 
 @Getter
-public enum CatePatternEnum implements CodeBackedEnum {
+public enum CommentPatternEnum implements CodeBackedEnum {
     TREE("tree"),
     LIST("list");
 
     private final String code;
 
-    CatePatternEnum(String code) {
+    CommentPatternEnum(String code) {
         this.code = code;
     }
 
@@ -24,17 +24,18 @@ public enum CatePatternEnum implements CodeBackedEnum {
         return code;
     }
 
-
     @JsonCreator
-    public static CatePatternEnum fromJson(String code) {
-        if (code == null) return null;
+    public static CommentPatternEnum fromJson(String code) {
+        if (code == null) {
+            return null;
+        }
 
-        for (CatePatternEnum s : values()) {
+        for (CommentPatternEnum s : values()) {
             if (Objects.equals(s.code, code)) {
                 return s;
             }
         }
 
-        throw new IllegalArgumentException("不支持的分类展示模式: " + code);
+        throw new IllegalArgumentException("不支持的评论展示模式: " + code);
     }
 }

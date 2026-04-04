@@ -7,6 +7,7 @@ import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.comment.CommentFilterDTO;
 import liuyuyang.net.dto.comment.CommentFormDTO;
+import liuyuyang.net.enums.comment.CommentPatternEnum;
 import liuyuyang.net.model.Article;
 import liuyuyang.net.model.Comment;
 import liuyuyang.net.vo.comment.CommentVO;
@@ -199,8 +200,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     private List<CommentVO> buildCommentVOList(CommentFilterDTO commentFilterDTO) {
         List<Comment> flat = queryFlatComments(commentFilterDTO);
 
-        // 查询的结构格式
-        if (Objects.equals(commentFilterDTO.getPattern(), "list")) {
+        // 如果是 list 模式则平铺列表，否则 tree 模式构建多级评论（默认）
+        if (commentFilterDTO.getPattern() == CommentPatternEnum.LIST) {
             return flat.stream().map(c -> {
                 CommentVO vo = toCommentVO(c);
                 vo.setArticleTitle(articleTitleOf(c.getArticleId()));
@@ -208,7 +209,6 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             }).collect(Collectors.toList());
         }
 
-        // 构建多级评论
         List<CommentVO> tree = buildCommentTreeVO(flat, 0);
         fillArticleTitles(tree);
         return tree;
