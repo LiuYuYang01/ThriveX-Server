@@ -188,7 +188,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     private List<Comment> queryFlatComments(CommentFilterDTO filterVo) {
         QueryWrapper<Comment> queryWrapper = commonUtils.queryWrapperFilter(filterVo, "name");
         queryWrapper.eq("audit_status", filterVo.getStatus());
-        if (filterVo.getContent() != null && !filterVo.getContent().isEmpty()) {
+
+        if (filterVo.getContent() != null) {
             queryWrapper.like("content", filterVo.getContent());
         }
 

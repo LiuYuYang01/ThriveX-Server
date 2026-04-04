@@ -69,8 +69,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         queryWrapper.orderByDesc(Article::getCreateTime);
 
         // 根据关键字通过标题过滤出对应文章数据
-        if (filterVo.getKey() != null && !filterVo.getKey().isEmpty()) {
-            queryWrapper.like(Article::getTitle, filterVo.getKey());
+        if (filterVo.getTitle() != null && !filterVo.getTitle().isEmpty()) {
+            queryWrapper.like(Article::getTitle, filterVo.getTitle());
         }
 
         // 根据开始与结束时间过滤

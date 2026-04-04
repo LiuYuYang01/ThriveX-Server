@@ -90,11 +90,6 @@ public class CommonUtils {
         QueryWrapper<T> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByDesc("create_time");
 
-        // 根据关键字通过标题过滤出对应数据
-        if (filterDTO.getKey() != null && !filterDTO.getKey().isEmpty()) {
-            queryWrapper.like(key, "%" + filterDTO.getKey() + "%");
-        }
-
         // 根据开始与结束时间过滤
         if (filterDTO.getStartDate() != null && filterDTO.getEndDate() != null) {
             queryWrapper.between("create_time", filterDTO.getStartDate(), filterDTO.getEndDate());

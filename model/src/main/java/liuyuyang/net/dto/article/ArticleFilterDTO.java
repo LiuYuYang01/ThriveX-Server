@@ -8,6 +8,8 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class ArticleFilterDTO extends FilterDTO {
+    @ApiModelProperty(value = "根据文章标题进行筛选")
+    private String title;
     @ApiModelProperty(value = "根据分类进行筛选")
     private Integer cateId;
     @ApiModelProperty(value = "根据标签进行筛选")

@@ -24,9 +24,9 @@ public class FootprintServiceImpl extends ServiceImpl<FootprintMapper, Footprint
         queryWrapper.orderByDesc("create_time");
 
         // 根据关键字通过标题过滤出对应文章数据
-        if (filterDTO.getKey() != null && !filterDTO.getKey().isEmpty()) {
-            queryWrapper.like("address", "%" + filterDTO.getKey() + "%");
-        }
+        // if (filterDTO.getKey() != null && !filterDTO.getKey().isEmpty()) {
+        //     queryWrapper.like("address", "%" + filterDTO.getKey() + "%");
+        // }
 
         // 根据开始与结束时间过滤
         if (filterDTO.getStartDate() != null && filterDTO.getEndDate() != null) {
