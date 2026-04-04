@@ -82,8 +82,8 @@ public class LinkController {
     @PostMapping("/list")
     @ApiOperation("获取网站列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<List<Link>> list(@RequestBody LinkFilterDTO filterVo) {
-        List<Link> data = linkService.list(filterVo);
+    public Result<List<Link>> list(@RequestBody LinkFilterDTO linkFilterDTO) {
+        List<Link> data = linkService.list(linkFilterDTO);
         return Result.success(data);
     }
 
@@ -92,8 +92,8 @@ public class LinkController {
     @PostMapping("/paging")
     @ApiOperation("分页查询网站列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result paging(@RequestBody LinkFilterDTO filterVo, PageDTO pageDTO) {
-        Page<Link> data = linkService.paging(filterVo, pageDTO);
+    public Result paging(@RequestBody LinkFilterDTO linkFilterDTO, PageDTO pageDTO) {
+        Page<Link> data = linkService.paging(linkFilterDTO, pageDTO);
         Map<String, Object> result = Paging.filter(data);
         return Result.success(result);
     }

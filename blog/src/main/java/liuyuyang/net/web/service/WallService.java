@@ -18,9 +18,9 @@ public interface WallService extends IService<Wall> {
 
     List<WallCate> getCateList();
 
-    List<Wall> list(WallFilterDTO filterVo);
+    List<Wall> list(WallFilterDTO wallFilterDTO);
 
-    Page<Wall> paging(WallFilterDTO filterVo, PageDTO pageDTO);
+    Page<Wall> paging(WallFilterDTO wallFilterDTO, PageDTO pageDTO);
 
     void updateChoice(Integer id);
 }

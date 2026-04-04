@@ -27,9 +27,9 @@ public interface ArticleService extends IService<Article> {
 
     ArticleVO getArticleData(Integer id, String password);
 
-    List<ArticleVO> processArticleData(ArticleFilterDTO filterVo);
+    List<ArticleVO> processArticleData(ArticleFilterDTO articleFilterDTO);
 
-    Page<ArticleVO> getArticleList(ArticleFilterDTO filterVo);
+    Page<ArticleVO> getArticleList(ArticleFilterDTO articleFilterDTO);
 
     Page<ArticleVO> getCateArticleList(Integer id, PageDTO pageDTO);
 
@@ -47,5 +47,5 @@ public interface ArticleService extends IService<Article> {
 
     ResponseEntity<byte[]> exportArticleList(List<Integer> ids);
 
-    LambdaQueryWrapper<Article> queryWrapperArticle(ArticleFilterDTO filterVo);
+    LambdaQueryWrapper<Article> queryWrapperArticle(ArticleFilterDTO articleFilterDTO);
 }

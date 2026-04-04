@@ -79,8 +79,8 @@ public class WallController {
     @PostMapping("/list")
     @ApiOperation("获取留言列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<List<Wall>> list(@RequestBody WallFilterDTO filterVo) {
-        List<Wall> list = wallService.list(filterVo);
+    public Result<List<Wall>> list(@RequestBody WallFilterDTO wallFilterDTO) {
+        List<Wall> list = wallService.list(wallFilterDTO);
         return Result.success(list);
     }
 
@@ -89,8 +89,8 @@ public class WallController {
     @PostMapping("/paging")
     @ApiOperation("分页查询留言列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result paging(@RequestBody WallFilterDTO filterVo, PageDTO pageDTO) {
-        Page<Wall> list = wallService.paging(filterVo, pageDTO);
+    public Result paging(@RequestBody WallFilterDTO wallFilterDTO, PageDTO pageDTO) {
+        Page<Wall> list = wallService.paging(wallFilterDTO, pageDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
