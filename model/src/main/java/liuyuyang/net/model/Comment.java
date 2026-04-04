@@ -6,8 +6,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
 @TableName("comment")
+@EqualsAndHashCode(callSuper = true)
 public class Comment extends BaseModel {
     @ApiModelProperty(value = "评论者名称", example = "宇阳", required = true)
     private String name;
@@ -18,7 +18,7 @@ public class Comment extends BaseModel {
     @ApiModelProperty(value = "评论者邮箱", example = "liuyuyang1024@yeah.net")
     private String email;
 
-    @ApiModelProperty(value = "评论者网站", example = "https://blog.liuyuyang.net")
+    @ApiModelProperty(value = "评论者网站", example = "https://liuyuyang.net")
     private String url;
 
     @ApiModelProperty(value = "评论内容", example = "这是一段评论内容", required = true)
