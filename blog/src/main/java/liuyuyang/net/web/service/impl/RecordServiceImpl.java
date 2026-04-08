@@ -25,7 +25,7 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
 
     @Override
     public List<Record> list(FilterDTO filterDTO) {
-        QueryWrapper<Record> queryWrapper = commonUtils.queryWrapperFilter(filterDTO, "content");
+        QueryWrapper<Record> queryWrapper = commonUtils.queryWrapperDateFilter(filterDTO, "content");
         List<Record> list = recordMapper.selectList(queryWrapper);
         return list;
     }

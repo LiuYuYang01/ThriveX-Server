@@ -187,7 +187,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     }
 
     private List<Comment> queryFlatComments(CommentFilterDTO commentFilterDTO) {
-        QueryWrapper<Comment> queryWrapper = commonUtils.queryWrapperFilter(commentFilterDTO, "name");
+        QueryWrapper<Comment> queryWrapper = commonUtils.queryWrapperDateFilter(commentFilterDTO, "name");
         queryWrapper.eq("audit_status", commentFilterDTO.getStatus());
 
         if (commentFilterDTO.getContent() != null) {
