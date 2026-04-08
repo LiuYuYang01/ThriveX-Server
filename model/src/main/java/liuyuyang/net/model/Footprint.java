@@ -5,11 +5,13 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
 @Data
-@TableName(value = "footprint", autoResultMap = true)
+@EqualsAndHashCode(callSuper = true)
+@TableName(value = "footprint")
 public class Footprint extends BaseModel {
     @ApiModelProperty(value = "标题", example = "这是一个标题", required = true)
     private String title;
