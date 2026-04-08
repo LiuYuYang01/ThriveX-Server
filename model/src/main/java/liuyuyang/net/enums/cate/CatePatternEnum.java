@@ -4,14 +4,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
-import liuyuyang.net.enums.CodeBackedEnum;
-
 import java.util.Objects;
 
 @Getter
-public enum CatePatternEnum implements CodeBackedEnum {
+public enum CatePatternEnum {
     TREE("tree"),
-    LIST("list");
+    LIST("list"),
+
+    tree("tree"),
+    list("list");
 
     private final String code;
 
