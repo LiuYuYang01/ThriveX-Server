@@ -86,7 +86,8 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
 
     @Override
     public List<Link> list(LinkFilterDTO linkFilterDTO) {
-        QueryWrapper<Link> queryWrapper = commonUtils.queryWrapperFilter(linkFilterDTO);
+        // QueryWrapper<Link> queryWrapper = commonUtils.queryWrapperFilter(linkFilterDTO);
+        QueryWrapper<Link> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("audit_status", linkFilterDTO.getStatus()); // 只显示审核成功的网站
 
         // 查询所有网站

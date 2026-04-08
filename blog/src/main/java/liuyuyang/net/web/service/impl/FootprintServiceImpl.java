@@ -73,7 +73,7 @@ public class FootprintServiceImpl extends ServiceImpl<FootprintMapper, Footprint
 
     @Override
     public Page<FootprintVO> getFootprintList(FootprintFilterDTO footprintFilterDTO) {
-        QueryWrapper<Footprint> queryWrapper = commonUtils.queryWrapperFilter(footprintFilterDTO, "title");
+        QueryWrapper<Footprint> queryWrapper = commonUtils.queryWrapperDateFilter(footprintFilterDTO, "title");
 
         // 根据关键字通过标题过滤出对应文章数据
         if (footprintFilterDTO.getAddress() != null) {

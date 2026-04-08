@@ -81,12 +81,7 @@ public class CommonUtils {
         return result;
     }
 
-    // 过滤数据
-    public <T> QueryWrapper<T> queryWrapperFilter(FilterDTO filterDTO) {
-        return queryWrapperFilter(filterDTO, "title");
-    }
-
-    public <T> QueryWrapper<T> queryWrapperFilter(FilterDTO filterDTO, String key) {
+    public <T> QueryWrapper<T> queryWrapperDateFilter(FilterDTO filterDTO, String key) {
         QueryWrapper<T> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByDesc("create_time");
 

@@ -48,7 +48,7 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
 
     @Override
     public List<Wall> list(WallFilterDTO wallFilterDTO) {
-        QueryWrapper<Wall> queryWrapper = commonUtils.queryWrapperFilter(wallFilterDTO, "content");
+        QueryWrapper<Wall> queryWrapper = commonUtils.queryWrapperDateFilter(wallFilterDTO, "content");
         queryWrapper.eq("audit_status", wallFilterDTO.getStatus());
 
         if (wallFilterDTO.getCateId() != null) {
