@@ -191,7 +191,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         queryWrapper.eq("audit_status", commentFilterDTO.getStatus());
 
         if (commentFilterDTO.getContent() != null) {
-            queryWrapper.like("content", commentFilterDTO.getContent());
+            queryWrapper.like("content", "%" + commentFilterDTO.getContent() + "%");
         }
 
         return commentMapper.selectList(queryWrapper);
