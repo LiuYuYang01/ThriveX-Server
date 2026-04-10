@@ -5,15 +5,21 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.core.execption.CustomException;
+import liuyuyang.net.dto.PageDTO;
+import liuyuyang.net.dto.link.LinkFilterDTO;
+import liuyuyang.net.dto.link.LinkFormDTO;
+import liuyuyang.net.enums.link.LinkStatusEnum;
+import liuyuyang.net.model.Article;
+import liuyuyang.net.model.Link;
+import liuyuyang.net.model.LinkType;
+import liuyuyang.net.vo.link.LinkVO;
 import liuyuyang.net.web.mapper.LinkMapper;
 import liuyuyang.net.web.mapper.LinkTypeMapper;
-import liuyuyang.net.model.Link;
 import liuyuyang.net.web.service.LinkService;
 import liuyuyang.net.core.utils.EmailUtils;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.core.utils.UrlSecurityUtils;
-import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.link.LinkFilterDTO;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +41,9 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
     private EmailUtils emailUtils;
 
     @Override
-    public void add(Link link, String token) throws Exception {
+    public void addLinkData(LinkFormDTO linkFormDTO, String token) throws Exception {
+        Link link = new Link();
+        BeanUtils.copyProperties(linkFormDTO, link);
         UrlSecurityUtils.validateExternalHttpUrl("RSS 地址", link.getRss());
 
         // 前端用户手动提交
@@ -65,13 +73,37 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
         boolean isAdminPermissions = CommonUtils.isAdmin();
         // 如果是超级管理员在添加时候不需要审核，直接显示
         if (isAdminPermissions) {
-            link.setAuditStatus(1);
+            link.setStatus(LinkStatusEnum.APPROVED);
             linkMapper.insert(link);
         }
     }
 
     @Override
-    public Link get(Integer id) {
+    public void delLinkData(Integer id) {
+        Link data = linkMapper.selectById(id);
+        if (data == null) {
+            throw new CustomException("该网站不存在");
+        }
+        linkMapper.deleteById(id);
+    }
+
+    @Override
+    public void batchDelLinkData(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        removeByIds(ids);
+    }
+
+    @Override
+    public void editLinkData(LinkFormDTO linkFormDTO) {
+        Link link = new Link();
+        BeanUtils.copyProperties(linkFormDTO, link);
+        updateById(link);
+    }
+
+    @Override
+    public LinkVO getLinkData(Integer id) {
         Link data = linkMapper.selectById(id);
 
         if (data == null) {
@@ -79,46 +111,67 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
         }
 
         // 获取网站类型
-        data.setType(linkTypeMapper.selectById(id));
+        LinkVO linkVO = new LinkVO();
+        BeanUtils.copyProperties(data, linkVO);
+        linkVO.setType(linkTypeMapper.selectById(data.getTypeId()));
 
-        return data;
+        return linkVO;
     }
 
     @Override
-    public List<Link> list(LinkFilterDTO linkFilterDTO) {
-        // QueryWrapper<Link> queryWrapper = commonUtils.queryWrapperFilter(linkFilterDTO);
+    public Page<LinkVO> getLinkList(LinkFilterDTO linkFilterDTO) {
         QueryWrapper<Link> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("audit_status", linkFilterDTO.getStatus()); // 只显示审核成功的网站
+
+        // 根据关键字通过标题过滤出对应文章数据
+        if (linkFilterDTO.getTitle() != null) {
+            queryWrapper.like("title", "%" + linkFilterDTO.getTitle() + "%");
+        }
+
+        if(linkFilterDTO.getStatus() != null) {
+            queryWrapper.eq("status", linkFilterDTO.getStatus()); // 只显示审核成功的网站
+        }
 
         // 查询所有网站
-        List<Link> list = linkMapper.selectList(queryWrapper);
-
-        if (!list.isEmpty()) {
-            for (Link link : list) {
-                link.setType(linkTypeMapper.selectById(link.getTypeId()));
-            }
-        }
+        List<LinkVO> list = linkMapper.selectList(queryWrapper).stream().map(link -> {
+            LinkVO linkVO = new LinkVO();
+            BeanUtils.copyProperties(link, linkVO);
+            linkVO.setType(linkTypeMapper.selectById(link.getTypeId()));
+            return linkVO;
+        }).collect(Collectors.toList());
 
         list = list.stream().sorted((o1, o2) -> o2.getCreateTime().compareTo(o1.getCreateTime()))
                 .collect(Collectors.toList());
 
-        return list;
+        // 不传 page/size 则返回全部
+        if (linkFilterDTO.getPageNum() == null || linkFilterDTO.getPageSize() == null) {
+            Page<LinkVO> result = new Page<>(1, list.size());
+            result.setRecords(new ArrayList<>(list));
+            result.setTotal(list.size());
+            return result;
+        }
+
+        PageDTO pageDTO = new PageDTO();
+        pageDTO.setPageNum(Math.max(1, linkFilterDTO.getPageNum()));
+        pageDTO.setPageSize(Math.max(1, linkFilterDTO.getPageSize()));
+        Page<LinkVO> result = commonUtils.getPageData(pageDTO, list);
+        result.setTotal(list.size());
+        return result;
     }
 
     @Override
-    public Page<Link> paging(LinkFilterDTO linkFilterDTO, PageDTO pageDTO) {
-        List<Link> list = list(linkFilterDTO);
-        int p = pageDTO.getPageNum() != null ? Math.max(1, pageDTO.getPageNum()) : 1;
-        int s = pageDTO.getPageSize() != null ? Math.max(1, pageDTO.getPageSize()) : 5;
+    public List<LinkType> getLinkTypeList() {
+        return linkTypeMapper.selectList(null);
+    }
 
-        // 分页处理
-        int start = Math.min((p - 1) * s, list.size());
-        int end = Math.min(start + s, list.size());
-        List<Link> pagedLinks = start >= end ? new ArrayList<>() : list.subList(start, end);
+    @Override
+    public void auditLinkData(Integer id) {
+        Link data = linkMapper.selectById(id);
 
-        Page<Link> result = new Page<>(p, s);
-        result.setRecords(pagedLinks);
-        result.setTotal(list.size());
-        return result;
+        if (data == null) {
+            throw new CustomException("该网站不存在");
+        }
+
+        data.setStatus(LinkStatusEnum.APPROVED);
+        linkMapper.updateById(data);
     }
 }

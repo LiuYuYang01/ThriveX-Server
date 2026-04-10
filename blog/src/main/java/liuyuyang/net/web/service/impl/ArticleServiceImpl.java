@@ -70,7 +70,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 根据关键字通过标题过滤出对应文章数据
         if (articleFilterDTO.getTitle() != null && !articleFilterDTO.getTitle().isEmpty()) {
-            queryWrapper.like(Article::getTitle, articleFilterDTO.getTitle());
+            queryWrapper.like(Article::getTitle, "%" + articleFilterDTO.getTitle() + "%");
         }
 
         // 根据开始与结束时间过滤
