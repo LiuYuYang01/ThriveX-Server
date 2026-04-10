@@ -6,14 +6,14 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
-import liuyuyang.net.core.execption.CustomException;
-import liuyuyang.net.model.Wall;
-import liuyuyang.net.model.WallCate;
-import liuyuyang.net.core.utils.Result;
-import liuyuyang.net.web.service.WallService;
 import liuyuyang.net.core.utils.Paging;
+import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.wall.WallFilterDTO;
+import liuyuyang.net.dto.wall.WallFilterDTO;
+import liuyuyang.net.dto.wall.WallFormDTO;
+import liuyuyang.net.model.WallCate;
+import liuyuyang.net.vo.wall.WallVO;
+import liuyuyang.net.web.service.WallService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,74 +34,43 @@ public class WallController {
     @PostMapping
     @ApiOperation("新增留言")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> add(@RequestBody Wall wall) throws Exception {
-        wallService.add(wall);
+    public Result<String> addWallData(@RequestBody WallFormDTO wallFormDTO) throws Exception {
+        wallFormDTO.setId(null);
+        wallService.addWallData(wallFormDTO);
         return Result.success();
     }
 
     @DeleteMapping("/{id}")
     @ApiOperation("删除留言")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
-    public Result<String> del(@PathVariable Integer id) {
-        Wall data = wallService.getById(id);
-        if (data == null) return Result.error("删除留言失败：该留言不存在");
-        wallService.removeById(id);
+    public Result<String> delWallData(@PathVariable Integer id) {
+        wallService.delWallData(id);
         return Result.success();
     }
 
     @DeleteMapping("/batch")
     @ApiOperation("批量删除留言")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result batchDel(@RequestBody List<Integer> ids) {
-        wallService.removeByIds(ids);
+    public Result<String> batchDelWallData(@RequestBody List<Integer> ids) {
+        wallService.batchDelWallData(ids);
         return Result.success();
     }
 
     @PatchMapping
     @ApiOperation("编辑留言")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> edit(@RequestBody Wall wall) {
-        wallService.updateById(wall);
+    public Result<String> editWallData(@RequestBody WallFormDTO wallFormDTO) {
+        wallService.editWallData(wallFormDTO);
         return Result.success();
     }
 
     @RateLimit
-    @GetMapping("/{id}")
-    @ApiOperation("获取留言")
+    @NoTokenRequired
+    @GetMapping
+    @ApiOperation(value = "获取留言列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<Wall> get(@PathVariable Integer id) {
-        Wall data = wallService.get(id);
-        return Result.success(data);
-    }
-
-    @RateLimit
-    @NoTokenRequired
-    @PostMapping("/list")
-    @ApiOperation("获取留言列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<List<Wall>> list(@RequestBody WallFilterDTO wallFilterDTO) {
-        List<Wall> list = wallService.list(wallFilterDTO);
-        return Result.success(list);
-    }
-
-    @RateLimit
-    @NoTokenRequired
-    @PostMapping("/paging")
-    @ApiOperation("分页查询留言列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result paging(@RequestBody WallFilterDTO wallFilterDTO, PageDTO pageDTO) {
-        Page<Wall> list = wallService.paging(wallFilterDTO, pageDTO);
-        Map<String, Object> result = Paging.filter(list);
-        return Result.success(result);
-    }
-
-    @RateLimit
-    @NoTokenRequired
-    @PostMapping("/cate/{cateId}")
-    @ApiOperation("获取指定分类中所有留言")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
-    public Result getCateWallList(@PathVariable Integer cateId, PageDTO pageDTO) {
-        Page<Wall> list = wallService.getCateWallList(cateId, pageDTO);
+    public Result<Map<String, Object>> getWallList(WallFilterDTO wallFilterDTO) {
+        Page<WallVO> list = wallService.getWallList(wallFilterDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
@@ -110,30 +79,45 @@ public class WallController {
     @RateLimit
     @GetMapping("/cate")
     @ApiOperation("获取留言分类列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
-    public Result getCateList() {
-        List<WallCate> list = wallService.getCateList();
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
+    public Result<List<WallCate>> getWallCateList() {
+        List<WallCate> list = wallService.getWallCateList();
         return Result.success(list);
+    }
+
+    @RateLimit
+    @NoTokenRequired
+    @GetMapping("/cate/{cate_id}")
+    @ApiOperation("获取指定分类中所有留言")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    public Result<Map<String, Object>> getCateWallList(@PathVariable Integer cate_id, PageDTO pageDTO) {
+        Page<WallVO> list = wallService.getCateWallList(cate_id, pageDTO);
+        Map<String, Object> result = Paging.filter(list);
+        return Result.success(result);
+    }
+
+    @RateLimit
+    @GetMapping("/{id}")
+    @ApiOperation("获取留言")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
+    public Result<WallVO> getWallData(@PathVariable Integer id) {
+        WallVO data = wallService.getWallData(id);
+        return Result.success(data);
     }
 
     @PatchMapping("/audit/{id}")
     @ApiOperation("审核指定留言")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 10)
-    public Result auditWall(@PathVariable Integer id) {
-        Wall data = wallService.getById(id);
-
-        if (data == null) throw new CustomException("该留言不存在");
-
-        data.setAuditStatus(1);
-        wallService.updateById(data);
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
+    public Result<String> auditWallData(@PathVariable Integer id) {
+        wallService.auditWallData(id);
         return Result.success();
     }
 
     @PatchMapping("/choice/{id}")
     @ApiOperation("设置与取消精选留言")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 11)
-    public Result updateChoice(@PathVariable Integer id) {
-        wallService.updateChoice(id);
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 10)
+    public Result<String> updateWallChoice(@PathVariable Integer id) {
+        wallService.updateWallChoice(id);
         return Result.success();
     }
 }
