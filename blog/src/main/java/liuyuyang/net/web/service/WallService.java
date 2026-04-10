@@ -2,25 +2,33 @@ package liuyuyang.net.web.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import liuyuyang.net.dto.PageDTO;
+import liuyuyang.net.dto.wall.WallFilterDTO;
+import liuyuyang.net.dto.wall.WallFormDTO;
 import liuyuyang.net.model.Wall;
 import liuyuyang.net.model.WallCate;
-import liuyuyang.net.dto.PageDTO;
-import liuyuyang.net.vo.wall.WallFilterDTO;
+import liuyuyang.net.vo.wall.WallVO;
 
 import java.util.List;
 
 public interface WallService extends IService<Wall> {
-    void add(Wall wall) throws Exception;
+    void addWallData(WallFormDTO wallFormDTO) throws Exception;
 
-    Wall get(Integer id);
+    void delWallData(Integer id);
 
-    Page<Wall> getCateWallList(Integer cateId, PageDTO pageDTO);
+    void batchDelWallData(List<Integer> ids);
 
-    List<WallCate> getCateList();
+    void editWallData(WallFormDTO wallFormDTO);
 
-    List<Wall> list(WallFilterDTO wallFilterDTO);
+    WallVO getWallData(Integer id);
 
-    Page<Wall> paging(WallFilterDTO wallFilterDTO, PageDTO pageDTO);
+    Page<WallVO> getWallList(WallFilterDTO wallFilterDTO);
 
-    void updateChoice(Integer id);
+    Page<WallVO> getCateWallList(Integer cateId, PageDTO pageDTO);
+
+    List<WallCate> getWallCateList();
+
+    void auditWallData(Integer id);
+
+    void updateWallChoice(Integer id);
 }
