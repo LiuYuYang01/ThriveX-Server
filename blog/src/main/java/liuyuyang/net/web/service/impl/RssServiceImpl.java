@@ -69,7 +69,7 @@ public class RssServiceImpl implements RssService {
         // 仅聚合审核通过且配置了 rss 的链接
         List<Link> linkList = linkMapper
                 .selectList(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Link>()
-                        .eq("audit_status", 1)
+                        .eq("status", 1)
                         .isNotNull("rss")
                         .ne("rss", ""));
 

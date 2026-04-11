@@ -31,7 +31,7 @@ public class Wall extends BaseModel {
     private String email;
 
     @ApiModelProperty(value = "审核状态：0 待审核，1 审核通过", example = "1")
-    private WallAuditStatusEnum auditStatus;
+    private WallAuditStatusEnum status;
 
     @ApiModelProperty(value = "设置与取消精选", example = "1")
     private Integer isChoice;

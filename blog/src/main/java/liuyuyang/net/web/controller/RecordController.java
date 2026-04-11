@@ -6,17 +6,16 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
-import liuyuyang.net.model.Record;
-import liuyuyang.net.core.utils.Result;
-import liuyuyang.net.web.service.RecordService;
 import liuyuyang.net.core.utils.Paging;
-import liuyuyang.net.dto.FilterDTO;
-import liuyuyang.net.dto.PageDTO;
+import liuyuyang.net.core.utils.Result;
+import liuyuyang.net.dto.record.RecordFilterDTO;
+import liuyuyang.net.dto.record.RecordFormDTO;
+import liuyuyang.net.vo.record.RecordVO;
+import liuyuyang.net.web.service.RecordService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import java.util.List;
 import java.util.Map;
 
 @Api(tags = "说说管理")
@@ -30,54 +29,46 @@ public class RecordController {
     @PostMapping
     @ApiOperation("新增说说")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> add(@RequestBody Record record) {
-        recordService.save(record);
+    public Result<String> addRecordData(@RequestBody RecordFormDTO recordFormDTO) {
+        recordFormDTO.setId(null);
+        recordService.addRecordData(recordFormDTO);
         return Result.success();
     }
 
     @DeleteMapping("/{id}")
     @ApiOperation("删除说说")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
-    public Result<String> del(@PathVariable Integer id) {
-        recordService.removeById(id);
+    public Result<String> delRecordData(@PathVariable Integer id) {
+        recordService.delRecordData(id);
         return Result.success();
     }
 
     @PatchMapping
     @ApiOperation("编辑说说")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> edit(@RequestBody Record record) {
-        recordService.updateById(record);
+    public Result<String> editRecordData(@RequestBody RecordFormDTO recordFormDTO) {
+        recordService.editRecordData(recordFormDTO);
         return Result.success();
     }
 
+    @NoTokenRequired
     @RateLimit
     @GetMapping("/{id}")
     @ApiOperation("获取说说")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<Record> get(@PathVariable Integer id) {
-        Record data = recordService.getById(id);
+    public Result<RecordVO> getRecordData(@PathVariable Integer id) {
+        RecordVO data = recordService.getRecordData(id);
         return Result.success(data);
     }
 
-    @RateLimit
     @NoTokenRequired
-    @PostMapping("/list")
-    @ApiOperation("获取说说列表")
+    @RateLimit
+    @GetMapping
+    @ApiOperation(value = "获取说说列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<List<Record>> list(@RequestBody FilterDTO filterDTO) {
-        List<Record> data = recordService.list(filterDTO);
-        return Result.success(data);
-    }
-
-    @RateLimit
-    @NoTokenRequired
-    @PostMapping("/paging")
-    @ApiOperation("分页查询说说列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result paging(@RequestBody FilterDTO filterDTO, PageDTO pageDTO) {
-        Page<Record> data = recordService.paging(filterDTO, pageDTO);
-        Map<String, Object> result = Paging.filter(data);
+    public Result<Map<String, Object>> getRecordList(RecordFilterDTO recordFilterDTO) {
+        Page<RecordVO> list = recordService.getRecordList(recordFilterDTO);
+        Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
 }

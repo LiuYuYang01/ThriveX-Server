@@ -81,7 +81,7 @@ public class CommonUtils {
         return result;
     }
 
-    public <T> QueryWrapper<T> queryWrapperDateFilter(FilterDTO filterDTO, String key) {
+    public <T> QueryWrapper<T> queryWrapperDateFilter(FilterDTO filterDTO) {
         QueryWrapper<T> queryWrapper = new QueryWrapper<>();
         queryWrapper.orderByDesc("create_time");
 
