@@ -26,7 +26,7 @@ public interface WallService extends IService<Wall> {
 
     Page<WallVO> getCateWallList(Integer cateId, PageDTO pageDTO);
 
-    List<WallCate> getWallCateList();
+    List<WallCate> getWallCateList(WallFilterDTO wallFilterDTO);
 
     void auditWallData(Integer id);
 

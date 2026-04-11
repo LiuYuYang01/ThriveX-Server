@@ -31,5 +31,5 @@ public class Comment extends BaseModel {
     private Integer commentId;
 
     @ApiModelProperty(value = "审核状态：0 待审核（默认），1 审核通过", example = "1")
-    private Integer auditStatus;
+    private Integer status;
 }

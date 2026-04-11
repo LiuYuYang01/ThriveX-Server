@@ -161,7 +161,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     public Page<CommentVO> getArticleCommentList(Integer articleId, PageDTO pageDTO) {
         QueryWrapper<Comment> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("article_id", articleId);
-        queryWrapper.eq("audit_status", 1);
+        queryWrapper.eq("status", 1);
         queryWrapper.orderByDesc("create_time");
 
         List<Comment> list = commentMapper.selectList(queryWrapper);
@@ -182,13 +182,13 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             throw new CustomException("该评论不存在");
         }
 
-        data.setAuditStatus(1);
+        data.setStatus(1);
         commentMapper.updateById(data);
     }
 
     private List<Comment> queryFlatComments(CommentFilterDTO commentFilterDTO) {
         QueryWrapper<Comment> queryWrapper = commonUtils.queryWrapperDateFilter(commentFilterDTO, "name");
-        queryWrapper.eq("audit_status", commentFilterDTO.getStatus());
+        queryWrapper.eq("status", commentFilterDTO.getStatus());
 
         if (commentFilterDTO.getContent() != null) {
             queryWrapper.like("content", "%" + commentFilterDTO.getContent() + "%");

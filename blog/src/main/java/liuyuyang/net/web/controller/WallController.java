@@ -80,8 +80,8 @@ public class WallController {
     @GetMapping("/cate")
     @ApiOperation("获取留言分类列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<List<WallCate>> getWallCateList() {
-        List<WallCate> list = wallService.getWallCateList();
+    public Result<List<WallCate>> getWallCateList(@RequestBody WallFilterDTO wallFilterDTO) {
+        List<WallCate> list = wallService.getWallCateList(wallFilterDTO);
         return Result.success(list);
     }
 

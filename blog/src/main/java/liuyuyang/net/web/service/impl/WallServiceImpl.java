@@ -51,8 +51,8 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
     public void addWallData(WallFormDTO wallFormDTO) throws Exception {
         Wall wall = new Wall();
         BeanUtils.copyProperties(wallFormDTO, wall);
-        if (wall.getAuditStatus() == null) {
-            wall.setAuditStatus(WallAuditStatusEnum.PENDING);
+        if (wall.getStatus() == null) {
+            wall.setStatus(WallAuditStatusEnum.PENDING);
         }
         wallMapper.insert(wall);
         emailUtils.send(null, "您有新的留言等待审核", "");
@@ -93,14 +93,18 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
     }
 
     private List<Wall> queryWallList(WallFilterDTO wallFilterDTO) {
-        QueryWrapper<Wall> queryWrapper = commonUtils.queryWrapperDateFilter(wallFilterDTO, "content");
+        QueryWrapper<Wall> queryWrapper = commonUtils.queryWrapperDateFilter(wallFilterDTO);
         WallAuditStatusEnum status = wallFilterDTO.getStatus() != null
                 ? wallFilterDTO.getStatus()
                 : WallAuditStatusEnum.APPROVED;
-        queryWrapper.eq("audit_status", status.getValue());
+        queryWrapper.eq("status", status.getValue());
 
         if (wallFilterDTO.getCateId() != null) {
             queryWrapper.eq("cate_id", wallFilterDTO.getCateId());
+        }
+
+        if (wallFilterDTO.getContent() != null && !wallFilterDTO.getContent().trim().isEmpty()) {
+            queryWrapper.like("content", "%" + wallFilterDTO.getContent().trim() + "%");
         }
 
         List<Wall> list = wallMapper.selectList(queryWrapper);
@@ -141,17 +145,7 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
             throw new CustomException("该留言分类不存在");
         }
 
-        QueryWrapper<Wall> queryWrapper = new QueryWrapper<>();
-        if (!Objects.equals(wallCate.getMark(), "all")) {
-            if (Objects.equals(wallCate.getMark(), "choice")) {
-                queryWrapper.eq("is_choice", 1);
-            } else {
-                queryWrapper.eq("cate_id", cateId);
-            }
-        }
-
-        queryWrapper.eq("audit_status", WallAuditStatusEnum.APPROVED.getValue());
-        queryWrapper.orderByDesc("create_time");
+        QueryWrapper<Wall> queryWrapper = getWallQueryWrapper(cateId, wallCate);
 
         Page<Wall> page = new Page<>(p, s);
         wallMapper.selectPage(page, queryWrapper);
@@ -169,9 +163,44 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
         return voPage;
     }
 
+    private static QueryWrapper<Wall> getWallQueryWrapper(Integer cateId, WallCate wallCate) {
+        QueryWrapper<Wall> queryWrapper = new QueryWrapper<>();
+
+        // 如果传递不是all全部，则根据分类标识过滤
+        if (!Objects.equals(wallCate.getMark(), "all")) {
+            // 如果分类标识是choice，则过滤精选留言
+            if (Objects.equals(wallCate.getMark(), "choice")) {
+                queryWrapper.eq("is_choice", 1);
+            } else {
+                // 否则根据分类ID过滤
+                queryWrapper.eq("cate_id", cateId);
+            }
+        }
+
+        // 并且是审核通过的留言
+        queryWrapper.eq("status", WallAuditStatusEnum.APPROVED.getValue());
+
+        queryWrapper.orderByDesc("create_time");
+        return queryWrapper;
+    }
+
     @Override
-    public List<WallCate> getWallCateList() {
-        QueryWrapper<WallCate> queryWrapper = new QueryWrapper<>();
+    public List<WallCate> getWallCateList(WallFilterDTO wallFilterDTO) {
+        QueryWrapper<WallCate> queryWrapper = commonUtils.queryWrapperDateFilter(wallFilterDTO);
+        queryWrapper.orderByDesc("create_time");
+
+        if (wallFilterDTO.getCateId() != null) {
+            queryWrapper.eq("cate_id", wallFilterDTO.getCateId());
+        }
+
+        if (wallFilterDTO.getIsChoice() != null) {
+            queryWrapper.eq("is_choice", wallFilterDTO.getIsChoice());
+        }
+
+        if (wallFilterDTO.getContent() != null && !wallFilterDTO.getContent().trim().isEmpty()) {
+            queryWrapper.like("content", "%" + wallFilterDTO.getContent().trim() + "%");
+        }
+
         return wallCateMapper.selectList(queryWrapper);
     }
 
@@ -181,7 +210,7 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
         if (data == null) {
             throw new CustomException("该留言不存在");
         }
-        data.setAuditStatus(WallAuditStatusEnum.APPROVED);
+        data.setStatus(WallAuditStatusEnum.APPROVED);
         wallMapper.updateById(data);
     }
 
