@@ -1,5 +1,6 @@
 package liuyuyang.net.web.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -99,8 +100,13 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
                 : WallAuditStatusEnum.APPROVED;
         queryWrapper.eq("status", status.getValue());
 
+
         if (wallFilterDTO.getCateId() != null) {
             queryWrapper.eq("cate_id", wallFilterDTO.getCateId());
+        }
+
+        if (wallFilterDTO.getIsChoice() != null) {
+            queryWrapper.eq("is_choice", wallFilterDTO.getIsChoice());
         }
 
         if (wallFilterDTO.getContent() != null && !wallFilterDTO.getContent().trim().isEmpty()) {
@@ -185,22 +191,9 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
     }
 
     @Override
-    public List<WallCate> getWallCateList(WallFilterDTO wallFilterDTO) {
-        QueryWrapper<WallCate> queryWrapper = commonUtils.queryWrapperDateFilter(wallFilterDTO);
-        queryWrapper.orderByDesc("create_time");
-
-        if (wallFilterDTO.getCateId() != null) {
-            queryWrapper.eq("cate_id", wallFilterDTO.getCateId());
-        }
-
-        if (wallFilterDTO.getIsChoice() != null) {
-            queryWrapper.eq("is_choice", wallFilterDTO.getIsChoice());
-        }
-
-        if (wallFilterDTO.getContent() != null && !wallFilterDTO.getContent().trim().isEmpty()) {
-            queryWrapper.like("content", "%" + wallFilterDTO.getContent().trim() + "%");
-        }
-
+    public List<WallCate> getWallCateList() {
+        LambdaQueryWrapper<WallCate> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByAsc(WallCate::getOrder);
         return wallCateMapper.selectList(queryWrapper);
     }
 
