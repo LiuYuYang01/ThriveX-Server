@@ -29,8 +29,8 @@ public class WallController {
     @Resource
     private WallService wallService;
 
-    @RateLimit
     @NoTokenRequired
+    @RateLimit
     @PostMapping
     @ApiOperation("新增留言")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
@@ -64,8 +64,8 @@ public class WallController {
         return Result.success();
     }
 
-    @RateLimit
     @NoTokenRequired
+    @RateLimit
     @GetMapping
     @ApiOperation(value = "获取留言列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
@@ -85,8 +85,8 @@ public class WallController {
         return Result.success(list);
     }
 
-    @RateLimit
     @NoTokenRequired
+    @RateLimit
     @GetMapping("/cate/{cate_id}")
     @ApiOperation("获取指定分类中所有留言")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
