@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.format.FormatterRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -42,6 +43,12 @@ public class WebConfig implements WebMvcConfigurer {
             }
             return true;
         });
+    }
+
+    @Override
+    public void addFormatters(FormatterRegistry registry) {
+        // 覆盖默认 String -> Enum，使查询参数中的数字/code 与各枚举的 fromJson 一致
+        registry.addConverterFactory(new JsonBackedEnumConverterFactory());
     }
 
     @Override
