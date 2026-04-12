@@ -30,15 +30,17 @@ import java.util.*;
  */
 @Service
 public class QiniuStorageService {
-    /** 七牛配置名称 */
+    /**
+     * 七牛配置名称
+     */
     private static final String CONFIG_NAME = "qiniu_storage";
     /**
      * 目录占位对象文件名。
-     *
+     * <p>
      * 背景：
      * - 七牛是对象存储，没有真实目录；
      * - 目录只是 key 前缀，空前缀不会在列表中自然出现。
-     *
+     * <p>
      * 方案：
      * - 创建目录时上传一个空对象
      * <dir>
@@ -75,11 +77,12 @@ public class QiniuStorageService {
     /**
      * 上传文件到七牛云。
      * <p>
-     * key 规则：{@link #normalizeDirPrefix(String) 规范化目录前缀} + UUID + 原文件扩展名，避免重名覆盖。
+     * key 规则：配置中的基础目录（{@code qiniu_storage.dir}，如 {@code static}）+ 业务相对目录
+     * + UUID + 原文件扩展名；前端传入的 {@code dir} 仅表示该基础目录下的子路径。
      */
     public String upload(String dir, MultipartFile file) throws IOException {
         QiniuConfig config = getQiniuConfig();
-        String key = buildObjectKey(dir, file.getOriginalFilename());
+        String key = buildObjectKey(combineStorageDir(config.getRootDir(), dir), file.getOriginalFilename());
         UploadManager uploadManager = new UploadManager(new Configuration(Region.autoRegion()));
         String token = Auth.create(config.getAccessKey(), config.getSecretKey()).uploadToken(config.getBucketName());
         Response response = uploadManager.put(file.getBytes(), key, token);
@@ -126,7 +129,7 @@ public class QiniuStorageService {
 
     /**
      * 按目录分页列出文件（平铺结构）。
-     *
+     * <p>
      * 占位逻辑：
      * - 过滤 `.keep`（应用内目录占位）；
      * - 过滤 key 以 `/` 结尾的对象（七牛控制台「新建文件夹」产生的目录占位），避免当成文件展示。
@@ -139,7 +142,7 @@ public class QiniuStorageService {
                 new Configuration(Region.autoRegion()));
         List<FileInfo> allFiles = new ArrayList<>();
         // 按前缀列举：返回 key 以 prefix 开头的所有对象（扁平列表，marker 用于翻页）
-        String prefix = normalizeDirPrefix(dir);
+        String prefix = combineStorageDir(config.getRootDir(), dir);
         String marker = null;
 
         do {
@@ -196,7 +199,7 @@ public class QiniuStorageService {
 
     /**
      * 返回整个存储桶的文件树结构（空前缀列举全部对象）。
-     *
+     * <p>
      * 占位逻辑（关键）：
      * 1) 先不过滤 `.keep`，否则“只有占位对象的空目录”会在树中丢失；
      * 2) 遍历 key 分段时，`.keep` 仍用于创建/补齐目录节点；
@@ -300,14 +303,14 @@ public class QiniuStorageService {
 
     /**
      * 创建目录（逻辑目录）。
-     *
+     * <p>
      * 实现方式：
      * - 上传空字节对象：.keep；
      * - 返回 node 给前端，便于“创建成功后本地直接插入目录树”，无需立即全量刷新。
      */
     public Map<String, Object> createDirectory(String dir) throws IOException {
-        String normalizedDir = normalizeDirectoryPath(dir);
         QiniuConfig config = getQiniuConfig();
+        String normalizedDir = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), dir));
         String key = normalizedDir + PLACEHOLDER_FILE_NAME;
         UploadManager uploadManager = new UploadManager(new Configuration(Region.autoRegion()));
         String token = Auth.create(config.getAccessKey(), config.getSecretKey()).uploadToken(config.getBucketName());
@@ -327,13 +330,13 @@ public class QiniuStorageService {
      * 重命名目录：按前缀列举后批量 move 对象。
      */
     public Map<String, Object> renameDirectory(String fromDir, String toDir) throws QiniuException {
-        String fromPrefix = normalizeDirectoryPath(fromDir);
-        String toPrefix = normalizeDirectoryPath(toDir);
+        QiniuConfig config = getQiniuConfig();
+        String fromPrefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), fromDir));
+        String toPrefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), toDir));
         if (Objects.equals(fromPrefix, toPrefix)) {
             throw new CustomException("新旧目录不能相同");
         }
 
-        QiniuConfig config = getQiniuConfig();
         BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
                 new Configuration(Region.autoRegion()));
 
@@ -360,8 +363,8 @@ public class QiniuStorageService {
      * 需先清空或移走业务文件。
      */
     public Map<String, Object> deleteDirectory(String dir) throws QiniuException {
-        String prefix = normalizeDirectoryPath(dir);
         QiniuConfig config = getQiniuConfig();
+        String prefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), dir));
         BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
                 new Configuration(Region.autoRegion()));
 
@@ -380,7 +383,9 @@ public class QiniuStorageService {
         return result;
     }
 
-    /** 创建目录节点（用于树结构） */
+    /**
+     * 创建目录节点（用于树结构）
+     */
     private Map<String, Object> createDirNode(String name, String path) {
         Map<String, Object> node = new LinkedHashMap<>();
         node.put("type", "dir");
@@ -442,7 +447,9 @@ public class QiniuStorageService {
         return (List<Map<String, Object>>) node.get("files");
     }
 
-    /** 累加目录统计信息（文件数、体积） */
+    /**
+     * 累加目录统计信息（文件数、体积）
+     */
     private void increaseDirectoryStats(Map<String, Object> node, long fileSize) {
         int fileCount = ((Number) node.get("fileCount")).intValue();
         long totalSize = ((Number) node.get("totalSize")).longValue();
@@ -465,7 +472,9 @@ public class QiniuStorageService {
         }
     }
 
-    /** 生成上传 key：目录前缀 + 随机名 + 扩展名 */
+    /**
+     * 生成上传 key：目录前缀 + 随机名 + 扩展名
+     */
     private String buildObjectKey(String dir, String originalFilename) {
         String ext = "";
         if (originalFilename != null) {
@@ -478,7 +487,26 @@ public class QiniuStorageService {
         return cleanDir + UUID.randomUUID().toString().replace("-", "") + ext;
     }
 
-    /** 规范化目录前缀：去掉前导 /，补齐尾部 / */
+    /**
+     * 将 {@code qiniu_storage.dir} 与业务相对路径拼接为完整 key 前缀。
+     * <p>
+     * 例如配置为 {@code static}、参数为 {@code article} 时得到 {@code static/article/}。
+     */
+    private String combineStorageDir(String baseDirFromConfig, String relativeDir) {
+        String base = normalizeDirPrefix(baseDirFromConfig == null ? "" : baseDirFromConfig);
+        String rel = normalizeDirPrefix(relativeDir == null ? "" : relativeDir);
+        if (rel.isEmpty()) {
+            return base;
+        }
+        if (base.isEmpty()) {
+            return rel;
+        }
+        return base + rel;
+    }
+
+    /**
+     * 规范化目录前缀：去掉前导 /，补齐尾部 /
+     */
     private String normalizeDirPrefix(String dir) {
         String value = dir == null ? "" : dir.trim();
         while (value.startsWith("/")) {
@@ -490,7 +518,9 @@ public class QiniuStorageService {
         return value;
     }
 
-    /** 规范化目录路径，且要求不能为空 */
+    /**
+     * 规范化目录路径，且要求不能为空
+     */
     private String normalizeDirectoryPath(String dir) {
         String value = normalizeDirPrefix(dir);
         if (value.isEmpty()) {
@@ -521,7 +551,9 @@ public class QiniuStorageService {
         return key != null && key.endsWith("/" + PLACEHOLDER_FILE_NAME);
     }
 
-    /** 根据完整路径快速创建目录节点（用于创建目录接口回显） */
+    /**
+     * 根据完整路径快速创建目录节点（用于创建目录接口回显）
+     */
     private Map<String, Object> createDirectoryNodeFromPath(String normalizedDir) {
         String clean = normalizedDir.endsWith("/") ? normalizedDir.substring(0, normalizedDir.length() - 1)
                 : normalizedDir;
@@ -533,7 +565,9 @@ public class QiniuStorageService {
         return createDirNode(name, normalizedDir);
     }
 
-    /** 按前缀列举全部对象 key（自动翻页） */
+    /**
+     * 按前缀列举全部对象 key（自动翻页）
+     */
     private List<String> listKeysByPrefix(BucketManager bucketManager, String bucket, String prefix)
             throws QiniuException {
         String marker = null;
@@ -585,12 +619,16 @@ public class QiniuStorageService {
         return path;
     }
 
-    /** 拼接公开访问 URL */
+    /**
+     * 拼接公开访问 URL
+     */
     private String buildPublicUrl(String domain, String key) {
         return normalizeDomain(domain) + "/" + key;
     }
 
-    /** 规范化域名：补协议、去尾 / */
+    /**
+     * 规范化域名：补协议、去尾 /
+     */
     private String normalizeDomain(String domain) {
         String value = domain == null ? "" : domain.trim();
         if (value.isEmpty()) {
@@ -605,7 +643,9 @@ public class QiniuStorageService {
         return value;
     }
 
-    /** 从 env_config 读取并校验七牛配置 */
+    /**
+     * 从 env_config 读取并校验七牛配置
+     */
     private QiniuConfig getQiniuConfig() {
         EnvConfig envConfig = envConfigService.getByName(CONFIG_NAME);
         if (envConfig == null || envConfig.getValue() == null) {
@@ -613,16 +653,19 @@ public class QiniuStorageService {
         }
         Map<String, Object> value = envConfig.getValue();
 
+        String rootDir = readRequired(value, "root_dir");
         String accessKey = readRequired(value, "access_key");
         String secretKey = readRequired(value, "secret_key");
         String bucketName = readRequired(value, "bucket_name");
         String domain = readRequired(value, "domain");
         String endPoint = readOptional(value, "end_point");
 
-        return new QiniuConfig(accessKey, secretKey, bucketName, domain, endPoint);
+        return new QiniuConfig(rootDir, accessKey, secretKey, bucketName, domain, endPoint);
     }
 
-    /** 读取必填字段 */
+    /**
+     * 读取必填字段
+     */
     private String readRequired(Map<String, Object> config, String key) {
         String value = readOptional(config, key);
         if (value == null || value.trim().isEmpty()) {
@@ -631,7 +674,9 @@ public class QiniuStorageService {
         return value.trim();
     }
 
-    /** 读取可选字段 */
+    /**
+     * 读取可选字段
+     */
     private String readOptional(Map<String, Object> config, String key) {
         Object value = config.get(key);
         return value == null ? null : String.valueOf(value);
@@ -640,15 +685,29 @@ public class QiniuStorageService {
     @Data
     @AllArgsConstructor
     private static class QiniuConfig {
-        /** 七牛 AK */
+        /**
+         * 文件存放路径
+         */
+        private String rootDir;
+        /**
+         * 七牛 AK
+         */
         private String accessKey;
-        /** 七牛 SK */
+        /**
+         * 七牛 SK
+         */
         private String secretKey;
-        /** 存储空间 */
+        /**
+         * 存储空间
+         */
         private String bucketName;
-        /** 访问域名 */
+        /**
+         * 访问域名
+         */
         private String domain;
-        /** 预留字段，当前逻辑未使用 */
+        /**
+         * 预留字段，当前逻辑未使用
+         */
         private String endPoint;
     }
 }
