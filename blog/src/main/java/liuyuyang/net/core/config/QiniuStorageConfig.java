@@ -1,4 +1,4 @@
-package liuyuyang.net.common.storage;
+package liuyuyang.net.core.config;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
@@ -11,6 +11,14 @@ import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.Auth;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.model.EnvConfig;
+import liuyuyang.net.vo.file.FileDirCreateVO;
+import liuyuyang.net.vo.file.FileDirDeleteVO;
+import liuyuyang.net.vo.file.FileDirRenameVO;
+import liuyuyang.net.vo.file.FileInfoVO;
+import liuyuyang.net.vo.file.FileListItemVO;
+import liuyuyang.net.vo.file.FileTreeFileVO;
+import liuyuyang.net.vo.file.FileTreeNodeVO;
+import liuyuyang.net.vo.file.FileTreeVO;
 import liuyuyang.net.web.service.EnvConfigService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,7 +28,14 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * 七牛对象存储封装：上传/删除、按目录平铺列表、整桶目录树、逻辑目录的创建/重命名/删除。
@@ -29,7 +44,7 @@ import java.util.*;
  * 与列表/树接口的过滤规则配合，使前端既能展示树形结构，又不会把占位对象当成用户文件。
  */
 @Service
-public class QiniuStorageService {
+public class QiniuStorageConfig {
     // 七牛配置名称
     private static final String CONFIG_NAME = "qiniu_storage";
     /**
@@ -68,7 +83,7 @@ public class QiniuStorageService {
         return putTime100ns / 10_000L;
     }
 
-    public QiniuStorageService(EnvConfigService envConfigService) {
+    public QiniuStorageConfig(EnvConfigService envConfigService) {
         this.envConfigService = envConfigService;
     }
 
@@ -105,26 +120,26 @@ public class QiniuStorageService {
      * <p>
      * 返回的 {@code putTime} 为<strong>毫秒</strong>时间戳（已自七牛 100ns 换算）。
      */
-    public Map<String, Object> getFileInfo(String filePath) throws QiniuException {
+    public FileInfoVO getFileInfo(String filePath) throws QiniuException {
         QiniuConfig config = getQiniuConfig();
         String key = extractKeyFromUrl(filePath, config.getDomain());
         BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
                 new Configuration(Region.autoRegion()));
         FileInfo fileInfo = bucketManager.stat(config.getBucketName(), key);
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("name", key.contains("/") ? key.substring(key.lastIndexOf('/') + 1) : key);
-        data.put("path", key);
-        data.put("size", fileInfo.fsize);
-        data.put("hash", fileInfo.hash);
-        data.put("mimeType", fileInfo.mimeType);
-        data.put("putTime", qiniuPutTimeToEpochMillis(fileInfo.putTime));
-        data.put("url", buildPublicUrl(config, key));
+        FileInfoVO data = new FileInfoVO();
+        data.setName(key.contains("/") ? key.substring(key.lastIndexOf('/') + 1) : key);
+        data.setPath(key);
+        data.setSize(fileInfo.fsize);
+        data.setHash(fileInfo.hash);
+        data.setMimeType(fileInfo.mimeType);
+        data.setPutTime(qiniuPutTimeToEpochMillis(fileInfo.putTime));
+        data.setUrl(buildPublicUrl(config, key));
         return data;
     }
 
     /**
-     * 按目录分页列出文件（平铺结构）。
+     * 按目录列举文件（平铺结构，已过滤占位对象），按上传时间降序；分页由业务层统一处理。
      * <p>
      * 占位逻辑：
      * - 过滤 `.keep`（应用内目录占位）；
@@ -132,7 +147,7 @@ public class QiniuStorageService {
      * <p>
      * 每条结果中的 {@code date} 为上传时间的<strong>毫秒</strong>时间戳。
      */
-    public Map<String, Object> listFiles(String dir, Integer page, Integer size) throws QiniuException {
+    public List<FileListItemVO> listFileItems(String dir) throws QiniuException {
         QiniuConfig config = getQiniuConfig();
         BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
                 new Configuration(Region.autoRegion()));
@@ -156,41 +171,28 @@ public class QiniuStorageService {
         // 新上传优先展示（putTime 降序）
         allFiles.sort((a, b) -> Long.compare(b.putTime, a.putTime));
 
-        int total = allFiles.size();
-        int startIndex = Math.max((page - 1) * size, 0);
-        int endIndex = Math.min(startIndex + size, total);
-
-        List<Map<String, Object>> result = new ArrayList<>();
-        if (startIndex < total) {
-            for (FileInfo item : allFiles.subList(startIndex, endIndex)) {
-                Map<String, Object> data = new HashMap<>();
-                String key = item.key;
-                String name = key.contains("/") ? key.substring(key.lastIndexOf('/') + 1) : key;
-                // 平铺列表里 type 表示扩展名（小写），与目录树里 file 节点的 ext 字段含义一致
-                String ext = "";
-                int extIndex = name.lastIndexOf('.');
-                if (extIndex >= 0 && extIndex < name.length() - 1) {
-                    ext = name.substring(extIndex + 1).toLowerCase();
-                }
-                data.put("basePath", normalizeDomain(config.getDomain()) + "/");
-                data.put("dir", dir);
-                data.put("path", key);
-                data.put("name", name);
-                data.put("size", item.fsize);
-                data.put("type", ext);
-                data.put("date", qiniuPutTimeToEpochMillis(item.putTime));
-                data.put("url", buildPublicUrl(config, key));
-                result.add(data);
+        List<FileListItemVO> result = new ArrayList<>();
+        for (FileInfo item : allFiles) {
+            FileListItemVO data = new FileListItemVO();
+            String key = item.key;
+            String name = key.contains("/") ? key.substring(key.lastIndexOf('/') + 1) : key;
+            // 平铺列表里 type 表示扩展名（小写），与目录树里 file 节点的 ext 字段含义一致
+            String ext = "";
+            int extIndex = name.lastIndexOf('.');
+            if (extIndex >= 0 && extIndex < name.length() - 1) {
+                ext = name.substring(extIndex + 1).toLowerCase();
             }
+            data.setBasePath(normalizeDomain(config.getDomain()) + "/");
+            data.setDir(dir);
+            data.setPath(key);
+            data.setName(name);
+            data.setSize(item.fsize);
+            data.setType(ext);
+            data.setDate(qiniuPutTimeToEpochMillis(item.putTime));
+            data.setUrl(buildPublicUrl(config, key));
+            result.add(data);
         }
-
-        Map<String, Object> pageData = new HashMap<>();
-        pageData.put("result", result);
-        pageData.put("size", size);
-        pageData.put("page", page);
-        pageData.put("pages", (total + size - 1) / size);
-        pageData.put("total", total);
-        return pageData;
+        return result;
     }
 
     /**
@@ -204,7 +206,7 @@ public class QiniuStorageService {
      * <p>
      * 树中 file 节点的 {@code date} 为上传时间的毫秒时间戳。
      */
-    public Map<String, Object> listFileTree() throws QiniuException {
+    public FileTreeVO listFileTree() throws QiniuException {
         QiniuConfig config = getQiniuConfig();
         BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
                 new Configuration(Region.autoRegion()));
@@ -220,8 +222,8 @@ public class QiniuStorageService {
             marker = listing.marker;
         } while (marker != null && !marker.isEmpty());
 
-        List<Map<String, Object>> roots = new ArrayList<>();
-        Map<String, Map<String, Object>> rootIndex = new LinkedHashMap<>();
+        List<FileTreeNodeVO> roots = new ArrayList<>();
+        Map<String, FileTreeNodeVO> rootIndex = new LinkedHashMap<>();
         String basePath = normalizeDomain(config.getDomain()) + "/";
 
         for (FileInfo fileInfo : allFiles) {
@@ -241,8 +243,8 @@ public class QiniuStorageService {
                 if (dirSegments.isEmpty()) {
                     continue;
                 }
-                Map<String, Object> markerCurrent = rootIndex.computeIfAbsent(dirSegments.get(0), name -> {
-                    Map<String, Object> node = createDirNode(name, name + "/");
+                FileTreeNodeVO markerCurrent = rootIndex.computeIfAbsent(dirSegments.get(0), name -> {
+                    FileTreeNodeVO node = createDirNode(name, name + "/");
                     roots.add(node);
                     return node;
                 });
@@ -257,8 +259,8 @@ public class QiniuStorageService {
                 continue;
             }
 
-            Map<String, Object> current = rootIndex.computeIfAbsent(segments[0], name -> {
-                Map<String, Object> node = createDirNode(name, name + "/");
+            FileTreeNodeVO current = rootIndex.computeIfAbsent(segments[0], name -> {
+                FileTreeNodeVO node = createDirNode(name, name + "/");
                 roots.add(node);
                 return node;
             });
@@ -270,7 +272,7 @@ public class QiniuStorageService {
 
             for (int i = 1; i < segments.length - 1; i++) {
                 String segment = segments[i];
-                Map<String, Object> childDir = getOrCreateDirChild(current, segment);
+                FileTreeNodeVO childDir = getOrCreateDirChild(current, segment);
                 if (!isPlaceholder) {
                     increaseDirectoryStats(childDir, fileInfo.fsize);
                 }
@@ -283,17 +285,17 @@ public class QiniuStorageService {
             }
 
             // 叶子段对应一个七牛对象，挂到当前目录的 files 下
-            Map<String, Object> fileNode = createFileNode(fileInfo, key, config);
-            getFiles(current).add(fileNode);
+            FileTreeFileVO fileNode = createFileNode(fileInfo, key, config);
+            current.getFiles().add(fileNode);
         }
 
         sortTreeNodes(roots);
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("basePath", basePath);
+        FileTreeVO data = new FileTreeVO();
+        data.setBasePath(basePath);
         // total 为列举到的原始对象条数（含 .keep 与控制台目录占位），与树中 files 条数不一定相等
-        data.put("total", allFiles.size());
-        data.put("result", roots);
+        data.setTotal(allFiles.size());
+        data.setResult(roots);
         return data;
     }
 
@@ -304,7 +306,7 @@ public class QiniuStorageService {
      * - 上传空字节对象：.keep；
      * - 返回 node 给前端，便于“创建成功后本地直接插入目录树”，无需立即全量刷新。
      */
-    public Map<String, Object> createDirectory(String dir) throws IOException {
+    public FileDirCreateVO createDirectory(String dir) throws IOException {
         QiniuConfig config = getQiniuConfig();
         String normalizedDir = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), dir));
         String key = normalizedDir + PLACEHOLDER_FILE_NAME;
@@ -315,15 +317,15 @@ public class QiniuStorageService {
             throw new CustomException("创建目录失败");
         }
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("dir", normalizedDir);
-        result.put("placeholder", key);
-        result.put("node", createDirectoryNodeFromPath(normalizedDir));
+        FileDirCreateVO result = new FileDirCreateVO();
+        result.setDir(normalizedDir);
+        result.setPlaceholder(key);
+        result.setNode(createDirectoryNodeFromPath(normalizedDir));
         return result;
     }
 
     // 重命名目录：按前缀列举后批量 move 对象。
-    public Map<String, Object> renameDirectory(String fromDir, String toDir) throws QiniuException {
+    public FileDirRenameVO renameDirectory(String fromDir, String toDir) throws QiniuException {
         QiniuConfig config = getQiniuConfig();
         String fromPrefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), fromDir));
         String toPrefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), toDir));
@@ -343,10 +345,10 @@ public class QiniuStorageService {
             moved++;
         }
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("fromDir", fromPrefix);
-        result.put("toDir", toPrefix);
-        result.put("moved", moved);
+        FileDirRenameVO result = new FileDirRenameVO();
+        result.setFromDir(fromPrefix);
+        result.setToDir(toPrefix);
+        result.setMoved(moved);
         return result;
     }
 
@@ -356,7 +358,7 @@ public class QiniuStorageService {
      * 若前缀下存在<strong>真实文件</strong>（非 {@code .keep}、非控制台以 {@code /} 结尾的目录占位），则拒绝删除，
      * 需先清空或移走业务文件。
      */
-    public Map<String, Object> deleteDirectory(String dir) throws QiniuException {
+    public FileDirDeleteVO deleteDirectory(String dir) throws QiniuException {
         QiniuConfig config = getQiniuConfig();
         String prefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), dir));
         BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
@@ -371,86 +373,74 @@ public class QiniuStorageService {
             deleted++;
         }
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("dir", prefix);
-        result.put("deleted", deleted);
+        FileDirDeleteVO result = new FileDirDeleteVO();
+        result.setDir(prefix);
+        result.setDeleted(deleted);
         return result;
     }
 
     // 创建目录节点（用于树结构）
-    private Map<String, Object> createDirNode(String name, String path) {
-        Map<String, Object> node = new LinkedHashMap<>();
-        node.put("type", "dir");
-        node.put("name", name);
-        node.put("path", path);
-        node.put("children", new ArrayList<Map<String, Object>>());
-        node.put("files", new ArrayList<Map<String, Object>>());
-        node.put("fileCount", 0);
-        node.put("totalSize", 0L);
+    private FileTreeNodeVO createDirNode(String name, String path) {
+        FileTreeNodeVO node = new FileTreeNodeVO();
+        node.setType("dir");
+        node.setName(name);
+        node.setPath(path);
+        node.setChildren(new ArrayList<>());
+        node.setFiles(new ArrayList<>());
+        node.setFileCount(0);
+        node.setTotalSize(0L);
         return node;
     }
 
     // 将七牛 FileInfo 转为树中的 file 节点（含 url、扩展名、父级 dir 等）；date 为上传时间的毫秒时间戳。
-    private Map<String, Object> createFileNode(FileInfo item, String key, QiniuConfig config) {
-        Map<String, Object> data = new LinkedHashMap<>();
+    private FileTreeFileVO createFileNode(FileInfo item, String key, QiniuConfig config) {
+        FileTreeFileVO data = new FileTreeFileVO();
         String name = key.contains("/") ? key.substring(key.lastIndexOf('/') + 1) : key;
         String ext = "";
         int extIndex = name.lastIndexOf('.');
         if (extIndex >= 0 && extIndex < name.length() - 1) {
             ext = name.substring(extIndex + 1).toLowerCase();
         }
-        data.put("type", "file");
-        data.put("path", key);
-        data.put("basePath", normalizeDomain(config.getDomain()) + "/");
-        data.put("size", item.fsize);
-        data.put("name", name);
-        data.put("dir", key.contains("/") ? key.substring(0, key.lastIndexOf('/')) : "");
-        data.put("ext", ext);
-        data.put("date", qiniuPutTimeToEpochMillis(item.putTime));
-        data.put("url", buildPublicUrl(config, key));
+        data.setType("file");
+        data.setPath(key);
+        data.setBasePath(normalizeDomain(config.getDomain()) + "/");
+        data.setSize(item.fsize);
+        data.setName(name);
+        data.setDir(key.contains("/") ? key.substring(0, key.lastIndexOf('/')) : "");
+        data.setExt(ext);
+        data.setDate(qiniuPutTimeToEpochMillis(item.putTime));
+        data.setUrl(buildPublicUrl(config, key));
         return data;
     }
 
     // 在父目录下按名称查找子目录节点；不存在则创建并挂到 children，保证 path 为前缀拼接规则。
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> getOrCreateDirChild(Map<String, Object> parent, String childName) {
-        List<Map<String, Object>> children = (List<Map<String, Object>>) parent.get("children");
-        String parentPath = String.valueOf(parent.get("path"));
+    private FileTreeNodeVO getOrCreateDirChild(FileTreeNodeVO parent, String childName) {
+        List<FileTreeNodeVO> children = parent.getChildren();
+        String parentPath = parent.getPath();
         String childPath = parentPath + childName + "/";
 
-        for (Map<String, Object> child : children) {
-            if (Objects.equals(child.get("path"), childPath)) {
+        for (FileTreeNodeVO child : children) {
+            if (Objects.equals(child.getPath(), childPath)) {
                 return child;
             }
         }
-        Map<String, Object> newChild = createDirNode(childName, childPath);
+        FileTreeNodeVO newChild = createDirNode(childName, childPath);
         children.add(newChild);
         return newChild;
     }
 
-    @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> getFiles(Map<String, Object> node) {
-        return (List<Map<String, Object>>) node.get("files");
-    }
-
     // 累加目录统计信息（文件数、体积）
-    private void increaseDirectoryStats(Map<String, Object> node, long fileSize) {
-        int fileCount = ((Number) node.get("fileCount")).intValue();
-        long totalSize = ((Number) node.get("totalSize")).longValue();
-        node.put("fileCount", fileCount + 1);
-        node.put("totalSize", totalSize + fileSize);
+    private void increaseDirectoryStats(FileTreeNodeVO node, long fileSize) {
+        node.setFileCount(node.getFileCount() + 1);
+        node.setTotalSize(node.getTotalSize() + fileSize);
     }
 
     // 目录按 name 字典序，文件按上传时间倒序；递归子树。
-    @SuppressWarnings("unchecked")
-    private void sortTreeNodes(List<Map<String, Object>> nodes) {
-        for (Map<String, Object> node : nodes) {
-            List<Map<String, Object>> children = (List<Map<String, Object>>) node.get("children");
-            List<Map<String, Object>> files = (List<Map<String, Object>>) node.get("files");
-            children.sort(Comparator.comparing(o -> String.valueOf(o.get("name"))));
-            files.sort(
-                    (a, b) -> Long.compare(((Number) b.get("date")).longValue(), ((Number) a.get("date")).longValue()));
-            sortTreeNodes(children);
+    private void sortTreeNodes(List<FileTreeNodeVO> nodes) {
+        for (FileTreeNodeVO node : nodes) {
+            node.getChildren().sort(Comparator.comparing(FileTreeNodeVO::getName));
+            node.getFiles().sort((a, b) -> Long.compare(b.getDate(), a.getDate()));
+            sortTreeNodes(node.getChildren());
         }
     }
 
@@ -528,7 +518,7 @@ public class QiniuStorageService {
     }
 
     // 根据完整路径快速创建目录节点（用于创建目录接口回显）
-    private Map<String, Object> createDirectoryNodeFromPath(String normalizedDir) {
+    private FileTreeNodeVO createDirectoryNodeFromPath(String normalizedDir) {
         String clean = normalizedDir.endsWith("/") ? normalizedDir.substring(0, normalizedDir.length() - 1)
                 : normalizedDir;
         String name = clean;
