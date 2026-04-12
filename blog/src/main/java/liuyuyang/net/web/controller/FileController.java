@@ -1,20 +1,33 @@
 package liuyuyang.net.web.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import com.qiniu.common.QiniuException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import liuyuyang.net.common.storage.QiniuStorageService;
-import liuyuyang.net.core.execption.CustomException;
+import io.swagger.annotations.ApiParam;
+import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.core.utils.Result;
+import liuyuyang.net.dto.file.FileBatchDeleteFormDTO;
+import liuyuyang.net.dto.file.FileDirCreateFormDTO;
+import liuyuyang.net.dto.file.FileDirDeleteFormDTO;
+import liuyuyang.net.dto.file.FileDirRenameFormDTO;
+import liuyuyang.net.dto.file.FileFilterDTO;
+import liuyuyang.net.vo.file.FileDirCreateVO;
+import liuyuyang.net.vo.file.FileDirDeleteVO;
+import liuyuyang.net.vo.file.FileDirRenameVO;
+import liuyuyang.net.vo.file.FileInfoVO;
+import liuyuyang.net.vo.file.FileListItemVO;
+import liuyuyang.net.vo.file.FileTreeVO;
+import liuyuyang.net.vo.file.FileUploadVO;
+import liuyuyang.net.web.service.FileService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
+import javax.annotation.Resource;
 import java.io.IOException;
-import java.util.*;
+import java.util.Map;
 
 /**
  * 统一文件上传
@@ -27,139 +40,78 @@ import java.util.*;
 @RequestMapping("/file")
 @Transactional
 public class FileController {
-    private final QiniuStorageService qiniuStorageService;
-
-    public FileController(QiniuStorageService qiniuStorageService) {
-        this.qiniuStorageService = qiniuStorageService;
-    }
+    @Resource
+    private FileService fileService;
 
     @PostMapping
     @ApiOperation("文件上传")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<Object> add(@RequestParam(defaultValue = "") String dir, @RequestParam MultipartFile[] files)
-            throws IOException {
-        if (dir == null || dir.trim().isEmpty())
-            throw new CustomException("请指定一个目录");
-
-        List<String> urls = new ArrayList<>();
-
-        for (MultipartFile file : files) {
-            // 校验文件是否为空
-            if (file.isEmpty()) {
-                throw new CustomException("文件不能为空");
-            }
-
-            // 只允许的图片扩展名
-            Set<String> allowedExt = new HashSet<>(Arrays.asList("jpg", "jpeg", "png", "webp"));
-            String originalFilename = file.getOriginalFilename();
-            String ext = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                ext = originalFilename.substring(originalFilename.lastIndexOf('.') + 1).toLowerCase();
-            }
-
-            if (!allowedExt.contains(ext)) {
-                throw new CustomException("仅支持上传图片类型文件（jpg、jpeg、png、webp）");
-            }
-
-            // 只允许的图片 MIME 类型
-            Set<String> allowedContentTypes = new HashSet<>(Arrays.asList(
-                    "image/jpeg",
-                    "image/png",
-                    "image/webp"));
-            String contentType = file.getContentType();
-            if (contentType == null || !allowedContentTypes.contains(contentType.toLowerCase())) {
-                throw new CustomException("文件类型不合法，仅支持上传图片类型文件");
-            }
-
-            // 解码校验，防止伪装成图片的恶意文件
-            BufferedImage image = ImageIO.read(file.getInputStream());
-            if (image == null) {
-                throw new CustomException("文件内容不是有效的图片");
-            }
-
-            urls.add(qiniuStorageService.upload(dir, file));
-        }
-
-        return Result.success("文件上传成功：", urls);
+    public Result<FileUploadVO> addFileData(
+            @ApiParam(value = "业务相对目录", required = true) @RequestParam String dir,
+            @ApiParam(value = "待上传文件", required = true) @RequestParam MultipartFile[] files) throws IOException {
+        FileUploadVO data = fileService.addFileData(dir, files);
+        return Result.success("文件上传成功：", data);
     }
 
     @DeleteMapping
     @ApiOperation("删除文件")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
-    public Result<String> del(@RequestParam String filePath) throws QiniuException {
-        boolean delete = qiniuStorageService.deleteByUrl(filePath);
-        return Result.status(delete);
+    public Result<String> delFileData(
+            @ApiParam(value = "文件 URL 或 key", required = true) @RequestParam String filePath) throws QiniuException {
+        fileService.delFileData(filePath);
+        return Result.success();
     }
 
     @DeleteMapping("/batch")
     @ApiOperation("批量删除文件")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result<String> batchDel(@RequestBody String[] pathList) throws QiniuException {
-        for (String url : pathList) {
-            boolean delete = qiniuStorageService.deleteByUrl(url);
-            if (!delete)
-                throw new CustomException("删除文件失败");
-        }
+    public Result<String> batchDelFileData(@RequestBody FileBatchDeleteFormDTO dto) throws QiniuException {
+        fileService.batchDelFileData(dto);
         return Result.success();
     }
 
     @GetMapping("/info")
     @ApiOperation("获取文件信息")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<Map<String, Object>> get(@RequestParam String filePath) throws QiniuException {
-        return Result.success(qiniuStorageService.getFileInfo(filePath));
+    public Result<FileInfoVO> getFileData(
+            @ApiParam(value = "文件 URL 或 key", required = true) @RequestParam String filePath) throws QiniuException {
+        return Result.success(fileService.getFileData(filePath));
     }
 
     @GetMapping("/list")
     @ApiOperation("获取指定目录中的文件")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<Map<String, Object>> getFileList(
-            @RequestParam String dir,
-            @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "20") Integer size) throws QiniuException {
-        if (dir == null || dir.trim().isEmpty())
-            throw new CustomException("请指定一个目录");
-        return Result.success(qiniuStorageService.listFiles(dir, page, size));
+    public Result<Map<String, Object>> getFileList(FileFilterDTO fileFilterDTO) throws QiniuException {
+        Page<FileListItemVO> list = fileService.getFileList(fileFilterDTO);
+        Map<String, Object> result = Paging.filter(list);
+        return Result.success(result);
     }
 
     @GetMapping("/tree")
     @ApiOperation("获取文件目录树")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
-    public Result<Map<String, Object>> getFileTree() throws QiniuException {
-        return Result.success(qiniuStorageService.listFileTree());
+    public Result<FileTreeVO> getFileTreeData() throws QiniuException {
+        return Result.success(fileService.getFileTreeData());
     }
 
     @PostMapping("/dir")
     @ApiOperation("新增目录")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result<Map<String, Object>> createDir(@RequestBody Map<String, String> body) throws IOException {
-        String dir = body == null ? null : body.get("dir");
-        if (dir == null || dir.trim().isEmpty()) {
-            throw new CustomException("请指定一个目录");
-        }
-        return Result.success(qiniuStorageService.createDirectory(dir));
+    public Result<FileDirCreateVO> addFileDirData(@RequestBody FileDirCreateFormDTO dto) throws IOException {
+        return Result.success(fileService.addFileDirData(dto));
     }
 
     @PatchMapping("/dir")
     @ApiOperation("重命名目录")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
-    public Result<Map<String, Object>> renameDir(@RequestBody Map<String, String> body) throws QiniuException {
-        String fromDir = body == null ? null : body.get("fromDir");
-        String toDir = body == null ? null : body.get("toDir");
-        if (fromDir == null || fromDir.trim().isEmpty() || toDir == null || toDir.trim().isEmpty()) {
-            throw new CustomException("请指定原目录和新目录");
-        }
-        return Result.success(qiniuStorageService.renameDirectory(fromDir, toDir));
+    public Result<FileDirRenameVO> renameFileDirData(@RequestBody FileDirRenameFormDTO dto) throws QiniuException {
+        return Result.success(fileService.renameFileDirData(dto));
     }
 
     @DeleteMapping("/dir")
     @ApiOperation("删除目录")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
-    public Result<Map<String, Object>> deleteDir(@RequestBody Map<String, String> body) throws QiniuException {
-        String dir = body == null ? null : body.get("dir");
-        if (dir == null || dir.trim().isEmpty()) {
-            throw new CustomException("请指定一个目录");
-        }
-        return Result.success(qiniuStorageService.deleteDirectory(dir));
+    public Result<FileDirDeleteVO> delFileDirData(@RequestBody FileDirDeleteFormDTO dto) throws QiniuException {
+        return Result.success(fileService.delFileDirData(dto));
     }
 }
