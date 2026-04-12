@@ -30,9 +30,7 @@ import java.util.*;
  */
 @Service
 public class QiniuStorageService {
-    /**
-     * 七牛配置名称
-     */
+    // 七牛配置名称
     private static final String CONFIG_NAME = "qiniu_storage";
     /**
      * 目录占位对象文件名。
@@ -89,12 +87,10 @@ public class QiniuStorageService {
         if (!response.isOK()) {
             throw new CustomException("上传文件失败");
         }
-        return buildPublicUrl(config.getDomain(), key);
+        return buildPublicUrl(config, key);
     }
 
-    /**
-     * 根据完整访问 URL 解析对象 key 并删除。
-     */
+    // 根据完整访问 URL 解析对象 key 并删除。
     public boolean deleteByUrl(String url) throws QiniuException {
         QiniuConfig config = getQiniuConfig();
         String key = extractKeyFromUrl(url, config.getDomain());
@@ -123,7 +119,7 @@ public class QiniuStorageService {
         data.put("hash", fileInfo.hash);
         data.put("mimeType", fileInfo.mimeType);
         data.put("putTime", qiniuPutTimeToEpochMillis(fileInfo.putTime));
-        data.put("url", buildPublicUrl(config.getDomain(), key));
+        data.put("url", buildPublicUrl(config, key));
         return data;
     }
 
@@ -183,7 +179,7 @@ public class QiniuStorageService {
                 data.put("size", item.fsize);
                 data.put("type", ext);
                 data.put("date", qiniuPutTimeToEpochMillis(item.putTime));
-                data.put("url", buildPublicUrl(config.getDomain(), key));
+                data.put("url", buildPublicUrl(config, key));
                 result.add(data);
             }
         }
@@ -287,7 +283,7 @@ public class QiniuStorageService {
             }
 
             // 叶子段对应一个七牛对象，挂到当前目录的 files 下
-            Map<String, Object> fileNode = createFileNode(fileInfo, key, basePath);
+            Map<String, Object> fileNode = createFileNode(fileInfo, key, config);
             getFiles(current).add(fileNode);
         }
 
@@ -326,9 +322,7 @@ public class QiniuStorageService {
         return result;
     }
 
-    /**
-     * 重命名目录：按前缀列举后批量 move 对象。
-     */
+    // 重命名目录：按前缀列举后批量 move 对象。
     public Map<String, Object> renameDirectory(String fromDir, String toDir) throws QiniuException {
         QiniuConfig config = getQiniuConfig();
         String fromPrefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), fromDir));
@@ -383,9 +377,7 @@ public class QiniuStorageService {
         return result;
     }
 
-    /**
-     * 创建目录节点（用于树结构）
-     */
+    // 创建目录节点（用于树结构）
     private Map<String, Object> createDirNode(String name, String path) {
         Map<String, Object> node = new LinkedHashMap<>();
         node.put("type", "dir");
@@ -398,12 +390,8 @@ public class QiniuStorageService {
         return node;
     }
 
-    /**
-     * 将七牛 {@link FileInfo} 转为树中的 file 节点（含 url、扩展名、父级 dir 等）。
-     * <p>
-     * {@code date} 为上传时间的毫秒时间戳。
-     */
-    private Map<String, Object> createFileNode(FileInfo item, String key, String basePath) {
+    // 将七牛 FileInfo 转为树中的 file 节点（含 url、扩展名、父级 dir 等）；date 为上传时间的毫秒时间戳。
+    private Map<String, Object> createFileNode(FileInfo item, String key, QiniuConfig config) {
         Map<String, Object> data = new LinkedHashMap<>();
         String name = key.contains("/") ? key.substring(key.lastIndexOf('/') + 1) : key;
         String ext = "";
@@ -413,19 +401,17 @@ public class QiniuStorageService {
         }
         data.put("type", "file");
         data.put("path", key);
-        data.put("basePath", basePath);
+        data.put("basePath", normalizeDomain(config.getDomain()) + "/");
         data.put("size", item.fsize);
         data.put("name", name);
         data.put("dir", key.contains("/") ? key.substring(0, key.lastIndexOf('/')) : "");
         data.put("ext", ext);
         data.put("date", qiniuPutTimeToEpochMillis(item.putTime));
-        data.put("url", basePath + key);
+        data.put("url", buildPublicUrl(config, key));
         return data;
     }
 
-    /**
-     * 在父目录下按名称查找子目录节点；不存在则创建并挂到 {@code children}，保证 path 为前缀拼接规则。
-     */
+    // 在父目录下按名称查找子目录节点；不存在则创建并挂到 children，保证 path 为前缀拼接规则。
     @SuppressWarnings("unchecked")
     private Map<String, Object> getOrCreateDirChild(Map<String, Object> parent, String childName) {
         List<Map<String, Object>> children = (List<Map<String, Object>>) parent.get("children");
@@ -447,9 +433,7 @@ public class QiniuStorageService {
         return (List<Map<String, Object>>) node.get("files");
     }
 
-    /**
-     * 累加目录统计信息（文件数、体积）
-     */
+    // 累加目录统计信息（文件数、体积）
     private void increaseDirectoryStats(Map<String, Object> node, long fileSize) {
         int fileCount = ((Number) node.get("fileCount")).intValue();
         long totalSize = ((Number) node.get("totalSize")).longValue();
@@ -457,9 +441,7 @@ public class QiniuStorageService {
         node.put("totalSize", totalSize + fileSize);
     }
 
-    /**
-     * 目录按 name 字典序，文件按上传时间倒序；递归子树。
-     */
+    // 目录按 name 字典序，文件按上传时间倒序；递归子树。
     @SuppressWarnings("unchecked")
     private void sortTreeNodes(List<Map<String, Object>> nodes) {
         for (Map<String, Object> node : nodes) {
@@ -472,9 +454,7 @@ public class QiniuStorageService {
         }
     }
 
-    /**
-     * 生成上传 key：目录前缀 + 随机名 + 扩展名
-     */
+    // 生成上传 key：目录前缀 + 随机名 + 扩展名
     private String buildObjectKey(String dir, String originalFilename) {
         String ext = "";
         if (originalFilename != null) {
@@ -504,9 +484,7 @@ public class QiniuStorageService {
         return base + rel;
     }
 
-    /**
-     * 规范化目录前缀：去掉前导 /，补齐尾部 /
-     */
+    // 规范化目录前缀：去掉前导 /，补齐尾部 /
     private String normalizeDirPrefix(String dir) {
         String value = dir == null ? "" : dir.trim();
         while (value.startsWith("/")) {
@@ -518,9 +496,7 @@ public class QiniuStorageService {
         return value;
     }
 
-    /**
-     * 规范化目录路径，且要求不能为空
-     */
+    // 规范化目录路径，且要求不能为空
     private String normalizeDirectoryPath(String dir) {
         String value = normalizeDirPrefix(dir);
         if (value.isEmpty()) {
@@ -551,9 +527,7 @@ public class QiniuStorageService {
         return key != null && key.endsWith("/" + PLACEHOLDER_FILE_NAME);
     }
 
-    /**
-     * 根据完整路径快速创建目录节点（用于创建目录接口回显）
-     */
+    // 根据完整路径快速创建目录节点（用于创建目录接口回显）
     private Map<String, Object> createDirectoryNodeFromPath(String normalizedDir) {
         String clean = normalizedDir.endsWith("/") ? normalizedDir.substring(0, normalizedDir.length() - 1)
                 : normalizedDir;
@@ -565,9 +539,7 @@ public class QiniuStorageService {
         return createDirNode(name, normalizedDir);
     }
 
-    /**
-     * 按前缀列举全部对象 key（自动翻页）
-     */
+    // 按前缀列举全部对象 key（自动翻页）
     private List<String> listKeysByPrefix(BucketManager bucketManager, String bucket, String prefix)
             throws QiniuException {
         String marker = null;
@@ -619,16 +591,43 @@ public class QiniuStorageService {
         return path;
     }
 
-    /**
-     * 拼接公开访问 URL
-     */
-    private String buildPublicUrl(String domain, String key) {
-        return normalizeDomain(domain) + "/" + key;
+    // 拼接公开访问 URL；{@code zlevel != 0} 时对 jpeg/png 追加七牛图片瘦身参数（值越小画质越好）。
+    private String buildPublicUrl(QiniuConfig config, String key) {
+        String base = normalizeDomain(config.getDomain()) + "/" + key;
+        int zlevel = config.getZlevel();
+        if (zlevel == 0 || !isImageSlimSupportedKey(key)) {
+            return base;
+        }
+        return base + "?imageslim/zlevel/" + zlevel;
     }
 
-    /**
-     * 规范化域名：补协议、去尾 /
-     */
+    // 图片瘦身（imageslim）仅支持 JPEG、PNG；其它扩展名不追加处理参数。
+    private static boolean isImageSlimSupportedKey(String key) {
+        if (key == null) {
+            return false;
+        }
+        int dot = key.lastIndexOf('.');
+        if (dot < 0 || dot >= key.length() - 1) {
+            return false;
+        }
+        String ext = key.substring(dot + 1).toLowerCase();
+        return "jpg".equals(ext) || "jpeg".equals(ext) || "png".equals(ext);
+    }
+
+    // 解析配置中的 zlevel：0 表示不启用瘦身，1–10 为瘦身档位（与七牛文档一致，值越小越清晰）。
+    private static int parseZlevel(String raw) {
+        try {
+            int z = Integer.parseInt(raw.trim());
+            if (z < 0 || z > 10) {
+                throw new CustomException("zlevel 取值范围应为 0-10");
+            }
+            return z;
+        } catch (NumberFormatException e) {
+            throw new CustomException("zlevel 必须为整数（0-10）");
+        }
+    }
+
+    // 规范化域名：补协议、去尾 /
     private String normalizeDomain(String domain) {
         String value = domain == null ? "" : domain.trim();
         if (value.isEmpty()) {
@@ -643,9 +642,7 @@ public class QiniuStorageService {
         return value;
     }
 
-    /**
-     * 从 env_config 读取并校验七牛配置
-     */
+    // 从 env_config 读取并校验七牛配置
     private QiniuConfig getQiniuConfig() {
         EnvConfig envConfig = envConfigService.getByName(CONFIG_NAME);
         if (envConfig == null || envConfig.getValue() == null) {
@@ -654,18 +651,17 @@ public class QiniuStorageService {
         Map<String, Object> value = envConfig.getValue();
 
         String rootDir = readRequired(value, "root_dir");
+        int zlevel = parseZlevel(readRequired(value, "zlevel"));
         String accessKey = readRequired(value, "access_key");
         String secretKey = readRequired(value, "secret_key");
         String bucketName = readRequired(value, "bucket_name");
         String domain = readRequired(value, "domain");
         String endPoint = readOptional(value, "end_point");
 
-        return new QiniuConfig(rootDir, accessKey, secretKey, bucketName, domain, endPoint);
+        return new QiniuConfig(rootDir, zlevel, accessKey, secretKey, bucketName, domain, endPoint);
     }
 
-    /**
-     * 读取必填字段
-     */
+    // 读取必填字段
     private String readRequired(Map<String, Object> config, String key) {
         String value = readOptional(config, key);
         if (value == null || value.trim().isEmpty()) {
@@ -674,9 +670,7 @@ public class QiniuStorageService {
         return value.trim();
     }
 
-    /**
-     * 读取可选字段
-     */
+    // 读取可选字段
     private String readOptional(Map<String, Object> config, String key) {
         Object value = config.get(key);
         return value == null ? null : String.valueOf(value);
@@ -685,29 +679,19 @@ public class QiniuStorageService {
     @Data
     @AllArgsConstructor
     private static class QiniuConfig {
-        /**
-         * 文件存放路径
-         */
+        // 文件存放路径
         private String rootDir;
-        /**
-         * 七牛 AK
-         */
+        // 图片瘦身档位：0 关闭；1–10 启用，数值越小画质越好。
+        private int zlevel;
+        // 七牛 AK
         private String accessKey;
-        /**
-         * 七牛 SK
-         */
+        // 七牛 SK
         private String secretKey;
-        /**
-         * 存储空间
-         */
+        // 存储桶名称
         private String bucketName;
-        /**
-         * 访问域名
-         */
+        // 访问域名
         private String domain;
-        /**
-         * 预留字段，当前逻辑未使用
-         */
+        // 地域
         private String endPoint;
     }
 }
