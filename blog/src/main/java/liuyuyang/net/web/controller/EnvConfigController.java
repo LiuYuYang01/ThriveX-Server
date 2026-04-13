@@ -72,4 +72,12 @@ public class EnvConfigController {
         EnvConfig envConfig = envConfigService.getByName("gaode_map");
         return Result.success(envConfig.getValue());
     }
+
+    @NoTokenRequired
+    @ApiOperation("获取公开的配置")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
+    @GetMapping("/public_config")
+    public Result<Map<String, Object>> getPublicConfig() {
+        return Result.success(envConfigService.getPublicConfig());
+    }
 } 

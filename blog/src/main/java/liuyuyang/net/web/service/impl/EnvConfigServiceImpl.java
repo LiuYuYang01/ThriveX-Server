@@ -71,4 +71,14 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
         }
         return false;
     }
+
+    @Override
+    public Map<String, Object> getPublicConfig() {
+        Map<String, Object> data = new HashMap<>(2);
+        EnvConfig baidu = this.getByName("baidu_statis_key");
+        EnvConfig hcaptcha = this.getByName("hcaptcha");
+        data.put("baidu_statis_key", baidu != null ? baidu.getValue() : null);
+        data.put("hcaptcha", hcaptcha != null ? hcaptcha.getValue() : null);
+        return data;
+    }
 } 
