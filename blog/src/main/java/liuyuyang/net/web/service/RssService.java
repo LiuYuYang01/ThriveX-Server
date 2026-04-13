@@ -7,7 +7,5 @@ import liuyuyang.net.dto.PageDTO;
 import java.util.List;
 
 public interface RssService {
-    List<Rss> list();
-    
-    Page<Rss> paging(PageDTO pageDTO);
+    Page<Rss> getRssList(PageDTO pageDTO);
 }

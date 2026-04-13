@@ -60,40 +60,6 @@ public class RssServiceImpl implements RssService {
         linkTypeMapper.selectList(null).forEach(lt -> typeCache.put(lt.getId(), lt.getName()));
     }
 
-    @Cacheable(value = "rssCache", key = "'allFeeds'")
-    @Override
-    public List<Rss> list() {
-        // 线程安全的列表，用于收集所有RSS条目
-        List<Rss> rssList = Collections.synchronizedList(new ArrayList<>());
-
-        // 仅聚合审核通过且配置了 rss 的链接
-        List<Link> linkList = linkMapper
-                .selectList(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Link>()
-                        .eq("status", 1)
-                        .isNotNull("rss")
-                        .ne("rss", ""));
-
-        // 为每个有RSS地址的链接创建异步任务
-        List<CompletableFuture<Void>> futures = linkList.stream()
-                .filter(link -> link.getRss() != null) // 过滤掉没有RSS地址的链接
-                .map(link -> CompletableFuture.runAsync(() -> processFeedWithTimeout(link, rssList), executorService)) // 异步处理每个RSS源
-                .collect(Collectors.toList());
-
-        // 等待所有异步任务完成
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
-        // 按发布时间降序排序后返回
-        return rssList.stream()
-                .sorted(Comparator.comparingLong(Rss::getCreateTime))
-                .collect(Collectors.toList());
-    }
-
-    // 定时任务更新缓存
-    @Scheduled(fixedRate = 3600000) // 每小时更新一次
-    @CacheEvict(value = "rssCache", key = "'allFeeds'")
-    public void evictCache() {
-    }
-
     /**
      * 处理单个RSS源，带有超时控制
      *
@@ -138,10 +104,41 @@ public class RssServiceImpl implements RssService {
         }
     }
 
+    @Cacheable(value = "rssCache", key = "'allFeeds'")
     @Override
-    public Page<Rss> paging(PageDTO pageDTO) {
+    public Page<Rss> getRssList(PageDTO pageDTO) {
+        // 线程安全的列表，用于收集所有RSS条目
+        List<Rss> rssList = Collections.synchronizedList(new ArrayList<>());
+
+        // 仅聚合审核通过且配置了 rss 的链接
+        List<Link> linkList = linkMapper
+                .selectList(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Link>()
+                        .eq("status", 1)
+                        .isNotNull("rss")
+                        .ne("rss", ""));
+
+        // 为每个有RSS地址的链接创建异步任务
+        List<CompletableFuture<Void>> futures = linkList.stream()
+                .filter(link -> link.getRss() != null) // 过滤掉没有RSS地址的链接
+                .map(link -> CompletableFuture.runAsync(() -> processFeedWithTimeout(link, rssList), executorService)) // 异步处理每个RSS源
+                .collect(Collectors.toList());
+
+        // 等待所有异步任务完成
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        // 按发布时间降序排序后返回
+        List<Rss> list = rssList.stream()
+                .sorted(Comparator.comparingLong(Rss::getCreateTime))
+                .collect(Collectors.toList());
+
         // 使用工具类进行分页
-        return commonUtils.getPageData(pageDTO, list());
+        return commonUtils.getPageData(pageDTO, list);
+    }
+
+    // 定时任务更新缓存
+    @Scheduled(fixedRate = 3600000) // 每小时更新一次
+    @CacheEvict(value = "rssCache", key = "'allFeeds'")
+    public void evictCache() {
     }
 
     /**
