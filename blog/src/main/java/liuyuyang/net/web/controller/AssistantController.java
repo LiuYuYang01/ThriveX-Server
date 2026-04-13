@@ -50,7 +50,7 @@ public class AssistantController {
     @DeleteMapping("/batch")
     @ApiOperation("批量删除助手")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result batchDel(@RequestBody List<Integer> ids) {
+    public Result<String> batchDel(@RequestBody List<Integer> ids) {
         assistantService.removeByIds(ids);
         return Result.success();
     }

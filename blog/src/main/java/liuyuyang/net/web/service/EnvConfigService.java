@@ -34,4 +34,9 @@ public interface EnvConfigService {
      * 更新 JSON 配置中的特定字段值
      */
     boolean updateJsonFieldValue(Integer id, String fieldName, Object value);
+
+    /**
+     * 获取公开的配置
+     */
+    Map<String, Object> getPublicConfig();
 } 
