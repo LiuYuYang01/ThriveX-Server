@@ -100,10 +100,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public void editUserPass(EditUserPassDTO data) {
-        if(data.getOldUsername() == null) throw new CustomException("请输入旧用户名");
-        if(data.getNewUsername() == null) throw new CustomException("请输入新用户名");
-        if(data.getOldPassword() == null) throw new CustomException("请输入旧密码");
-        if(data.getNewPassword() == null) throw new CustomException("请输入新密码");
+        if (data.getOldUsername() == null) throw new CustomException("请输入旧用户名");
+        if (data.getNewUsername() == null) throw new CustomException("请输入新用户名");
+        if (data.getOldPassword() == null) throw new CustomException("请输入旧密码");
+        if (data.getNewPassword() == null) throw new CustomException("请输入新密码");
 
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getUsername, data.getOldUsername());
