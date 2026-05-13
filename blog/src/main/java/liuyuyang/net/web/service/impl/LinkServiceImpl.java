@@ -56,7 +56,6 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
 
             // 邮件提醒
             emailUtils.send(null, "您有新的友联等待审核", link.toString());
-
             return;
         }
 
