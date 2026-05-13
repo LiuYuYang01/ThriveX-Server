@@ -8,8 +8,10 @@ import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.core.utils.Result;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.tag.TagFilterDTO;
 import liuyuyang.net.dto.tag.TagFormDTO;
+import liuyuyang.net.vo.article.ArticleVO;
 import liuyuyang.net.vo.tag.TagVO;
 import liuyuyang.net.web.service.TagService;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,6 +79,17 @@ public class TagController {
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
     public Result<Map<String, Object>> getTagList(TagFilterDTO tagFilterDTO) {
         Page<TagVO> list = tagService.getTagList(tagFilterDTO);
+        Map<String, Object> result = Paging.filter(list);
+        return Result.success(result);
+    }
+
+    @NoTokenRequired
+    @RateLimit
+    @GetMapping("/{id}/articles")
+    @ApiOperation("获取标签关联的文章列表")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    public Result<Map<String, Object>> getTagArticleList(@PathVariable Integer id, PageDTO pageDTO) {
+        Page<ArticleVO> list = tagService.getTagArticleList(id, pageDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
     }
