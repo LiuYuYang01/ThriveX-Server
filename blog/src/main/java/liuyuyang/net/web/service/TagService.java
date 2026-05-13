@@ -2,9 +2,11 @@ package liuyuyang.net.web.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.tag.TagFilterDTO;
 import liuyuyang.net.dto.tag.TagFormDTO;
 import liuyuyang.net.model.Tag;
+import liuyuyang.net.vo.article.ArticleVO;
 import liuyuyang.net.vo.tag.TagVO;
 
 import java.util.List;
@@ -21,4 +23,6 @@ public interface TagService extends IService<Tag> {
     TagVO getTagData(Integer id);
 
     Page<TagVO> getTagList(TagFilterDTO tagFilterDTO);
+
+    Page<ArticleVO> getTagArticleList(Integer tagId, PageDTO pageDTO);
 }

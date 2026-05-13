@@ -4,11 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.core.execption.CustomException;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.tag.TagFilterDTO;
 import liuyuyang.net.dto.tag.TagFormDTO;
 import liuyuyang.net.model.Tag;
+import liuyuyang.net.vo.article.ArticleVO;
 import liuyuyang.net.vo.tag.TagVO;
 import liuyuyang.net.web.mapper.TagMapper;
+import liuyuyang.net.web.service.ArticleService;
 import liuyuyang.net.web.service.TagService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,8 @@ import java.util.stream.Collectors;
 public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagService {
     @Resource
     private TagMapper tagMapper;
+    @Resource
+    private ArticleService articleService;
 
     @Override
     public void addTagData(TagFormDTO tagFormDTO) {
@@ -102,6 +107,12 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
         result.setRecords(records.stream().map(this::toVO).collect(Collectors.toCollection(ArrayList::new)));
         result.setTotal((long) data.size());
         return result;
+    }
+
+    @Override
+    public Page<ArticleVO> getTagArticleList(Integer tagId, PageDTO pageDTO) {
+        PageDTO dto = pageDTO != null ? pageDTO : new PageDTO();
+        return articleService.getTagArticleList(tagId, dto);
     }
 
     private TagVO toVO(Tag tag) {
