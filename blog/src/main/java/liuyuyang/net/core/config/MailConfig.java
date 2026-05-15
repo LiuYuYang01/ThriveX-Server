@@ -23,6 +23,40 @@ public class MailConfig {
         return envConfig.getValue();
     }
 
+    private String requireString(Map<String, Object> config, String key) {
+        Object value = config.get(key);
+        if (value == null) {
+            throw new RuntimeException("邮件配置缺少字段: " + key);
+        }
+        String text = String.valueOf(value).trim();
+        if (text.isEmpty()) {
+            throw new RuntimeException("邮件配置字段不能为空: " + key);
+        }
+        return text;
+    }
+
+    private Integer requireInt(Map<String, Object> config, String key) {
+        Object value = config.get(key);
+        if (value == null) {
+            throw new RuntimeException("邮件配置缺少字段: " + key);
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        if (value instanceof String) {
+            String text = ((String) value).trim();
+            if (text.isEmpty()) {
+                throw new RuntimeException("邮件配置字段不能为空: " + key);
+            }
+            try {
+                return Integer.parseInt(text);
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("邮件配置字段格式错误: " + key);
+            }
+        }
+        throw new RuntimeException("邮件配置字段类型错误: " + key);
+    }
+
     /**
      * 验证并获取邮箱服务商类型
      */
@@ -125,10 +159,10 @@ public class MailConfig {
         try {
             Map<String, Object> config = getEmailConfig();
             
-            String host = (String) config.get("host");
-            Integer port = (Integer) config.get("port");
-            String username = (String) config.get("username");
-            String password = (String) config.get("password");
+            String host = requireString(config, "host");
+            Integer port = requireInt(config, "port");
+            String username = requireString(config, "username");
+            String password = requireString(config, "password");
             
             // 验证邮箱服务商
             String provider = getEmailProvider(host, username);
