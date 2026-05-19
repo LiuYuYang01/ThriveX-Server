@@ -63,6 +63,9 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
     public void addCateData(CateFormDTO cateFormDTO) {
         Cate cate = new Cate();
         BeanUtils.copyProperties(cateFormDTO, cate);
+        if (cate.getIsHide() == null) {
+            cate.setIsHide(false);
+        }
         this.save(cate);
     }
 
@@ -122,6 +125,9 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         if (cate == null) {
             throw new CustomException("该分类不存在");
         }
+        if (!CommonUtils.isAdmin() && Boolean.TRUE.equals(cate.getIsHide())) {
+            throw new CustomException("该分类不存在");
+        }
 
         CateVO cateVO = new CateVO();
         BeanUtils.copyProperties(cate, cateVO);
@@ -148,8 +154,12 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
 
     @Override
     public Page<CateVO> getCateList(CateFilterDTO cateFilterDTO) {
+        boolean isAdmin = CommonUtils.isAdmin();
         LambdaQueryWrapper<Cate> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(Cate::getOrder);
+        if (!isAdmin) {
+            wrapper.and(w -> w.eq(Cate::getIsHide, false).or().isNull(Cate::getIsHide));
+        }
 
         // 获取文章数量
         Map<Integer, Integer> articleCountByCateId = articleCateMapper
@@ -196,12 +206,20 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
     // 基于父级分类的 id 递归获取它的所有子分类
     @Override
     public List<CateVO> getCateTreeChildren(List<Cate> list, Integer level) {
+        boolean isAdmin = CommonUtils.isAdmin();
+        return getCateTreeChildren(list, level, isAdmin);
+    }
+
+    private List<CateVO> getCateTreeChildren(List<Cate> list, Integer level, boolean isAdmin) {
         List<CateVO> children = new ArrayList<>();
         for (Cate cate : list) {
             if (Objects.equals(cate.getLevel(), level)) {
+                if (!isAdmin && Boolean.TRUE.equals(cate.getIsHide())) {
+                    continue;
+                }
                 CateVO cateVO = new CateVO();
                 BeanUtils.copyProperties(cate, cateVO);
-                cateVO.setChildren(getCateTreeChildren(list, cate.getId()));
+                cateVO.setChildren(getCateTreeChildren(list, cate.getId(), isAdmin));
                 children.add(cateVO);
             }
         }

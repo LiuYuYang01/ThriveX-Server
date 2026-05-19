@@ -27,4 +27,7 @@ public class Cate {
     @TableField("`order`")
     @ApiModelProperty(value = "分类顺序", example = "1")
     private Integer order;
+    @TableField("is_hide")
+    @ApiModelProperty(value = "是否隐藏", example = "false")
+    private Boolean isHide;
 }
