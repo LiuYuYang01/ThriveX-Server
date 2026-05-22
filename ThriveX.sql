@@ -487,6 +487,7 @@ CREATE TABLE `swiper` (
                           `description` varchar(255) DEFAULT NULL,
                           `image` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
                           `url` varchar(500) DEFAULT NULL,
+                          `order` int NOT NULL DEFAULT 0 COMMENT '排序，越小越靠前',
                           PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -497,7 +498,7 @@ CREATE TABLE `swiper` (
 
 LOCK TABLES `swiper` WRITE;
 /*!40000 ALTER TABLE `swiper` DISABLE KEYS */;
-INSERT INTO `swiper` VALUES (1,'ThriveX 3.0 来袭，不忘初心，保持热爱','','https://bu.dusays.com/2025/06/15/684e8f3435c97.png','https://github.com/LiuYuYang01/ThriveX-Admin'),(29,'ThriveX 官网全新发布 🎉',NULL,'https://bu.dusays.com/2025/01/21/678f4a609f91f.png','https://thrivex.liuyuyang.net/');
+INSERT INTO `swiper` VALUES (1,'ThriveX 3.0 来袭，不忘初心，保持热爱','','https://bu.dusays.com/2025/06/15/684e8f3435c97.png','https://github.com/LiuYuYang01/ThriveX-Admin',1),(29,'ThriveX 官网全新发布 🎉',NULL,'https://bu.dusays.com/2025/01/21/678f4a609f91f.png','https://thrivex.liuyuyang.net/',2);
 /*!40000 ALTER TABLE `swiper` ENABLE KEYS */;
 UNLOCK TABLES;
 
