@@ -10,6 +10,7 @@ import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.cate.CateFilterDTO;
 import liuyuyang.net.dto.cate.CateFormDTO;
+import liuyuyang.net.dto.cate.CateSortDTO;
 import liuyuyang.net.vo.cate.CateVO;
 import liuyuyang.net.web.service.CateService;
 import org.springframework.transaction.annotation.Transactional;
@@ -79,5 +80,13 @@ public class CateController {
         Page<CateVO> list = cateService.getCateList(cateFilterDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
+    }
+
+    @PatchMapping("/sort")
+    @ApiOperation("分类同级拖拽排序")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    public Result<String> sortCateData(@RequestBody CateSortDTO cateSortDTO) {
+        cateService.sortCateData(cateSortDTO);
+        return Result.success();
     }
 }

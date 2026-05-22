@@ -7,6 +7,7 @@ import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.cate.CateFilterDTO;
 import liuyuyang.net.dto.cate.CateFormDTO;
+import liuyuyang.net.dto.cate.CateSortDTO;
 import liuyuyang.net.enums.cate.CatePatternEnum;
 import liuyuyang.net.model.ArticleCate;
 import liuyuyang.net.vo.cate.CateVO;
@@ -22,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -65,6 +68,12 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         BeanUtils.copyProperties(cateFormDTO, cate);
         if (cate.getIsHide() == null) {
             cate.setIsHide(false);
+        }
+        if (cate.getLevel() == null) {
+            cate.setLevel(0);
+        }
+        if (cate.getOrder() == null || cate.getOrder() == 0) {
+            cate.setOrder(nextCateOrder(cate.getLevel()));
         }
         this.save(cate);
     }
@@ -223,7 +232,48 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
                 children.add(cateVO);
             }
         }
+        children.sort(Comparator.comparingInt(c -> c.getOrder() == null ? 0 : c.getOrder()));
         return children;
+    }
+
+    @Override
+    public void sortCateData(CateSortDTO cateSortDTO) {
+        if (cateSortDTO == null || cateSortDTO.getLevel() == null) {
+            throw new CustomException("请提供上级分类 ID");
+        }
+        List<Integer> ids = cateSortDTO.getIds();
+        if (ids == null || ids.isEmpty()) {
+            throw new CustomException("请提供排序后的分类 ID 列表");
+        }
+        if (ids.size() != new HashSet<>(ids).size()) {
+            throw new CustomException("分类 ID 不能重复");
+        }
+
+        Integer parentLevel = cateSortDTO.getLevel();
+        long existCount = count(new LambdaQueryWrapper<Cate>()
+                .eq(Cate::getLevel, parentLevel)
+                .in(Cate::getId, ids));
+        if (existCount != ids.size()) {
+            throw new CustomException("有 " + (ids.size() - (int) existCount) + " 个分类不存在或不属于该层级");
+        }
+
+        long siblingCount = count(new LambdaQueryWrapper<Cate>().eq(Cate::getLevel, parentLevel));
+
+        for (int i = 0; i < ids.size(); i++) {
+            Cate cate = new Cate();
+            cate.setId(ids.get(i));
+            cate.setOrder(i + 1);
+            updateById(cate);
+        }
+    }
+
+    private int nextCateOrder(Integer level) {
+        Cate last = getOne(new LambdaQueryWrapper<Cate>()
+                .select(Cate::getOrder)
+                .eq(Cate::getLevel, level == null ? 0 : level)
+                .orderByDesc(Cate::getOrder)
+                .last("LIMIT 1"), false);
+        return last == null || last.getOrder() == null ? 1 : last.getOrder() + 1;
     }
 
     private void fillTreeCount(List<CateVO> tree, Map<Integer, Integer> articleCountByCateId) {
