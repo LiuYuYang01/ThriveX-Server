@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import liuyuyang.net.dto.cate.CateFilterDTO;
 import liuyuyang.net.dto.cate.CateFormDTO;
+import liuyuyang.net.dto.cate.CateSortDTO;
 import liuyuyang.net.model.Cate;
 import liuyuyang.net.vo.cate.CateVO;
 
@@ -29,4 +30,6 @@ public interface CateService extends IService<Cate> {
     Page<CateVO> getCateList(CateFilterDTO cateFilterDTO);
 
     List<CateVO> getCateTreeChildren(List<Cate> list, Integer id);
+
+    void sortCateData(CateSortDTO cateSortDTO);
 }
