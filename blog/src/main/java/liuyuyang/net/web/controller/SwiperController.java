@@ -80,4 +80,12 @@ public class SwiperController {
         SwiperVO data = swiperService.getSwiperData(id);
         return Result.success(data);
     }
+
+    @PatchMapping("/sort")
+    @ApiOperation("轮播图拖拽排序")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    public Result<String> sortSwiperData(@RequestBody List<Integer> ids) {
+        swiperService.sortSwiperData(ids);
+        return Result.success();
+    }
 }

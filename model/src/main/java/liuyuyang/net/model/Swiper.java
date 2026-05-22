@@ -1,6 +1,7 @@
 package liuyuyang.net.model;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModelProperty;
@@ -20,4 +21,7 @@ public class Swiper {
     private String description;
     @ApiModelProperty(value = "轮播图链接", example = "/")
     private String url;
+    @TableField("`order`")
+    @ApiModelProperty(value = "排序，越小越靠前", example = "1")
+    private Integer order;
 }

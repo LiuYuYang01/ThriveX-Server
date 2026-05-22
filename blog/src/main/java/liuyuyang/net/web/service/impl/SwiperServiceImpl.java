@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,6 +30,9 @@ public class SwiperServiceImpl extends ServiceImpl<SwiperMapper, Swiper> impleme
     public void addSwiperData(SwiperFormDTO swiperFormDTO) {
         Swiper swiper = new Swiper();
         BeanUtils.copyProperties(swiperFormDTO, swiper);
+        if (swiper.getOrder() == null) {
+            swiper.setOrder(nextSwiperOrder());
+        }
         this.save(swiper);
     }
 
@@ -72,7 +76,9 @@ public class SwiperServiceImpl extends ServiceImpl<SwiperMapper, Swiper> impleme
 
     @Override
     public Page<SwiperVO> getSwiperList(SwiperFilterDTO swiperFilterDTO) {
-        LambdaQueryWrapper<Swiper> queryWrapper = new LambdaQueryWrapper<Swiper>().orderByDesc(Swiper::getId);
+        LambdaQueryWrapper<Swiper> queryWrapper = new LambdaQueryWrapper<Swiper>()
+                .orderByAsc(Swiper::getOrder)
+                .orderByDesc(Swiper::getId);
 
         // 不传分页参数时返回全部（page/size 任意一个未传则全量）
         if (swiperFilterDTO == null || swiperFilterDTO.getPageNum() == null || swiperFilterDTO.getPageSize() == null) {
@@ -93,6 +99,41 @@ public class SwiperServiceImpl extends ServiceImpl<SwiperMapper, Swiper> impleme
         Page<SwiperVO> voPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         voPage.setRecords(page.getRecords().stream().map(this::toVO).collect(Collectors.toCollection(ArrayList::new)));
         return voPage;
+    }
+
+    @Override
+    public void sortSwiperData(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new CustomException("请提供排序后的轮播图 ID 列表");
+        }
+        if (ids.size() != new HashSet<>(ids).size()) {
+            throw new CustomException("轮播图 ID 不能重复");
+        }
+
+        long existCount = count(new LambdaQueryWrapper<Swiper>().in(Swiper::getId, ids));
+        if (existCount != ids.size()) {
+            throw new CustomException("有 " + (ids.size() - (int) existCount) + " 条轮播图不存在");
+        }
+
+        long totalCount = count();
+        if (totalCount != ids.size()) {
+            throw new CustomException("请提交全部轮播图的排序结果");
+        }
+
+        for (int i = 0; i < ids.size(); i++) {
+            Swiper swiper = new Swiper();
+            swiper.setId(ids.get(i));
+            swiper.setOrder(i + 1);
+            updateById(swiper);
+        }
+    }
+
+    private int nextSwiperOrder() {
+        Swiper last = getOne(new LambdaQueryWrapper<Swiper>()
+                .select(Swiper::getOrder)
+                .orderByDesc(Swiper::getOrder)
+                .last("LIMIT 1"), false);
+        return last == null || last.getOrder() == null ? 1 : last.getOrder() + 1;
     }
 
     private SwiperVO toVO(Swiper swiper) {

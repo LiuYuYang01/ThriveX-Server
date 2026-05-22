@@ -21,4 +21,6 @@ public interface SwiperService extends IService<Swiper> {
     SwiperVO getSwiperData(Integer id);
 
     Page<SwiperVO> getSwiperList(SwiperFilterDTO swiperFilterDTO);
+
+    void sortSwiperData(List<Integer> ids);
 }
