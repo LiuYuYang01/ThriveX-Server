@@ -16,6 +16,8 @@ import liuyuyang.net.vo.article.ArticleFilterVo;
 import liuyuyang.net.web.service.ArticleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import liuyuyang.net.validation.ValidationGroups;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,7 +37,7 @@ public class ArticleController {
     @PostMapping
     @ApiOperation("新增文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addArticleData(@RequestBody ArticleFormDTO articledFormDTO) {
+    public Result<String> addArticleData(@RequestBody @Validated(ValidationGroups.Create.class) ArticleFormDTO articledFormDTO) {
         articleService.addArticleData(articledFormDTO);
         return Result.success();
     }
@@ -67,7 +69,7 @@ public class ArticleController {
     @PatchMapping
     @ApiOperation("编辑文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<String> editArticleData(@RequestBody ArticleFormDTO articleFormDTO) {
+    public Result<String> editArticleData(@RequestBody @Validated(ValidationGroups.Update.class) ArticleFormDTO articleFormDTO) {
         articleService.editArticleData(articleFormDTO);
         return Result.success();
     }

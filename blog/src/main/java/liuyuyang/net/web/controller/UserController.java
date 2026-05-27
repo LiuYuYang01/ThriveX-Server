@@ -15,11 +15,14 @@ import liuyuyang.net.common.utils.Result;
 import liuyuyang.net.web.service.UserService;
 import liuyuyang.net.common.utils.Paging;
 import liuyuyang.net.vo.PageVo;
+import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.user.UserFilterVo;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +37,7 @@ public class UserController {
     @PostMapping
     @ApiOperation("新增用户")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> add(@RequestBody UserDTO user) {
+    public Result<String> add(@RequestBody @Validated(ValidationGroups.Create.class) UserDTO user) {
         userService.add(user);
         return Result.success();
     }
@@ -88,10 +91,11 @@ public class UserController {
         return Result.success(result);
     }
 
+    @RateLimit(tokens = 5, duration = 60, message = "登录尝试过于频繁，请 60 秒后再试")
     @PostMapping("/login")
     @ApiOperation("用户登录")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
-    public Result<Map> login(@RequestBody UserLoginDTO user) {
+    public Result<Map> login(@RequestBody @Valid UserLoginDTO user) {
         Map<String, Object> result = userService.login(user);
         return Result.success("登录成功", result);
     }
@@ -99,7 +103,7 @@ public class UserController {
     @PatchMapping("/pass")
     @ApiOperation("修改用户密码")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
-    public Result<String> editPass(@RequestBody EditPassDTO data) {
+    public Result<String> editPass(@RequestBody @Valid EditPassDTO data) {
         userService.editPass(data);
         return Result.success("密码修改成功");
     }

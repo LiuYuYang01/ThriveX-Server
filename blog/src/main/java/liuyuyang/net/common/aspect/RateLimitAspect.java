@@ -8,9 +8,11 @@ import io.github.bucket4j.Refill;
 import liuyuyang.net.common.execption.CustomException;
 import liuyuyang.net.common.utils.BlackListUtils;
 import liuyuyang.net.common.utils.IpUtils;
+import liuyuyang.net.common.annotation.RateLimit;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -19,7 +21,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Aspect
@@ -67,26 +68,40 @@ public class RateLimitAspect {
         String methodName = joinPoint.getSignature().toShortString();
         String key = methodName + ":" + ip;
 
-        // 4. 获取或创建桶
-        Bucket bucket = buckets.get(key, k -> createNewBucket());
+        // 4. 读取注解上的限流参数（未指定则使用全局配置）
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        RateLimit rateLimit = signature.getMethod().getAnnotation(RateLimit.class);
+        long tokens = rateLimit.tokens() > 0 ? rateLimit.tokens() : defaultTokens;
+        long duration = rateLimit.duration() > 0 ? rateLimit.duration() : defaultDuration;
 
-        // 5. 尝试消耗令牌
+        // 5. 获取或创建桶
+        Bucket bucket = buckets.get(key, k -> createNewBucket(tokens, duration));
+
+        // 6. 尝试消耗令牌
         if (bucket != null && bucket.tryConsume(1)) {
             // 需要将对应的黑名单数据移除
             rateLimitCounts.invalidate(ip);
             return joinPoint.proceed();
         } else {
             // 触发限流
-            handleRateLimitExceeded(ip);
-            int count = Optional.ofNullable(rateLimitCounts.getIfPresent(ip))
-                    .orElse(0);
-            throw new CustomException("操作太快啦，请稍后再试,距触发风控还需要:" + (blacklistThreshold - count));
+            int count = handleRateLimitExceeded(ip);
+            throw new CustomException(buildRateLimitMessage(rateLimit, duration, count));
         }
     }
 
-    private Bucket createNewBucket() {
-        Refill refill = Refill.intervally(defaultTokens, Duration.ofSeconds(defaultDuration));
-        Bandwidth limit = Bandwidth.classic(defaultTokens, refill);
+    private String buildRateLimitMessage(RateLimit rateLimit, long duration, int exceedCount) {
+        if (!rateLimit.message().isEmpty()) {
+            return rateLimit.message();
+        }
+        if (exceedCount >= blacklistThreshold) {
+            return "操作过于频繁，已暂时限制访问，请稍后再试";
+        }
+        return String.format("操作过于频繁，请 %d 秒后再试", duration);
+    }
+
+    private Bucket createNewBucket(long tokens, long duration) {
+        Refill refill = Refill.intervally(tokens, Duration.ofSeconds(duration));
+        Bandwidth limit = Bandwidth.classic(tokens, refill);
         return Bucket.builder().addLimit(limit).build();
     }
 
@@ -94,8 +109,9 @@ public class RateLimitAspect {
      * 处理限流超限情况
      *
      * @param ip 触发限流的IP地址
+     * @return 当前 IP 累计触发限流的次数
      */
-    private void handleRateLimitExceeded(String ip) {
+    private int handleRateLimitExceeded(String ip) {
         // 增加该IP的限流计数
         Integer count = rateLimitCounts.getIfPresent(ip);
         if (count == null) {
@@ -110,5 +126,7 @@ public class RateLimitAspect {
         if (count >= blacklistThreshold) {
             blackListUtils.addToBlacklist(ip);
         }
+
+        return count;
     }
 }
