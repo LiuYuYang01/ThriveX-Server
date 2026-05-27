@@ -42,12 +42,6 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- 参数校验 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-
         <!-- 集成MyBatis-Plus和Spring Boot -->
         <dependency>
             <groupId>com.baomidou</groupId>

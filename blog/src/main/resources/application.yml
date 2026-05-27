@@ -10,10 +10,8 @@ spring:
   servlet.multipart.max-file-size: 10MB
   servlet.multipart.max-request-size: 100MB
 
-logging:
-  level:
-    org.springframework.mail: DEBUG
-    org.springframework.boot.autoconfigure.mail: DEBUG
+logging.level.org.springframework.mail: DEBUG
+logging.level.org.springframework.boot.autoconfigure.mail: DEBUG
 
 jwt:
   # 设置jwt签名加密时使用的秘钥

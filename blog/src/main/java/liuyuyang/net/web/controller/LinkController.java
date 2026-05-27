@@ -14,10 +14,8 @@ import liuyuyang.net.common.utils.Result;
 import liuyuyang.net.web.service.LinkService;
 import liuyuyang.net.common.utils.Paging;
 import liuyuyang.net.vo.PageVo;
-import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.link.LinkFilterVo;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -39,7 +37,7 @@ public class LinkController {
     @NoTokenRequired
     @ApiOperation("新增网站")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> add(@RequestBody @Validated(ValidationGroups.Create.class) Link link, @RequestHeader(value = "Authorization", required = false) String token) throws Exception {
+    public Result<String> add(@RequestBody Link link, @RequestHeader(value = "Authorization", required = false) String token) throws Exception {
         linkService.add(link, token);
         return Result.success();
     }
@@ -65,7 +63,7 @@ public class LinkController {
     @PatchMapping
     @ApiOperation("编辑网站")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> edit(@RequestBody @Validated(ValidationGroups.Update.class) Link link) {
+    public Result<String> edit(@RequestBody Link link) {
         linkService.updateById(link);
         return Result.success();
     }
