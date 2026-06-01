@@ -86,17 +86,6 @@ public class FootprintServiceImpl extends ServiceImpl<FootprintMapper, Footprint
             return footprintVO;
         }).collect(Collectors.toList());
 
-        // 不传 page/size 则返回全部
-        if (footprintFilterDTO.getPageNum() == null || footprintFilterDTO.getPageSize() == null) {
-            Page<FootprintVO> result = new Page<>(1, list.size());
-            result.setRecords(new ArrayList<>(list));
-            result.setTotal(list.size());
-            return result;
-        }
-
-        PageDTO pageDTO = new PageDTO();
-        pageDTO.setPageNum(Math.max(1, footprintFilterDTO.getPageNum()));
-        pageDTO.setPageSize(Math.max(1, footprintFilterDTO.getPageSize()));
-        return commonUtils.getPageData(pageDTO, list);
+        return commonUtils.paginate(footprintFilterDTO, list);
     }
 }

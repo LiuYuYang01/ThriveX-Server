@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.core.execption.CustomException;
+import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.tag.TagFilterDTO;
 import liuyuyang.net.dto.tag.TagFormDTO;
@@ -86,27 +87,8 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
     @Override
     public Page<TagVO> getTagList(TagFilterDTO tagFilterDTO) {
         List<Tag> data = tagMapper.staticArticleCount();
-
-        // 不传分页参数时返回全部（page/size 任意一个未传则全量）
-        if (tagFilterDTO == null || tagFilterDTO.getPageNum() == null || tagFilterDTO.getPageSize() == null) {
-            Page<TagVO> result = new Page<>(1, data.size());
-            result.setRecords(data.stream().map(this::toVO).collect(Collectors.toCollection(ArrayList::new)));
-            result.setTotal((long) data.size());
-            return result;
-        }
-
-        if (tagFilterDTO.getPageNum() <= 0 || tagFilterDTO.getPageSize() <= 0) {
-            throw new CustomException("分页参数 page/size 必须大于 0");
-        }
-
-        // 手动分页（数据源为统计查询结果）
-        Page<TagVO> result = new Page<>(tagFilterDTO.getPageNum(), tagFilterDTO.getPageSize());
-        int start = (int) ((tagFilterDTO.getPageNum() - 1L) * tagFilterDTO.getPageSize());
-        int end = Math.min(start + tagFilterDTO.getPageSize(), data.size());
-        List<Tag> records = start >= data.size() ? new ArrayList<>() : data.subList(start, end);
-        result.setRecords(records.stream().map(this::toVO).collect(Collectors.toCollection(ArrayList::new)));
-        result.setTotal((long) data.size());
-        return result;
+        List<TagVO> list = data.stream().map(this::toVO).collect(Collectors.toCollection(ArrayList::new));
+        return CommonUtils.paginate(tagFilterDTO, list);
     }
 
     @Override

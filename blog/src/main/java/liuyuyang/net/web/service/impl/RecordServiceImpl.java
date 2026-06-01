@@ -82,18 +82,6 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
     public Page<RecordVO> getRecordList(RecordFilterDTO recordFilterDTO) {
         List<Record> raw = queryRecordList(recordFilterDTO);
         List<RecordVO> list = raw.stream().map(RecordServiceImpl::toRecordVO).collect(Collectors.toList());
-
-        // 不传 page/size 则返回全部
-        if (recordFilterDTO.getPageNum() == null || recordFilterDTO.getPageSize() == null) {
-            Page<RecordVO> result = new Page<>(1, list.size());
-            result.setRecords(new ArrayList<>(list));
-            result.setTotal(list.size());
-            return result;
-        }
-
-        PageDTO pageDTO = new PageDTO();
-        pageDTO.setPageNum(Math.max(1, recordFilterDTO.getPageNum()));
-        pageDTO.setPageSize(Math.max(1, recordFilterDTO.getPageSize()));
-        return commonUtils.getPageData(pageDTO, list);
+        return commonUtils.paginate(recordFilterDTO, list);
     }
 }
