@@ -8,6 +8,7 @@ import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.link.LinkFilterDTO;
 import liuyuyang.net.dto.link.LinkFormDTO;
+import liuyuyang.net.dto.link.LinkSortDTO;
 import liuyuyang.net.enums.link.LinkStatusEnum;
 import liuyuyang.net.model.Article;
 import liuyuyang.net.model.Link;
@@ -25,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,13 +62,8 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
             return;
         }
 
-        // 如果没有设置 order 则放在最后
-        if (link.getOrder() == null) {
-            // 查询当前类型下的网站数量
-            LambdaQueryWrapper<Link> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(Link::getTypeId, link.getTypeId());
-            List<Link> links = linkMapper.selectList(queryWrapper);
-            link.setOrder(links.size() + 1);
+        if (link.getOrder() == null || link.getOrder() == 0) {
+            link.setOrder(nextLinkOrder(link.getTypeId()));
         }
 
         // 判断权限
@@ -138,7 +136,13 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
             return linkVO;
         }).collect(Collectors.toList());
 
-        list = list.stream().sorted((o1, o2) -> o2.getCreateTime().compareTo(o1.getCreateTime()))
+        list = list.stream()
+                .sorted(Comparator
+                        .comparingInt((LinkVO o) -> o.getType() == null || o.getType().getOrder() == null
+                                ? Integer.MAX_VALUE
+                                : o.getType().getOrder())
+                        .thenComparingInt(o -> o.getOrder() == null ? Integer.MAX_VALUE : o.getOrder())
+                        .thenComparing(LinkVO::getCreateTime, Comparator.reverseOrder()))
                 .collect(Collectors.toList());
 
         // 不传 page/size 则返回全部
@@ -172,5 +176,48 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
 
         data.setStatus(LinkStatusEnum.APPROVED);
         linkMapper.updateById(data);
+    }
+
+    @Override
+    public void sortLinkData(LinkSortDTO linkSortDTO) {
+        if (linkSortDTO == null || linkSortDTO.getTypeId() == null) {
+            throw new CustomException("请提供网站类型 ID");
+        }
+        List<Integer> ids = linkSortDTO.getIds();
+        if (ids == null || ids.isEmpty()) {
+            throw new CustomException("请提供排序后的网站 ID 列表");
+        }
+        if (ids.size() != new HashSet<>(ids).size()) {
+            throw new CustomException("网站 ID 不能重复");
+        }
+
+        Integer typeId = linkSortDTO.getTypeId();
+        long existCount = count(new LambdaQueryWrapper<Link>()
+                .eq(Link::getTypeId, typeId)
+                .in(Link::getId, ids));
+        if (existCount != ids.size()) {
+            throw new CustomException("有 " + (ids.size() - (int) existCount) + " 个网站不存在或不属于该类型");
+        }
+
+        long typeCount = count(new LambdaQueryWrapper<Link>().eq(Link::getTypeId, typeId));
+        if (typeCount != ids.size()) {
+            throw new CustomException("请提交该类型下全部网站的排序结果");
+        }
+
+        for (int i = 0; i < ids.size(); i++) {
+            Link link = new Link();
+            link.setId(ids.get(i));
+            link.setOrder(i + 1);
+            updateById(link);
+        }
+    }
+
+    private int nextLinkOrder(Integer typeId) {
+        Link last = getOne(new LambdaQueryWrapper<Link>()
+                .select(Link::getOrder)
+                .eq(Link::getTypeId, typeId)
+                .orderByDesc(Link::getOrder)
+                .last("LIMIT 1"), false);
+        return last == null || last.getOrder() == null ? 1 : last.getOrder() + 1;
     }
 }

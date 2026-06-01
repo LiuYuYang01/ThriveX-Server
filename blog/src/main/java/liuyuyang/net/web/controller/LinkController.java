@@ -12,6 +12,7 @@ import liuyuyang.net.web.service.LinkService;
 import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.dto.link.LinkFilterDTO;
 import liuyuyang.net.dto.link.LinkFormDTO;
+import liuyuyang.net.dto.link.LinkSortDTO;
 import liuyuyang.net.vo.link.LinkVO;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -98,6 +99,14 @@ public class LinkController {
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
     public Result<String> auditLinkData(@PathVariable Integer id) {
         linkService.auditLinkData(id);
+        return Result.success();
+    }
+
+    @PatchMapping("/sort")
+    @ApiOperation("网站拖拽排序（同类型内）")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
+    public Result<String> sortLinkData(@RequestBody LinkSortDTO linkSortDTO) {
+        linkService.sortLinkData(linkSortDTO);
         return Result.success();
     }
 }
