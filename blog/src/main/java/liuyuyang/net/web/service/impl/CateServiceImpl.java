@@ -198,18 +198,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
             fillTreeCount(arr, articleCountByCateId);
         }
 
-        // 不传 page/size 则返回全部
-        if (cateFilterDTO.getPageNum() == null || cateFilterDTO.getPageSize() == null) {
-            Page<CateVO> result = new Page<>(1, arr.size());
-            result.setRecords(new ArrayList<>(arr));
-            result.setTotal(arr.size());
-            return result;
-        }
-
-        PageDTO pageDTO = new PageDTO();
-        pageDTO.setPageNum(Math.max(1, cateFilterDTO.getPageNum()));
-        pageDTO.setPageSize(Math.max(1, cateFilterDTO.getPageSize()));
-        return commonUtils.getPageData(pageDTO, arr);
+        return commonUtils.paginate(cateFilterDTO, arr);
     }
 
     // 基于父级分类的 id 递归获取它的所有子分类

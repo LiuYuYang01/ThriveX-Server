@@ -366,18 +366,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                     .collect(Collectors.toList());
         }
 
-        // 不传 page/size 则返回全部
-        if (articleFilterDTO.getPageNum() == null || articleFilterDTO.getPageSize() == null) {
-            Page<ArticleVO> result = new Page<>(1, list.size());
-            result.setRecords(new ArrayList<>(list));
-            result.setTotal(list.size());
-            return result;
-        }
-
-        PageDTO pageDTO = new PageDTO();
-        pageDTO.setPageNum(Math.max(1, articleFilterDTO.getPageNum()));
-        pageDTO.setPageSize(Math.max(1, articleFilterDTO.getPageSize()));
-        return commonUtils.getPageData(pageDTO, list);
+        return commonUtils.paginate(articleFilterDTO, list);
     }
 
     // 获取指定分类中所有文章

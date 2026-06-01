@@ -145,20 +145,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
                         .thenComparing(LinkVO::getCreateTime, Comparator.reverseOrder()))
                 .collect(Collectors.toList());
 
-        // 不传 page/size 则返回全部
-        if (linkFilterDTO.getPageNum() == null || linkFilterDTO.getPageSize() == null) {
-            Page<LinkVO> result = new Page<>(1, list.size());
-            result.setRecords(new ArrayList<>(list));
-            result.setTotal(list.size());
-            return result;
-        }
-
-        PageDTO pageDTO = new PageDTO();
-        pageDTO.setPageNum(Math.max(1, linkFilterDTO.getPageNum()));
-        pageDTO.setPageSize(Math.max(1, linkFilterDTO.getPageSize()));
-        Page<LinkVO> result = commonUtils.getPageData(pageDTO, list);
-        result.setTotal(list.size());
-        return result;
+        return commonUtils.paginate(linkFilterDTO, list);
     }
 
     @Override

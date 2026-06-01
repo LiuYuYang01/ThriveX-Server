@@ -127,19 +127,7 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
     public Page<WallVO> getWallList(WallFilterDTO wallFilterDTO) {
         List<Wall> raw = queryWallList(wallFilterDTO);
         List<WallVO> list = raw.stream().map(WallServiceImpl::toWallVO).collect(Collectors.toList());
-
-        // 不传 page/size 则返回全部
-        if (wallFilterDTO.getPageNum() == null || wallFilterDTO.getPageSize() == null) {
-            Page<WallVO> result = new Page<>(1, list.size());
-            result.setRecords(new ArrayList<>(list));
-            result.setTotal(list.size());
-            return result;
-        }
-
-        PageDTO pageDTO = new PageDTO();
-        pageDTO.setPageNum(Math.max(1, wallFilterDTO.getPageNum()));
-        pageDTO.setPageSize(Math.max(1, wallFilterDTO.getPageSize()));
-        return commonUtils.getPageData(pageDTO, list);
+        return commonUtils.paginate(wallFilterDTO, list);
     }
 
     @Override

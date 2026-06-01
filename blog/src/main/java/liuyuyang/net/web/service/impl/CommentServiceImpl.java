@@ -142,19 +142,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     @Override
     public Page<CommentVO> getCommentList(CommentFilterDTO commentFilterDTO) {
         List<CommentVO> vos = buildCommentVOList(commentFilterDTO);
-
-        // 不传 page/size 则返回全部
-        if (commentFilterDTO.getPageNum() == null || commentFilterDTO.getPageSize() == null) {
-            Page<CommentVO> result = new Page<>(1, vos.size());
-            result.setRecords(new ArrayList<>(vos));
-            result.setTotal(vos.size());
-            return result;
-        }
-
-        PageDTO pageDTO = new PageDTO();
-        pageDTO.setPageNum(Math.max(1, commentFilterDTO.getPageNum()));
-        pageDTO.setPageSize(Math.max(1, commentFilterDTO.getPageSize()));
-        return commonUtils.getPageData(pageDTO, vos);
+        return commonUtils.paginate(commentFilterDTO, vos);
     }
 
     @Override

@@ -65,8 +65,25 @@ public class CommonUtils {
         }
     }
 
+    /**
+     * 统一分页处理：不传 page/size 则返回全部，否则进行分页
+     * @return 分页结果
+     */
+    public static <T> Page<T> paginate(PageDTO pageDTO, List<T> list) {
+        // 页码和页数只要有一个没传，就返回全部数据
+        if (pageDTO == null || pageDTO.getPageNum() == null || pageDTO.getPageSize() == null) {
+            Page<T> result = new Page<>(1, list.size());
+            result.setRecords(new ArrayList<>(list));
+            result.setTotal(list.size());
+            return result;
+        }
+
+        // 否则数据分页处理
+        return getPageData(pageDTO, list);
+    }
+
     /** 对内存列表做分页，返回 MyBatis-Plus Page（避免 start 超出列表长度） */
-    public <T> Page<T> getPageData(PageDTO pageDTO, List<T> list) {
+    public static <T> Page<T> getPageData(PageDTO pageDTO, List<T> list) {
         // 下限保护：页码至少为 1，避免非法分页
         int page = Math.max(1, pageDTO.getPageNum() != null ? pageDTO.getPageNum() : 1);
         int size = Math.max(1, pageDTO.getPageSize() != null ? pageDTO.getPageSize() : 5);

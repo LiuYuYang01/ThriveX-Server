@@ -131,8 +131,7 @@ public class RssServiceImpl implements RssService {
                 .sorted(Comparator.comparingLong(Rss::getCreateTime))
                 .collect(Collectors.toList());
 
-        // 使用工具类进行分页
-        return commonUtils.getPageData(pageDTO, list);
+        return commonUtils.paginate(pageDTO, list);
     }
 
     // 定时任务更新缓存

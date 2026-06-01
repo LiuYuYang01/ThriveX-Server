@@ -116,20 +116,7 @@ public class AssistantServiceImpl extends ServiceImpl<AssistantMapper, Assistant
             return assistantVO;
         }).collect(Collectors.toList());
 
-        // 不传 page/size 则返回全部
-        if (assistantFilterDTO.getPageNum() == null || assistantFilterDTO.getPageSize() == null) {
-            Page<AssistantVO> result = new Page<>(1, list.size());
-            result.setRecords(new ArrayList<>(list));
-            result.setTotal(list.size());
-            return result;
-        }
-
-        PageDTO pageDTO = new PageDTO();
-        pageDTO.setPageNum(Math.max(1, assistantFilterDTO.getPageNum()));
-        pageDTO.setPageSize(Math.max(1, assistantFilterDTO.getPageSize()));
-        Page<AssistantVO> result = commonUtils.getPageData(pageDTO, list);
-        result.setTotal(list.size());
-        return result;
+        return commonUtils.paginate(assistantFilterDTO, list);
     }
 
     @Override
