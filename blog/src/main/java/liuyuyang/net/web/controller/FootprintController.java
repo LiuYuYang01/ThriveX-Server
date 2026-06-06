@@ -10,12 +10,15 @@ import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.footprint.FootprintFilterDTO;
 import liuyuyang.net.dto.footprint.FootprintFormDTO;
+import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.footprint.FootprintVO;
 import liuyuyang.net.web.service.FootprintService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +26,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/footprint")
 @Transactional
+@Validated
 public class FootprintController {
     @Resource
     private FootprintService footprintService;
@@ -30,7 +34,7 @@ public class FootprintController {
     @PostMapping
     @ApiOperation("新增足迹")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addFootprintData(@RequestBody FootprintFormDTO footprintFormDTO) {
+    public Result<String> addFootprintData(@RequestBody @Validated(ValidationGroups.Create.class) FootprintFormDTO footprintFormDTO) {
         footprintFormDTO.setId(null);
         footprintService.addFootprintData(footprintFormDTO);
         return Result.success();
@@ -47,7 +51,7 @@ public class FootprintController {
     @DeleteMapping("/batch")
     @ApiOperation("批量删除足迹")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result<String> batchDelFootprintData(@RequestBody List<Integer> ids) {
+    public Result<String> batchDelFootprintData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         footprintService.batchDelFootprintData(ids);
         return Result.success();
     }
@@ -55,7 +59,7 @@ public class FootprintController {
     @PatchMapping
     @ApiOperation("编辑足迹")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> editFootprintData(@RequestBody FootprintFormDTO footprintFormDTO) {
+    public Result<String> editFootprintData(@RequestBody @Validated(ValidationGroups.Update.class) FootprintFormDTO footprintFormDTO) {
         footprintService.editFootprintData(footprintFormDTO);
         return Result.success();
     }

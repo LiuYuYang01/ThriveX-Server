@@ -10,9 +10,11 @@ import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.record.RecordFilterDTO;
 import liuyuyang.net.dto.record.RecordFormDTO;
+import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.record.RecordVO;
 import liuyuyang.net.web.service.RecordService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -29,7 +31,7 @@ public class RecordController {
     @PostMapping
     @ApiOperation("新增说说")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addRecordData(@RequestBody RecordFormDTO recordFormDTO) {
+    public Result<String> addRecordData(@RequestBody @Validated(ValidationGroups.Create.class) RecordFormDTO recordFormDTO) {
         recordFormDTO.setId(null);
         recordService.addRecordData(recordFormDTO);
         return Result.success();
@@ -46,7 +48,7 @@ public class RecordController {
     @PatchMapping
     @ApiOperation("编辑说说")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> editRecordData(@RequestBody RecordFormDTO recordFormDTO) {
+    public Result<String> editRecordData(@RequestBody @Validated(ValidationGroups.Update.class) RecordFormDTO recordFormDTO) {
         recordService.editRecordData(recordFormDTO);
         return Result.success();
     }

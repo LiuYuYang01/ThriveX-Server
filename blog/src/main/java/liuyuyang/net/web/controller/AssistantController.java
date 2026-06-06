@@ -8,12 +8,15 @@ import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.assistant.AssistantFilterDTO;
 import liuyuyang.net.dto.assistant.AssistantFormDTO;
+import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.assistant.AssistantVO;
 import liuyuyang.net.web.service.AssistantService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +24,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/assistant")
 @Transactional
+@Validated
 public class AssistantController {
     @Resource
     private AssistantService assistantService;
@@ -28,7 +32,8 @@ public class AssistantController {
     @PostMapping
     @ApiOperation("新增助手")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addAssistantData(@RequestBody AssistantFormDTO assistantFormDTO) {
+    public Result<String> addAssistantData(@RequestBody @Validated(ValidationGroups.Create.class) AssistantFormDTO assistantFormDTO) {
+        assistantFormDTO.setId(null);
         assistantService.addAssistantData(assistantFormDTO);
         return Result.success();
     }
@@ -44,7 +49,7 @@ public class AssistantController {
     @DeleteMapping("/batch")
     @ApiOperation("批量删除助手")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result<String> batchDelAssistantData(@RequestBody List<Integer> ids) {
+    public Result<String> batchDelAssistantData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         assistantService.batchDelAssistantData(ids);
         return Result.success();
     }
@@ -52,7 +57,7 @@ public class AssistantController {
     @PatchMapping
     @ApiOperation("编辑助手")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> editAssistantData(@RequestBody AssistantFormDTO assistantFormDTO) {
+    public Result<String> editAssistantData(@RequestBody @Validated(ValidationGroups.Update.class) AssistantFormDTO assistantFormDTO) {
         assistantService.editAssistantData(assistantFormDTO);
         return Result.success();
     }

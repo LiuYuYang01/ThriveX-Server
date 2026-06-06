@@ -60,7 +60,7 @@ public class UserController {
     @PatchMapping("/pass")
     @ApiOperation("修改管理员密码")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
-    public Result<String> editPass(@RequestBody EditUserPassDTO data) {
+    public Result<String> editPass(@RequestBody @Valid EditUserPassDTO data) {
         userService.editUserPass(data);
         return Result.success("密码修改成功");
     }

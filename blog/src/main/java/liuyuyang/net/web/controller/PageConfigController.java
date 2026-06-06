@@ -9,15 +9,18 @@ import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.model.PageConfig;
 import liuyuyang.net.web.service.PageConfigService;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
 @Api(tags = "页面配置管理")
 @RestController
 @RequestMapping("/page_config")
+@Validated
 public class PageConfigController {
     @Resource
     private PageConfigService pageConfigService;
@@ -56,7 +59,7 @@ public class PageConfigController {
     @PatchMapping("/json/{id}")
     public Result<String> updateJsonValue(
             @ApiParam(value = "页面配置ID", required = true, example = "1") @PathVariable Integer id,
-            @ApiParam(value = "JSON配置值", required = true) @RequestBody Map<String, Object> jsonValue) {
+            @ApiParam(value = "JSON配置值", required = true) @RequestBody @NotEmpty(message = "配置内容不能为空") Map<String, Object> jsonValue) {
         boolean success = pageConfigService.updateJsonValue(id, jsonValue);
         return success ? Result.success() : Result.error();
     }

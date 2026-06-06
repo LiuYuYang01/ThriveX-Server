@@ -11,13 +11,16 @@ import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.tag.TagFilterDTO;
 import liuyuyang.net.dto.tag.TagFormDTO;
+import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.article.ArticleVO;
 import liuyuyang.net.vo.tag.TagVO;
 import liuyuyang.net.web.service.TagService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +28,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/tag")
 @Transactional
+@Validated
 public class TagController {
     @Resource
     private TagService tagService;
@@ -32,7 +36,7 @@ public class TagController {
     @PostMapping
     @ApiOperation("新增标签")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addTagData(@RequestBody TagFormDTO tagFormDTO) {
+    public Result<String> addTagData(@RequestBody @Validated(ValidationGroups.Create.class) TagFormDTO tagFormDTO) {
         tagFormDTO.setId(null);
         tagService.addTagData(tagFormDTO);
         return Result.success();
@@ -49,7 +53,7 @@ public class TagController {
     @DeleteMapping("/batch")
     @ApiOperation("批量删除标签")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result<String> batchDelTagData(@RequestBody List<Integer> ids) {
+    public Result<String> batchDelTagData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         tagService.batchDelTagData(ids);
         return Result.success();
     }
@@ -57,7 +61,7 @@ public class TagController {
     @PatchMapping
     @ApiOperation("编辑标签")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> editTagData(@RequestBody TagFormDTO tagFormDTO) {
+    public Result<String> editTagData(@RequestBody @Validated(ValidationGroups.Update.class) TagFormDTO tagFormDTO) {
         tagService.editTagData(tagFormDTO);
         return Result.success();
     }

@@ -20,6 +20,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +29,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/link")
 @Transactional
+@Validated
 public class LinkController {
     @Resource
     private LinkService linkService;
@@ -53,7 +56,7 @@ public class LinkController {
     @DeleteMapping("/batch")
     @ApiOperation("批量删除网站")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result<String> batchDelLinkData(@RequestBody List<Integer> ids) {
+    public Result<String> batchDelLinkData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         linkService.batchDelLinkData(ids);
         return Result.success();
     }
@@ -61,7 +64,7 @@ public class LinkController {
     @PatchMapping
     @ApiOperation("编辑网站")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> editLinkData(@RequestBody LinkFormDTO linkFormDTO) {
+    public Result<String> editLinkData(@RequestBody @Validated(ValidationGroups.Update.class) LinkFormDTO linkFormDTO) {
         linkService.editLinkData(linkFormDTO);
         return Result.success();
     }
@@ -107,7 +110,7 @@ public class LinkController {
     @PatchMapping("/sort")
     @ApiOperation("网站拖拽排序（同类型内）")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
-    public Result<String> sortLinkData(@RequestBody LinkSortDTO linkSortDTO) {
+    public Result<String> sortLinkData(@RequestBody @Valid LinkSortDTO linkSortDTO) {
         linkService.sortLinkData(linkSortDTO);
         return Result.success();
     }
