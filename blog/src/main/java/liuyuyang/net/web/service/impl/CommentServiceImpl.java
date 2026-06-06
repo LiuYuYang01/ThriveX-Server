@@ -158,8 +158,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         List<CommentVO> vos = buildCommentTreeVO(list, 0);
         fillArticleTitles(vos);
 
-        // 分页处理
-        return commonUtils.getPageData(pageDTO, vos);
+        return commonUtils.paginate(pageDTO, vos);
     }
 
     @Override

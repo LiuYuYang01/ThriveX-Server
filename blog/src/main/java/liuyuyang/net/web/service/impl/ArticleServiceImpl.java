@@ -372,9 +372,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     // 获取指定分类中所有文章
     @Override
     public Page<ArticleVO> getCateArticleList(Integer id, PageDTO pageDTO) {
-        int p = pageDTO.getPageNum() != null ? Math.max(1, pageDTO.getPageNum()) : 1;
-        int s = pageDTO.getPageSize() != null ? Math.max(1, pageDTO.getPageSize()) : 5;
-
         Cate cate = cateMapper.selectById(id);
         if (cate == null || (!CommonUtils.isAdmin() && Boolean.TRUE.equals(cate.getIsHide()))) {
             throw new CustomException("该分类不存在");
@@ -389,7 +386,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 有数据就查询，没有就返回空数组
         if (articleIds.isEmpty()) {
-            return new Page<>(p, s, 0);
+            return commonUtils.paginate(pageDTO, new ArrayList<>());
         }
 
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -404,7 +401,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 如果过滤后没有文章,直接返回空页
         if (articleIds.isEmpty()) {
-            return new Page<>(p, s, 0);
+            return commonUtils.paginate(pageDTO, new ArrayList<>());
         }
 
         // 构建文章查询条件
@@ -412,19 +409,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 .in(Article::getId, articleIds)
                 .orderByDesc(Article::getCreateTime);
 
-        // 查询文章列表
-        Page<Article> page = new Page<>(p, s);
-        articleMapper.selectPage(page, queryWrapperArticle);
-
-        // 绑定数据并处理加密/隐藏文章
-        return processArticlePage(page);
+        List<Article> articles = articleMapper.selectList(queryWrapperArticle);
+        List<ArticleVO> vos = processArticleList(articles);
+        return commonUtils.paginate(pageDTO, vos);
     }
 
     @Override
     public Page<ArticleVO> getTagArticleList(Integer id, PageDTO pageDTO) {
-        int p = pageDTO.getPageNum() != null ? Math.max(1, pageDTO.getPageNum()) : 1;
-        int s = pageDTO.getPageSize() != null ? Math.max(1, pageDTO.getPageSize()) : 5;
-
         // 通过标签 id 查询出所有文章 id
         LambdaQueryWrapper<ArticleTag> queryWrapperArticleTag = new LambdaQueryWrapper<>();
         queryWrapperArticleTag.eq(ArticleTag::getTagId, id);
@@ -434,7 +425,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 有数据就查询，没有就返回空数组
         if (articleIds.isEmpty()) {
-            return new Page<>(p, s, 0);
+            return commonUtils.paginate(pageDTO, new ArrayList<>());
         }
 
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -446,26 +437,23 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 如果过滤后没有文章,直接返回空页
         if (articleIds.isEmpty()) {
-            return new Page<>(p, s, 0);
+            return commonUtils.paginate(pageDTO, new ArrayList<>());
         }
 
         // 构建文章查询条件
         LambdaQueryWrapper<Article> queryWrapperArticle = new LambdaQueryWrapper<>();
         queryWrapperArticle.in(Article::getId, articleIds).orderByDesc(Article::getCreateTime);
 
-        // 查询文章列表
-        Page<Article> page = new Page<>(p, s);
-        articleMapper.selectPage(page, queryWrapperArticle);
-
-        // 绑定数据并处理加密/隐藏文章
-        return processArticlePage(page);
+        List<Article> articles = articleMapper.selectList(queryWrapperArticle);
+        List<ArticleVO> vos = processArticleList(articles);
+        return commonUtils.paginate(pageDTO, vos);
     }
 
     /**
-     * 公共文章分页结果处理：绑定数据、处理加密文章、过滤隐藏文章
+     * 绑定数据、处理加密文章、过滤隐藏文章
      */
-    private Page<ArticleVO> processArticlePage(Page<Article> page) {
-        List<ArticleVO> records = page.getRecords().stream()
+    private List<ArticleVO> processArticleList(List<Article> articles) {
+        return articles.stream()
                 .map(article -> {
                     ArticleVO boundArticle = bindingArticleData(article.getId());
                     // 分类/标签页默认按普通用户规则展示
@@ -476,10 +464,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-
-        Page<ArticleVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
-        result.setRecords(records);
-        return result;
     }
 
     /**
