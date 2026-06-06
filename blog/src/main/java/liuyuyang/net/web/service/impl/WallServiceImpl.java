@@ -132,29 +132,21 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
 
     @Override
     public Page<WallVO> getCateWallList(Integer cateId, PageDTO pageDTO) {
-        int p = pageDTO.getPageNum() != null ? Math.max(1, pageDTO.getPageNum()) : 1;
-        int s = pageDTO.getPageSize() != null ? Math.max(1, pageDTO.getPageSize()) : 5;
         WallCate wallCate = wallCateMapper.selectById(cateId);
         if (wallCate == null) {
             throw new CustomException("该留言分类不存在");
         }
 
         QueryWrapper<Wall> queryWrapper = getWallQueryWrapper(cateId, wallCate);
-
-        Page<Wall> page = new Page<>(p, s);
-        wallMapper.selectPage(page, queryWrapper);
-
-        List<Wall> list = page.getRecords();
+        List<Wall> list = wallMapper.selectList(queryWrapper);
 
         // 绑定数据
         for (Wall wall : list) {
             wall.setCate(wallCateMapper.selectById(wall.getCateId()));
         }
 
-        // 分页处理
-        Page<WallVO> voPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
-        voPage.setRecords(list.stream().map(WallServiceImpl::toWallVO).collect(Collectors.toList()));
-        return voPage;
+        List<WallVO> vos = list.stream().map(WallServiceImpl::toWallVO).collect(Collectors.toList());
+        return commonUtils.paginate(pageDTO, vos);
     }
 
     private static QueryWrapper<Wall> getWallQueryWrapper(Integer cateId, WallCate wallCate) {

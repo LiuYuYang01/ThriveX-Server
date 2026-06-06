@@ -377,11 +377,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             throw new CustomException("该分类不存在");
         }
 
-        Cate cate = cateMapper.selectById(id);
-        if (cate == null || (!CommonUtils.isAdmin() && Boolean.TRUE.equals(cate.getIsHide()))) {
-            throw new CustomException("该分类不存在");
-        }
-
         // 通过分类 id 查询出所有文章id
         LambdaQueryWrapper<ArticleCate> queryWrapperArticleCate = new LambdaQueryWrapper<>();
         queryWrapperArticleCate.eq(ArticleCate::getCateId, id); // 修改in为eq,因为只查询单个分类
