@@ -8,6 +8,7 @@ import liuyuyang.net.validation.ValidationGroups;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -27,5 +28,6 @@ public class ArticleFormDTO extends Article {
     @TableField(exist = false)
     @ApiModelProperty(value = "文章配置项")
     @NotNull(message = "文章配置不能为空", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
+    @Valid
     private ArticleConfig config;
 }

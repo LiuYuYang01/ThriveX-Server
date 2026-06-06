@@ -18,6 +18,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +26,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/comment")
 @Transactional
+@Validated
 public class CommentController {
     @Resource
     private CommentService commentService;
@@ -51,7 +53,7 @@ public class CommentController {
     @DeleteMapping("/batch")
     @ApiOperation("批量删除评论")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result<String> batchDelCommentData(@RequestBody List<Integer> ids) {
+    public Result<String> batchDelCommentData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         commentService.batchDelCommentData(ids);
         return Result.success();
     }
@@ -59,7 +61,7 @@ public class CommentController {
     @PatchMapping
     @ApiOperation("编辑评论")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> editCommentData(@RequestBody CommentFormDTO commentFormDTO) {
+    public Result<String> editCommentData(@RequestBody @Validated(ValidationGroups.Update.class) CommentFormDTO commentFormDTO) {
         commentService.editCommentData(commentFormDTO);
         return Result.success();
     }

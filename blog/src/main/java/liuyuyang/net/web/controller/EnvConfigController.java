@@ -8,9 +8,12 @@ import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.model.EnvConfig;
 import liuyuyang.net.web.service.EnvConfigService;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +21,7 @@ import java.util.Map;
 @Api(tags = "环境配置管理")
 @RestController
 @RequestMapping("/env_config")
+@Validated
 public class EnvConfigController {
     @Resource
     private EnvConfigService envConfigService;
@@ -53,7 +57,7 @@ public class EnvConfigController {
     @PatchMapping("/json/{id}")
     public Result<String> updateJsonValue(
             @ApiParam(value = "环境配置ID", required = true, example = "1") @PathVariable Integer id,
-            @ApiParam(value = "JSON配置值", required = true) @RequestBody Map<String, Object> jsonValue) {
+            @ApiParam(value = "JSON配置值", required = true) @RequestBody @NotEmpty(message = "配置内容不能为空") Map<String, Object> jsonValue) {
         boolean success = envConfigService.updateJsonValue(id, jsonValue);
         return success ? Result.success("JSON配置更新成功") : Result.error("更新失败");
     }
@@ -63,7 +67,7 @@ public class EnvConfigController {
     @PatchMapping("/{id}/field/{fieldName}")
     public Result<String> updateJsonFieldValue(
             @ApiParam(value = "环境配置ID", required = true, example = "1") @PathVariable Integer id,
-            @ApiParam(value = "字段名称", required = true, example = "host") @PathVariable String fieldName,
+            @ApiParam(value = "字段名称", required = true, example = "host") @PathVariable @NotBlank(message = "字段名称不能为空") String fieldName,
             @ApiParam(value = "字段值", required = true) @RequestBody Object value) {
         boolean success = envConfigService.updateJsonFieldValue(id, fieldName, value);
         return success ? Result.success() : Result.error();

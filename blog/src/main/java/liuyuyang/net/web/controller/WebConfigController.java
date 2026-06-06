@@ -8,9 +8,11 @@ import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.web.service.WebConfigService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 import liuyuyang.net.model.WebConfig;
@@ -19,6 +21,7 @@ import liuyuyang.net.model.WebConfig;
 @RestController
 @RequestMapping("/web_config")
 @Transactional
+@Validated
 public class WebConfigController {
     @Resource
     private WebConfigService webConfigService;
@@ -56,7 +59,7 @@ public class WebConfigController {
     @ApiOperation("根据ID更新网站配置")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
     @PatchMapping("/json/{id}")
-    public Result<String> updateJsonValue(@PathVariable Integer id, @RequestBody Map<String, Object> jsonValue) {
+    public Result<String> updateJsonValue(@PathVariable Integer id, @RequestBody @NotEmpty(message = "配置内容不能为空") Map<String, Object> jsonValue) {
         boolean success = webConfigService.updateJsonValue(id, jsonValue);
         return success ? Result.success() : Result.error();
     }
@@ -65,7 +68,7 @@ public class WebConfigController {
     @ApiOperation("根据名称更新网站配置")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
     @PatchMapping("/json/name/{name}")
-    public Result<String> updateJsonValueByName(@PathVariable String name, @RequestBody Map<String, Object> jsonValue) {
+    public Result<String> updateJsonValueByName(@PathVariable String name, @RequestBody @NotEmpty(message = "配置内容不能为空") Map<String, Object> jsonValue) {
         WebConfig webConfig = webConfigService.getByName(name);
         if (webConfig == null) {
             return Result.error("配置不存在");

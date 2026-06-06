@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotEmpty;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/article")
 @Transactional
+@Validated
 public class ArticleController {
     @Resource
     private ArticleService articleService;
@@ -62,7 +64,7 @@ public class ArticleController {
     @DeleteMapping("/batch")
     @ApiOperation("批量删除文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> batchDelArticleData(@RequestBody List<Integer> ids) {
+    public Result<String> batchDelArticleData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         articleService.delBatchArticleData(ids);
         return Result.success();
     }
@@ -70,7 +72,7 @@ public class ArticleController {
     @PatchMapping
     @ApiOperation("编辑文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
-    public Result<String> editArticleData(@RequestBody ArticleFormDTO articleFormDTO) {
+    public Result<String> editArticleData(@RequestBody @Validated(ValidationGroups.Update.class) ArticleFormDTO articleFormDTO) {
         articleService.editArticleData(articleFormDTO);
         return Result.success();
     }
@@ -160,7 +162,7 @@ public class ArticleController {
     @PostMapping("/export")
     @ApiOperation("批量导出文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 15)
-    public ResponseEntity<byte[]> exportArticleList(@RequestBody List<Integer> ids) {
+    public ResponseEntity<byte[]> exportArticleList(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         return articleService.exportArticleList(ids);
     }
 }

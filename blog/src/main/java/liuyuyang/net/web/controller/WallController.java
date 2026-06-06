@@ -20,6 +20,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +28,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/wall")
 @Transactional
+@Validated
 public class WallController {
     @Resource
     private WallService wallService;
@@ -53,7 +55,7 @@ public class WallController {
     @DeleteMapping("/batch")
     @ApiOperation("批量删除留言")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result<String> batchDelWallData(@RequestBody List<Integer> ids) {
+    public Result<String> batchDelWallData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         wallService.batchDelWallData(ids);
         return Result.success();
     }
@@ -61,7 +63,7 @@ public class WallController {
     @PatchMapping
     @ApiOperation("编辑留言")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> editWallData(@RequestBody WallFormDTO wallFormDTO) {
+    public Result<String> editWallData(@RequestBody @Validated(ValidationGroups.Update.class) WallFormDTO wallFormDTO) {
         wallService.editWallData(wallFormDTO);
         return Result.success();
     }

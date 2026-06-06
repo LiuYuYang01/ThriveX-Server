@@ -10,12 +10,15 @@ import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.swiper.SwiperFilterDTO;
 import liuyuyang.net.dto.swiper.SwiperFormDTO;
+import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.swiper.SwiperVO;
 import liuyuyang.net.web.service.SwiperService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +26,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/swiper")
 @Transactional
+@Validated
 public class SwiperController {
     @Resource
     private SwiperService swiperService;
@@ -30,7 +34,7 @@ public class SwiperController {
     @PostMapping
     @ApiOperation("新增轮播图")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addSwiperData(@RequestBody SwiperFormDTO swiperFormDTO) {
+    public Result<String> addSwiperData(@RequestBody @Validated(ValidationGroups.Create.class) SwiperFormDTO swiperFormDTO) {
         swiperFormDTO.setId(null);
         swiperService.addSwiperData(swiperFormDTO);
         return Result.success();
@@ -47,7 +51,7 @@ public class SwiperController {
     @DeleteMapping("/batch")
     @ApiOperation("批量删除轮播图")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result<String> batchDelSwiperData(@RequestBody List<Integer> ids) {
+    public Result<String> batchDelSwiperData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         swiperService.batchDelSwiperData(ids);
         return Result.success();
     }
@@ -55,7 +59,7 @@ public class SwiperController {
     @PatchMapping
     @ApiOperation("编辑轮播图")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> editSwiperData(@RequestBody SwiperFormDTO swiperFormDTO) {
+    public Result<String> editSwiperData(@RequestBody @Validated(ValidationGroups.Update.class) SwiperFormDTO swiperFormDTO) {
         swiperService.editSwiperData(swiperFormDTO);
         return Result.success();
     }
@@ -84,7 +88,7 @@ public class SwiperController {
     @PatchMapping("/sort")
     @ApiOperation("轮播图拖拽排序")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result<String> sortSwiperData(@RequestBody List<Integer> ids) {
+    public Result<String> sortSwiperData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         swiperService.sortSwiperData(ids);
         return Result.success();
     }

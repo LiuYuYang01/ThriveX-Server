@@ -11,12 +11,16 @@ import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.cate.CateFilterDTO;
 import liuyuyang.net.dto.cate.CateFormDTO;
 import liuyuyang.net.dto.cate.CateSortDTO;
+import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.cate.CateVO;
 import liuyuyang.net.web.service.CateService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +28,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/cate")
 @Transactional
+@Validated
 public class CateController {
     @Resource
     private CateService cateService;
@@ -31,7 +36,7 @@ public class CateController {
     @PostMapping
     @ApiOperation("新增分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addCateData(@RequestBody CateFormDTO cateFormDTO) {
+    public Result<String> addCateData(@RequestBody @Validated(ValidationGroups.Create.class) CateFormDTO cateFormDTO) {
         cateFormDTO.setId(null);
         cateService.addCateData(cateFormDTO);
         return Result.success();
@@ -48,7 +53,7 @@ public class CateController {
     @DeleteMapping("/batch")
     @ApiOperation("批量删除分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result<String> batchDelCateData(@RequestBody List<Integer> ids) {
+    public Result<String> batchDelCateData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         cateService.batchDelCateData(ids);
         return Result.success();
     }
@@ -56,7 +61,7 @@ public class CateController {
     @PatchMapping
     @ApiOperation("编辑分类")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> editCateData(@RequestBody CateFormDTO cateFormDTO) {
+    public Result<String> editCateData(@RequestBody @Validated(ValidationGroups.Update.class) CateFormDTO cateFormDTO) {
         cateService.editCateData(cateFormDTO);
         return Result.success();
     }
@@ -85,7 +90,7 @@ public class CateController {
     @PatchMapping("/sort")
     @ApiOperation("分类同级拖拽排序")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result<String> sortCateData(@RequestBody CateSortDTO cateSortDTO) {
+    public Result<String> sortCateData(@RequestBody @Valid CateSortDTO cateSortDTO) {
         cateService.sortCateData(cateSortDTO);
         return Result.success();
     }

@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.validation.Valid;
 import java.io.IOException;
 import java.util.Map;
 
@@ -65,7 +66,7 @@ public class FileController {
     @DeleteMapping("/batch")
     @ApiOperation("批量删除文件")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
-    public Result<String> batchDelFileData(@RequestBody FileBatchDeleteFormDTO dto) throws QiniuException {
+    public Result<String> batchDelFileData(@RequestBody @Valid FileBatchDeleteFormDTO dto) throws QiniuException {
         fileService.batchDelFileData(dto);
         return Result.success();
     }
@@ -97,21 +98,21 @@ public class FileController {
     @PostMapping("/dir")
     @ApiOperation("新增目录")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    public Result<FileDirCreateVO> addFileDirData(@RequestBody FileDirCreateFormDTO dto) throws IOException {
+    public Result<FileDirCreateVO> addFileDirData(@RequestBody @Valid FileDirCreateFormDTO dto) throws IOException {
         return Result.success(fileService.addFileDirData(dto));
     }
 
     @PatchMapping("/dir")
     @ApiOperation("重命名目录")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
-    public Result<FileDirRenameVO> renameFileDirData(@RequestBody FileDirRenameFormDTO dto) throws QiniuException {
+    public Result<FileDirRenameVO> renameFileDirData(@RequestBody @Valid FileDirRenameFormDTO dto) throws QiniuException {
         return Result.success(fileService.renameFileDirData(dto));
     }
 
     @DeleteMapping("/dir")
     @ApiOperation("删除目录")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
-    public Result<FileDirDeleteVO> delFileDirData(@RequestBody FileDirDeleteFormDTO dto) throws QiniuException {
+    public Result<FileDirDeleteVO> delFileDirData(@RequestBody @Valid FileDirDeleteFormDTO dto) throws QiniuException {
         return Result.success(fileService.delFileDirData(dto));
     }
 }
