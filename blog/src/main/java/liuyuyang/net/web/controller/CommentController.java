@@ -10,9 +10,11 @@ import liuyuyang.net.dto.comment.CommentFilterDTO;
 import liuyuyang.net.dto.comment.CommentFormDTO;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.core.utils.Paging;
+import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.comment.CommentVO;
 import liuyuyang.net.web.service.CommentService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -32,7 +34,7 @@ public class CommentController {
     @PostMapping
     @ApiOperation("新增评论")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addCommentData(@RequestBody CommentFormDTO commentFormDTO) throws Exception {
+    public Result<String> addCommentData(@RequestBody @Validated(ValidationGroups.Create.class) CommentFormDTO commentFormDTO) throws Exception {
         commentFormDTO.setId(null);
         commentService.addCommentData(commentFormDTO);
         return Result.success();
