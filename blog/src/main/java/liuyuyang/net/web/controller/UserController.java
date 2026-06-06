@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.Valid;
 import java.util.Map;
 
 @Api(tags = "用户管理")
@@ -31,7 +32,7 @@ public class UserController {
     @PatchMapping
     @ApiOperation("编辑管理员")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
-    public Result<String> editUserData(@RequestBody EditUserInfoDTO user) {
+    public Result<String> editUserData(@RequestBody @Valid EditUserInfoDTO user) {
         userService.editUserData(user);
         return Result.success();
     }
@@ -50,7 +51,8 @@ public class UserController {
     @PostMapping("/login")
     @ApiOperation("管理员登录")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
-    public Result<Map<String, Object>> login(@RequestBody UserLoginDTO user) {
+    @RateLimit(tokens = 5, duration = 60, message = "登录尝试过于频繁，请 60 秒后再试")
+    public Result<Map<String, Object>> login(@RequestBody @Valid UserLoginDTO user) {
         Map<String, Object> result = userService.login(user);
         return Result.success("登录成功", result);
     }

@@ -13,8 +13,10 @@ import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.dto.link.LinkFilterDTO;
 import liuyuyang.net.dto.link.LinkFormDTO;
 import liuyuyang.net.dto.link.LinkSortDTO;
+import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.link.LinkVO;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -34,7 +36,7 @@ public class LinkController {
     @NoTokenRequired
     @ApiOperation("新增网站")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addLinkData(@RequestBody LinkFormDTO linkFormDTO, @RequestHeader(value = "Authorization", required = false) String token) throws Exception {
+    public Result<String> addLinkData(@RequestBody @Validated(ValidationGroups.Create.class) LinkFormDTO linkFormDTO, @RequestHeader(value = "Authorization", required = false) String token) throws Exception {
         linkFormDTO.setId(null);
         linkService.addLinkData(linkFormDTO, token);
         return Result.success();

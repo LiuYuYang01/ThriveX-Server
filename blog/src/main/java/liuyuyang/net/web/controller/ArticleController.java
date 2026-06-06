@@ -12,10 +12,12 @@ import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.article.ArticleFormDTO;
 import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.article.ArticleFilterDTO;
+import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.article.ArticleVO;
 import liuyuyang.net.web.service.ArticleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,7 +37,7 @@ public class ArticleController {
     @PostMapping
     @ApiOperation("新增文章")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addArticleData(@RequestBody ArticleFormDTO articledFormDTO) {
+    public Result<String> addArticleData(@RequestBody @Validated(ValidationGroups.Create.class) ArticleFormDTO articledFormDTO) {
         articledFormDTO.setId(null);
         articleService.addArticleData(articledFormDTO);
         return Result.success();

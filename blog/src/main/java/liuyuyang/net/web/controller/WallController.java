@@ -12,9 +12,11 @@ import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.wall.WallFilterDTO;
 import liuyuyang.net.dto.wall.WallFormDTO;
 import liuyuyang.net.model.WallCate;
+import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.wall.WallVO;
 import liuyuyang.net.web.service.WallService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -34,7 +36,7 @@ public class WallController {
     @PostMapping
     @ApiOperation("新增留言")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addWallData(@RequestBody WallFormDTO wallFormDTO) throws Exception {
+    public Result<String> addWallData(@RequestBody @Validated(ValidationGroups.Create.class) WallFormDTO wallFormDTO) throws Exception {
         wallFormDTO.setId(null);
         wallService.addWallData(wallFormDTO);
         return Result.success();
