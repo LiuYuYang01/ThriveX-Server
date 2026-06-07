@@ -246,8 +246,6 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
             throw new CustomException("有 " + (ids.size() - (int) existCount) + " 个分类不存在或不属于该层级");
         }
 
-        long siblingCount = count(new LambdaQueryWrapper<Cate>().eq(Cate::getLevel, parentLevel));
-
         for (int i = 0; i < ids.size(); i++) {
             Cate cate = new Cate();
             cate.setId(ids.get(i));
