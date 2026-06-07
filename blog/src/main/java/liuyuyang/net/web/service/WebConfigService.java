@@ -1,7 +1,6 @@
 package liuyuyang.net.web.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import liuyuyang.net.model.PageConfig;
 import liuyuyang.net.model.WebConfig;
 
 import java.util.List;
