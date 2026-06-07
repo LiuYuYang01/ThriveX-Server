@@ -8,6 +8,6 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class AssistantFilterDTO extends PageDTO {
-    @ApiModelProperty(value = "根据助手名称进行筛选")
-    private String name;
+    @ApiModelProperty(value = "根据模型进行筛选")
+    private String model;
 }
