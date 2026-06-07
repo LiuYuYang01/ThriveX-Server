@@ -102,8 +102,8 @@ public class AssistantServiceImpl extends ServiceImpl<AssistantMapper, Assistant
     @Override
     public Page<AssistantVO> getAssistantList(AssistantFilterDTO assistantFilterDTO) {
         QueryWrapper<Assistant> queryWrapper = new QueryWrapper<>();
-        if (assistantFilterDTO.getName() != null && !assistantFilterDTO.getName().trim().isEmpty()) {
-            queryWrapper.like("name", assistantFilterDTO.getName().trim());
+        if (assistantFilterDTO.getModel() != null && !assistantFilterDTO.getModel().trim().isEmpty()) {
+            queryWrapper.like("model", assistantFilterDTO.getModel().trim());
         }
         queryWrapper.orderByDesc("is_default");
         queryWrapper.orderByDesc("id");

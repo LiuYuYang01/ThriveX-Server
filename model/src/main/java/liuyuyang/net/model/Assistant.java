@@ -19,10 +19,6 @@ public class Assistant {
     @ApiModelProperty(value = "ID")
     @NotNull(message = "ID不能为空", groups = ValidationGroups.Update.class)
     private Integer id;
-    @ApiModelProperty(value = "助手名称", example = "DeepSeek", required = true)
-    @NotBlank(message = "助手名称不能为空", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
-    @Size(max = 50, message = "助手名称不能超过50个字符", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
-    private String name;
     @TableField("`key`")
     @ApiModelProperty(value = "API 密钥", example = "xxxxxxxxxxxxxxxxxxxxxxxxxx")
     @Size(max = 200, message = "API密钥不能超过200个字符", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
