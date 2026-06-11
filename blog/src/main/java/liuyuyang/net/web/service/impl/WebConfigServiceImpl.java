@@ -38,4 +38,17 @@ public class WebConfigServiceImpl extends ServiceImpl<WebConfigMapper, WebConfig
     public WebConfig getByName(String name) {
         return this.lambdaQuery().eq(WebConfig::getName, name).one();
     }
+
+    @Override
+    public boolean updateJsonValueByName(String name, Map<String, Object> jsonValue) {
+        WebConfig webConfig = getByName(name);
+        if (webConfig == null) {
+            webConfig = new WebConfig();
+            webConfig.setName(name);
+            webConfig.setValue(jsonValue);
+            webConfig.setNotes("");
+            return save(webConfig);
+        }
+        return updateJsonValue(webConfig.getId(), jsonValue);
+    }
 }

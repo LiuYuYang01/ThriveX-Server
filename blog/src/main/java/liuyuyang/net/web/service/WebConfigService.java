@@ -26,4 +26,9 @@ public interface WebConfigService extends IService<WebConfig> {
      * 根据名称获取网站配置
      */
     WebConfig getByName(String name);
+
+    /**
+     * 根据名称更新 JSON 配置值，不存在则创建
+     */
+    boolean updateJsonValueByName(String name, Map<String, Object> jsonValue);
 }
