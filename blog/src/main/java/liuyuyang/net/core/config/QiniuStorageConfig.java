@@ -546,6 +546,11 @@ public class QiniuStorageConfig {
         if (base.isEmpty()) {
             return rel;
         }
+        // 兼容前端传入已含 root_dir 的完整路径，避免 thrive/thrive/... 重复前缀
+        String baseSeg = base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
+        if (!baseSeg.isEmpty() && (rel.equals(base) || rel.startsWith(baseSeg + "/"))) {
+            return rel;
+        }
         return base + rel;
     }
 
