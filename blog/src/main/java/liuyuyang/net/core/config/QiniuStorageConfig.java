@@ -2,6 +2,8 @@ package liuyuyang.net.core.config;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
+import com.qiniu.processing.OperationManager;
+import com.qiniu.processing.OperationStatus;
 import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.Region;
@@ -10,6 +12,7 @@ import com.qiniu.storage.model.FileInfo;
 import com.qiniu.storage.model.FileListing;
 import com.qiniu.util.Auth;
 import liuyuyang.net.core.execption.CustomException;
+import liuyuyang.net.core.utils.ImagePfopUtils;
 import liuyuyang.net.model.EnvConfig;
 import liuyuyang.net.vo.file.FileDirCreateVO;
 import liuyuyang.net.vo.file.FileDirDeleteVO;
@@ -103,6 +106,78 @@ public class QiniuStorageConfig {
             throw new CustomException("上传文件失败");
         }
         return buildPublicUrl(config, key);
+    }
+
+    /**
+     * 提交 pfop 持久化瘦身任务，结果先写入临时 key，轮询成功后再覆盖原 key。
+     */
+    public String submitCompressPfop(String key, String fops) throws QiniuException {
+        QiniuConfig config = getQiniuConfig();
+        String bucket = config.getBucketName();
+        String tmpKey = ImagePfopUtils.buildTmpKey(key);
+        deleteObjectQuietly(bucket, tmpKey);
+
+        String pfopFops = ImagePfopUtils.buildPfopFops(fops, bucket, tmpKey);
+        Auth auth = Auth.create(config.getAccessKey(), config.getSecretKey());
+        OperationManager operationManager = new OperationManager(auth, new Configuration(Region.autoRegion()));
+        return operationManager.pfop(bucket, key, pfopFops);
+    }
+
+    /**
+     * 查询 pfop 任务状态。
+     */
+    public OperationStatus queryPfopStatus(String persistentId) throws QiniuException {
+        QiniuConfig config = getQiniuConfig();
+        Auth auth = Auth.create(config.getAccessKey(), config.getSecretKey());
+        OperationManager operationManager = new OperationManager(auth, new Configuration(Region.autoRegion()));
+        return operationManager.prefop(persistentId);
+    }
+
+    /**
+     * pfop 完成后：比对临时文件体积，达标则 move 覆盖原 key，否则删除临时文件保留原图。
+     */
+    public FileInfoVO finalizeCompressPfop(String key, String tmpKey, long beforeSize) throws QiniuException {
+        QiniuConfig config = getQiniuConfig();
+        String bucket = config.getBucketName();
+        BucketManager bucketManager = createBucketManager(config);
+
+        FileInfo tmpInfo;
+        try {
+            tmpInfo = bucketManager.stat(bucket, tmpKey);
+        } catch (QiniuException e) {
+            deleteObjectQuietly(bucket, tmpKey);
+            throw new CustomException("未找到处理结果，可能 pfop 未成功写入临时文件");
+        }
+
+        long afterSize = tmpInfo.fsize;
+        if (ImagePfopUtils.isInsufficientSaving(beforeSize, afterSize)) {
+            deleteObjectQuietly(bucket, tmpKey);
+            throw new CustomException(String.format(
+                    "压缩后体积未明显减小（%s → %s），已保留原文件",
+                    ImagePfopUtils.formatSavedBytes(beforeSize),
+                    ImagePfopUtils.formatSavedBytes(afterSize)));
+        }
+
+        bucketManager.move(bucket, tmpKey, bucket, key, true);
+        return getFileInfo(key);
+    }
+
+    public void deleteObjectQuietly(String bucket, String key) {
+        try {
+            createBucketManager(getQiniuConfig()).delete(bucket, key);
+        } catch (Exception ignored) {
+            // 清理临时文件失败不影响主流程
+        }
+    }
+
+    public void deleteKeyQuietly(String key) {
+        QiniuConfig config = getQiniuConfig();
+        deleteObjectQuietly(config.getBucketName(), key);
+    }
+
+    private BucketManager createBucketManager(QiniuConfig config) {
+        return new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
+                new Configuration(Region.autoRegion()));
     }
 
     // 根据完整访问 URL 解析对象 key 并删除。
@@ -581,9 +656,13 @@ public class QiniuStorageConfig {
         return path;
     }
 
+    private String buildRawPublicUrl(QiniuConfig config, String key) {
+        return normalizeDomain(config.getDomain()) + "/" + key;
+    }
+
     // 拼接公开访问 URL；{@code zlevel != 0} 时对 jpeg/png 追加七牛图片瘦身参数（值越小画质越好）。
     private String buildPublicUrl(QiniuConfig config, String key) {
-        String base = normalizeDomain(config.getDomain()) + "/" + key;
+        String base = buildRawPublicUrl(config, key);
         int zlevel = config.getZlevel();
         if (zlevel == 0 || !isImageSlimSupportedKey(key)) {
             return base;

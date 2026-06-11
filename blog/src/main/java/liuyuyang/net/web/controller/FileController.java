@@ -9,10 +9,14 @@ import io.swagger.annotations.ApiParam;
 import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.file.FileBatchDeleteFormDTO;
+import liuyuyang.net.dto.file.FileCompressFormDTO;
+import liuyuyang.net.dto.file.FileCompressTaskQueryDTO;
 import liuyuyang.net.dto.file.FileDirCreateFormDTO;
 import liuyuyang.net.dto.file.FileDirDeleteFormDTO;
 import liuyuyang.net.dto.file.FileDirRenameFormDTO;
 import liuyuyang.net.dto.file.FileFilterDTO;
+import liuyuyang.net.vo.file.FileCompressItemVO;
+import liuyuyang.net.vo.file.FileCompressVO;
 import liuyuyang.net.vo.file.FileDirCreateVO;
 import liuyuyang.net.vo.file.FileDirDeleteVO;
 import liuyuyang.net.vo.file.FileDirRenameVO;
@@ -28,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -114,5 +119,27 @@ public class FileController {
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
     public Result<FileDirDeleteVO> delFileDirData(@RequestBody @Valid FileDirDeleteFormDTO dto) throws QiniuException {
         return Result.success(fileService.delFileDirData(dto));
+    }
+
+    @PostMapping("/compress")
+    @ApiOperation("图片瘦身（七牛 pfop 异步）")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 10)
+    public Result<FileCompressVO> compressFileData(@RequestBody @Valid FileCompressFormDTO dto) {
+        return Result.success(fileService.compressFileData(dto));
+    }
+
+    @GetMapping("/compress/task/{taskId}")
+    @ApiOperation("查询单个瘦身任务状态")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 11)
+    public Result<FileCompressItemVO> queryCompressTask(
+            @ApiParam(value = "七牛 pfop persistentId", required = true) @PathVariable String taskId) {
+        return Result.success(fileService.queryCompressTask(taskId));
+    }
+
+    @PostMapping("/compress/tasks")
+    @ApiOperation("批量查询瘦身任务状态")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 12)
+    public Result<List<FileCompressItemVO>> queryCompressTasks(@RequestBody @Valid FileCompressTaskQueryDTO dto) {
+        return Result.success(fileService.queryCompressTasks(dto));
     }
 }
