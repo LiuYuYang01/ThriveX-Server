@@ -69,11 +69,7 @@ public class WebConfigController {
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
     @PatchMapping("/json/name/{name}")
     public Result<String> updateJsonValueByName(@PathVariable String name, @RequestBody @NotEmpty(message = "配置内容不能为空") Map<String, Object> jsonValue) {
-        WebConfig webConfig = webConfigService.getByName(name);
-        if (webConfig == null) {
-            return Result.error("配置不存在");
-        }
-        boolean success = webConfigService.updateJsonValue(webConfig.getId(), jsonValue);
+        boolean success = webConfigService.updateJsonValueByName(name, jsonValue);
         return success ? Result.success() : Result.error();
     }
 }
