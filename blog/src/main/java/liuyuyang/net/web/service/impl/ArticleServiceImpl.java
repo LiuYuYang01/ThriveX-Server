@@ -573,11 +573,15 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         List<Integer> cate_ids = articleCateMapper.selectList(queryWrapperCateIds).stream().map(ArticleCate::getCateId)
                 .collect(Collectors.toList());
 
-        // 如果有分类，则绑定分类信息
+        // 如果有分类，则绑定分类信息（仅返回文章关联的分类，而非整棵分类树）
         if (!cate_ids.isEmpty()) {
             LambdaQueryWrapper<Cate> queryWrapperCateList = new LambdaQueryWrapper<>();
             queryWrapperCateList.in(Cate::getId, cate_ids);
-            List<CateVO> cates = cateService.getCateTreeChildren(cateMapper.selectList(null), 0);
+            List<CateVO> cates = cateMapper.selectList(queryWrapperCateList).stream().map(cate -> {
+                CateVO cateVO = new CateVO();
+                BeanUtils.copyProperties(cate, cateVO);
+                return cateVO;
+            }).collect(Collectors.toList());
             data.setCateList(cates);
         }
 
@@ -610,12 +614,16 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     public LambdaQueryWrapper<Article> queryWrapperArticle(ArticleFilterDTO articleFilterDTO) {
         LambdaQueryWrapper<Article> queryWrapper = getArticleQueryWrapper(articleFilterDTO);
 
-        // 根据分类id过滤
-        if (articleFilterDTO.getCateId() != null) {
+        // 根据分类 id 过滤（cateIds 数组，满足任一分类即可）
+        List<Integer> filterCateIds = articleFilterDTO.getCateIds() == null
+                ? Collections.emptyList()
+                : articleFilterDTO.getCateIds().stream().distinct().collect(Collectors.toList());
+
+        if (!filterCateIds.isEmpty()) {
             LambdaQueryWrapper<ArticleCate> queryWrapperArticleIds = new LambdaQueryWrapper<>();
-            queryWrapperArticleIds.eq(ArticleCate::getCateId, articleFilterDTO.getCateId());
+            queryWrapperArticleIds.in(ArticleCate::getCateId, filterCateIds);
             List<Integer> articleIds = articleCateMapper.selectList(queryWrapperArticleIds).stream()
-                    .map(ArticleCate::getArticleId).collect(Collectors.toList());
+                    .map(ArticleCate::getArticleId).distinct().collect(Collectors.toList());
 
             if (!articleIds.isEmpty()) {
                 queryWrapper.in(Article::getId, articleIds);
