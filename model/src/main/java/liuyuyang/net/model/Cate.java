@@ -36,7 +36,7 @@ public class Cate {
     @NotNull(message = "分类级别不能为空", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     @Min(value = 0, message = "分类级别不能小于0", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private Integer level;
-    @ApiModelProperty(value = "分类类型：cate 分类，nav 导航", example = "cate", required = true)
+    @ApiModelProperty(value = "分类类型：cate 分类，page 页面，nav 导航", example = "cate", required = true)
     @NotNull(message = "分类类型不能为空", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private CateTypeEnum type;
     @TableField("`order`")

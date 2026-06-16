@@ -7,6 +7,7 @@ import lombok.Getter;
 
 public enum CateTypeEnum {
     CATE("cate", "分类"),
+    PAGE("page", "页面"),
     NAV("nav", "导航");
 
     @EnumValue
