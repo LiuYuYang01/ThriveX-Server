@@ -665,40 +665,8 @@ public class QiniuStorageConfig {
         return normalizeDomain(config.getDomain()) + "/" + key;
     }
 
-    // 拼接公开访问 URL；{@code zlevel != 0} 时对 jpeg/png 追加七牛图片瘦身参数（值越小画质越好）。
     private String buildPublicUrl(QiniuConfig config, String key) {
-        String base = buildRawPublicUrl(config, key);
-        int zlevel = config.getZlevel();
-        if (zlevel == 0 || !isImageSlimSupportedKey(key)) {
-            return base;
-        }
-        return base + "?imageslim/zlevel/" + zlevel;
-    }
-
-    // 图片瘦身（imageslim）仅支持 JPEG、PNG；其它扩展名不追加处理参数。
-    private static boolean isImageSlimSupportedKey(String key) {
-        if (key == null) {
-            return false;
-        }
-        int dot = key.lastIndexOf('.');
-        if (dot < 0 || dot >= key.length() - 1) {
-            return false;
-        }
-        String ext = key.substring(dot + 1).toLowerCase();
-        return "jpg".equals(ext) || "jpeg".equals(ext) || "png".equals(ext);
-    }
-
-    // 解析配置中的 zlevel：0 表示不启用瘦身，1–10 为瘦身档位（与七牛文档一致，值越小越清晰）。
-    private static int parseZlevel(String raw) {
-        try {
-            int z = Integer.parseInt(raw.trim());
-            if (z < 0 || z > 10) {
-                throw new CustomException("zlevel 取值范围应为 0-10");
-            }
-            return z;
-        } catch (NumberFormatException e) {
-            throw new CustomException("zlevel 必须为整数（0-10）");
-        }
+        return buildRawPublicUrl(config, key);
     }
 
     // 规范化域名：补协议、去尾 /
@@ -725,14 +693,13 @@ public class QiniuStorageConfig {
         Map<String, Object> value = envConfig.getValue();
 
         String rootDir = readRequired(value, "root_dir");
-        int zlevel = parseZlevel(readRequired(value, "zlevel"));
         String accessKey = readRequired(value, "access_key");
         String secretKey = readRequired(value, "secret_key");
         String bucketName = readRequired(value, "bucket_name");
         String domain = readRequired(value, "domain");
         String endPoint = readOptional(value, "end_point");
 
-        return new QiniuConfig(rootDir, zlevel, accessKey, secretKey, bucketName, domain, endPoint);
+        return new QiniuConfig(rootDir, accessKey, secretKey, bucketName, domain, endPoint);
     }
 
     // 读取必填字段
@@ -755,8 +722,6 @@ public class QiniuStorageConfig {
     private static class QiniuConfig {
         // 文件存放路径
         private String rootDir;
-        // 图片瘦身档位：0 关闭；1–10 启用，数值越小画质越好。
-        private int zlevel;
         // 七牛 AK
         private String accessKey;
         // 七牛 SK
