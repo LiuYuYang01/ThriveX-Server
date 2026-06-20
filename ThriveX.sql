@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 8.0.45, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.41, for macos15 (arm64)
 --
 -- Host: 127.0.0.1    Database: test_app
 -- ------------------------------------------------------
--- Server version	8.0.45
+-- Server version	8.0.41
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -245,7 +245,7 @@ CREATE TABLE `env_config` (
 
 LOCK TABLES `env_config` WRITE;
 /*!40000 ALTER TABLE `env_config` DISABLE KEYS */;
-INSERT INTO `env_config` VALUES (1,'baidu_statis','{\"site_id\": 17256142, \"access_token\": \"\"}','B 百度统计：在控制端首页显示网站数据'),(2,'email','{\"host\": \"smtp.qq.com\", \"port\": 465, \"password\": \"\", \"username\": \"xxx@qq.com\"}','邮件发送配置'),(3,'gaode_map','{\"key_code\": \"\", \"security_code\": \"\"}','高德地图配置'),(4,'gaode_coordinate','{\"key\": \"\"}','高德地图坐标配置'),(5,'qiniu_storage','{\"domain\": \"\", \"zlevel\": 1, \"root_dir\": \"static\", \"end_point\": \"\", \"access_key\": \"\", \"secret_key\": \"\", \"bucket_name\": \"\"}','七牛云存储'),(6,'baidu_statis_key','{\"key\": \"\"}','A 百度统计：在前端获取该配置来激活统计功能'),(7,'hcaptcha','{\"key\": \"\"}','人机验证配置'),(8,'is_system_init','{\"value\": false}','系统是否初始化');
+INSERT INTO `env_config` VALUES (1,'baidu_statis','{\"site_id\": 17256142, \"access_token\": \"\"}','B 百度统计：在控制端首页显示网站数据'),(2,'email','{\"host\": \"smtp.qq.com\", \"port\": 465, \"password\": \"123\", \"username\": \"xxx@qq.com\"}','邮件发送配置'),(3,'gaode_map','{\"key_code\": \"\", \"security_code\": \"\"}','高德地图配置'),(4,'gaode_coordinate','{\"key\": \"\"}','高德地图坐标配置'),(5,'qiniu_storage','{\"domain\": \"\", \"zlevel\": 1, \"root_dir\": \"static\", \"end_point\": \"\", \"access_key\": \"\", \"secret_key\": \"\", \"bucket_name\": \"\"}','七牛云存储'),(6,'baidu_statis_key','{\"key\": \"\"}','A 百度统计：在前端获取该配置来激活统计功能'),(7,'hcaptcha','{\"key\": \"\"}','人机验证配置'),(8,'is_system_init','{\"value\": false}','系统是否初始化');
 /*!40000 ALTER TABLE `env_config` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -337,37 +337,6 @@ LOCK TABLES `link_type` WRITE;
 /*!40000 ALTER TABLE `link_type` DISABLE KEYS */;
 INSERT INTO `link_type` VALUES (1,'生活类',0,4),(2,'技术类',0,5),(3,'全站置顶',1,1),(4,'推荐',1,2),(5,'大佬',1,3),(6,'聚合类',0,6);
 /*!40000 ALTER TABLE `link_type` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `oss`
---
-
-DROP TABLE IF EXISTS `oss`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `oss` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `platform` varchar(255) NOT NULL COMMENT '平台',
-  `access_key` varchar(100) DEFAULT NULL COMMENT 'key',
-  `secret_key` varchar(255) DEFAULT '/' COMMENT '密钥',
-  `end_point` varchar(100) DEFAULT NULL COMMENT 'endPoint',
-  `bucket_name` varchar(255) DEFAULT NULL,
-  `domain` varchar(255) DEFAULT NULL,
-  `base_path` varchar(255) DEFAULT NULL,
-  `is_enable` int DEFAULT NULL COMMENT '是否启用',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='oss配置表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `oss`
---
-
-LOCK TABLES `oss` WRITE;
-/*!40000 ALTER TABLE `oss` DISABLE KEYS */;
-INSERT INTO `oss` VALUES (1,'local',NULL,'','/path/to/your/static/dir/',NULL,'localhost:9003/static/','upload/',1),(7,'tencent','','','ap-nanjing','your-bucket-appid','your-bucket-appid.cos.ap-nanjing.myqcloud.com/','upload/',NULL);
-/*!40000 ALTER TABLE `oss` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -523,7 +492,7 @@ CREATE TABLE `user_token` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_token_pk_2` (`id`),
   UNIQUE KEY `user_token_pk_3` (`uid`)
-) ENGINE=InnoDB AUTO_INCREMENT=157 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户 token';
+) ENGINE=InnoDB AUTO_INCREMENT=158 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户 token';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -532,7 +501,7 @@ CREATE TABLE `user_token` (
 
 LOCK TABLES `user_token` WRITE;
 /*!40000 ALTER TABLE `user_token` DISABLE KEYS */;
-INSERT INTO `user_token` VALUES (156,1,'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3ODE4MzU0MzV9.JI0a-IkXj_1AFxTtUV_4fJxjO_eXrR-0FNRLB5L1oG4');
+INSERT INTO `user_token` VALUES (157,1,'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3ODIyMDY5NDV9.U72El7TTNziTS5r-xQ6djfox9w3q0-jHq0x-Xb-WwrI');
 /*!40000 ALTER TABLE `user_token` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -632,4 +601,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-20 17:21:16
+-- Dump completed on 2026-06-20 17:57:36
