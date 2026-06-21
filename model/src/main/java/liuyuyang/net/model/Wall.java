@@ -36,7 +36,7 @@ public class Wall extends BaseModel {
 
     @ApiModelProperty(value = "留言内容", example = "这是一段内容", required = true)
     @NotBlank(message = "内容不能为空", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
-    @Size(max = 255, message = "内容不能超过255个字符", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
+    @Size(max = 1000, message = "内容不能超过1000个字符", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private String content;
 
     @ApiModelProperty(value = "邮箱", example = "3311118881@qq.com")
