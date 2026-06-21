@@ -74,15 +74,6 @@ public class EnvConfigController {
     }
 
     @NoTokenRequired
-    @ApiOperation("获取高德地图配置")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
-    @GetMapping("/gaode_map")
-    public Result<Map<String, Object>> getGaodeMapConfig() {
-        EnvConfig envConfig = envConfigService.getByName("gaode_map");
-        return Result.success(envConfig.getValue());
-    }
-
-    @NoTokenRequired
     @ApiOperation("获取公开的配置")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
     @GetMapping("/public_config")

@@ -245,7 +245,7 @@ CREATE TABLE `env_config` (
 
 LOCK TABLES `env_config` WRITE;
 /*!40000 ALTER TABLE `env_config` DISABLE KEYS */;
-INSERT INTO `env_config` VALUES (1,'baidu_statis','{\"site_id\": 17256142, \"access_token\": \"\"}','B 百度统计：在控制端首页显示网站数据'),(2,'email','{\"host\": \"smtp.qq.com\", \"port\": 465, \"password\": \"123\", \"username\": \"xxx@qq.com\"}','邮件发送配置'),(3,'gaode_map','{\"key_code\": \"\", \"security_code\": \"\"}','高德地图配置'),(4,'gaode_coordinate','{\"key\": \"\"}','高德地图坐标配置'),(5,'qiniu_storage','{\"domain\": \"\", \"zlevel\": 1, \"root_dir\": \"static\", \"end_point\": \"\", \"access_key\": \"\", \"secret_key\": \"\", \"bucket_name\": \"\"}','七牛云存储'),(6,'baidu_statis_key','{\"key\": \"\"}','A 百度统计：在前端获取该配置来激活统计功能'),(7,'hcaptcha_key','{\"key\": \"\"}','人机验证配置'),(8,'is_system_init','{\"value\": false}','系统是否初始化');
+INSERT INTO `env_config` VALUES (1,'baidu_statis','{\"site_id\": 17256142, \"access_token\": \"\"}','B 百度统计：在控制端首页显示网站数据'),(2,'email','{\"host\": \"smtp.qq.com\", \"port\": 465, \"password\": \"123\", \"username\": \"xxx@qq.com\"}','邮件发送配置'),(3,'gaode_map_key','{\"key_code\": \"\", \"security_code\": \"\"}','高德地图配置'),(4,'gaode_coordinate','{\"key\": \"\"}','高德地图坐标配置'),(5,'qiniu_storage','{\"domain\": \"\", \"zlevel\": 1, \"root_dir\": \"static\", \"end_point\": \"\", \"access_key\": \"\", \"secret_key\": \"\", \"bucket_name\": \"\"}','七牛云存储'),(6,'baidu_statis_key','{\"key\": \"\"}','A 百度统计：在前端获取该配置来激活统计功能'),(7,'hcaptcha_key','{\"key\": \"\"}','人机验证配置'),(8,'is_system_init','{\"value\": false}','系统是否初始化');
 /*!40000 ALTER TABLE `env_config` ENABLE KEYS */;
 UNLOCK TABLES;
 
