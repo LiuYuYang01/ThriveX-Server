@@ -10,6 +10,7 @@ import liuyuyang.net.dto.record.RecordFormDTO;
 import liuyuyang.net.model.Record;
 import liuyuyang.net.vo.record.RecordVO;
 import liuyuyang.net.web.mapper.RecordMapper;
+import liuyuyang.net.web.service.RecordCommentService;
 import liuyuyang.net.web.service.RecordService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,8 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
     private RecordMapper recordMapper;
     @Resource
     private CommonUtils commonUtils;
+    @Resource
+    private RecordCommentService recordCommentService;
 
     private static RecordVO toRecordVO(Record record) {
         if (record == null) {
@@ -49,6 +52,7 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
         if (data == null) {
             throw new CustomException("删除说说失败：该说说不存在");
         }
+        recordCommentService.delByRecordId(id);
         recordMapper.deleteById(id);
     }
 

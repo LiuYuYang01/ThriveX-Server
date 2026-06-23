@@ -8,10 +8,13 @@ import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.core.utils.Result;
+import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.record.RecordFilterDTO;
 import liuyuyang.net.dto.record.RecordFormDTO;
 import liuyuyang.net.validation.ValidationGroups;
+import liuyuyang.net.vo.record.RecordCommentVO;
 import liuyuyang.net.vo.record.RecordVO;
+import liuyuyang.net.web.service.RecordCommentService;
 import liuyuyang.net.web.service.RecordService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -27,6 +30,8 @@ import java.util.Map;
 public class RecordController {
     @Resource
     private RecordService recordService;
+    @Resource
+    private RecordCommentService recordCommentService;
 
     @PostMapping
     @ApiOperation("新增说说")
@@ -72,5 +77,15 @@ public class RecordController {
         Page<RecordVO> list = recordService.getRecordList(recordFilterDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
+    }
+
+    @NoTokenRequired
+    @RateLimit
+    @GetMapping("/{id}/comment")
+    @ApiOperation("获取指定说说下的评论")
+    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    public Result<Map<String, Object>> getRecordCommentList(@PathVariable Integer id, PageDTO pageDTO) {
+        Page<RecordCommentVO> list = recordCommentService.getRecordCommentListByRecordId(id, pageDTO);
+        return Result.success(Paging.filter(list));
     }
 }

@@ -245,7 +245,7 @@ CREATE TABLE `env_config` (
 
 LOCK TABLES `env_config` WRITE;
 /*!40000 ALTER TABLE `env_config` DISABLE KEYS */;
-INSERT INTO `env_config` VALUES (1,'baidu_statis','{\"site_id\": 17256142, \"access_token\": \"\"}','B 百度统计：在控制端首页显示网站数据'),(2,'email','{\"host\": \"smtp.qq.com\", \"port\": 465, \"password\": \"123\", \"username\": \"xxx@qq.com\"}','邮件发送配置'),(3,'gaode_map_key','{\"key_code\": \"\", \"security_code\": \"\"}','高德地图配置'),(4,'gaode_coordinate','{\"key\": \"\"}','高德地图坐标配置'),(5,'qiniu_storage','{\"domain\": \"\", \"zlevel\": 1, \"root_dir\": \"static\", \"end_point\": \"\", \"access_key\": \"\", \"secret_key\": \"\", \"bucket_name\": \"\"}','七牛云存储'),(6,'baidu_statis_key','{\"key\": \"\"}','A 百度统计：在前端获取该配置来激活统计功能'),(7,'hcaptcha_key','{\"key\": \"\"}','人机验证配置'),(8,'is_system_init','{\"value\": false}','系统是否初始化');
+INSERT INTO `env_config` VALUES (1,'baidu_statis','{\"site_id\": 17256142, \"access_token\": \"\"}','B 百度统计：在控制端首页显示网站数据'),(2,'email','{\"host\": \"smtp.qq.com\", \"port\": 465, \"password\": \"123\", \"username\": \"xxx@qq.com\"}','邮件发送配置'),(3,'gaode_map_key','{\"key_code\": \"\", \"security_code\": \"\"}','高德地图配置'),(4,'gaode_coordinate','{\"key\": \"\"}','高德地图坐标配置'),(5,'qiniu_storage','{\"domain\": \"\", \"zlevel\": 1, \"root_dir\": \"static\", \"end_point\": \"\", \"access_key\": \"\", \"secret_key\": \"\", \"bucket_name\": \"\"}','七牛云存储'),(6,'baidu_statis_key','{\"key\": \"\"}','A 百度统计：在前端获取该配置来激活统计功能'),(7,'hcaptcha_key','{\"key\": \"\"}','人机验证配置'),(8,'is_system_init','{\"value\": true}','系统是否初始化');
 /*!40000 ALTER TABLE `env_config` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -396,6 +396,40 @@ INSERT INTO `record` VALUES (1,'Hello World','[]',1736513670072);
 UNLOCK TABLES;
 
 --
+-- Table structure for table `record_comment`
+--
+
+DROP TABLE IF EXISTS `record_comment`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `record_comment` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  `avatar` varchar(255) DEFAULT NULL,
+  `content` text NOT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `url` varchar(500) DEFAULT NULL,
+  `record_id` int NOT NULL,
+  `comment_id` int DEFAULT '0',
+  `status` int DEFAULT '0',
+  `create_time` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_record_id` (`record_id`),
+  KEY `idx_comment_id` (`comment_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `record_comment`
+--
+
+LOCK TABLES `record_comment` WRITE;
+/*!40000 ALTER TABLE `record_comment` DISABLE KEYS */;
+INSERT INTO `record_comment` VALUES (1,'神秘人','','测试回复','','',1,0,1,1782177871518),(4,'海绵宝宝','','测试','','',1,1,1,1782178416942),(5,'章鱼哥','','测试中','','',1,4,1,1782178436652),(6,'蟹老板','','测试','','',1,0,1,1782178848952),(7,'痞老板','','测试','','',1,0,1,1782178935780);
+/*!40000 ALTER TABLE `record_comment` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `swiper`
 --
 
@@ -492,7 +526,7 @@ CREATE TABLE `user_token` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_token_pk_2` (`id`),
   UNIQUE KEY `user_token_pk_3` (`uid`)
-) ENGINE=InnoDB AUTO_INCREMENT=158 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户 token';
+) ENGINE=InnoDB AUTO_INCREMENT=159 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户 token';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -501,7 +535,7 @@ CREATE TABLE `user_token` (
 
 LOCK TABLES `user_token` WRITE;
 /*!40000 ALTER TABLE `user_token` DISABLE KEYS */;
-INSERT INTO `user_token` VALUES (157,1,'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3ODIyMDY5NDV9.U72El7TTNziTS5r-xQ6djfox9w3q0-jHq0x-Xb-WwrI');
+INSERT INTO `user_token` VALUES (158,1,'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3ODI0MzY5MzJ9.uehdL7wQkUD1FS6-rJqLiWpZVdfjStZCrHxaxvchlgs');
 /*!40000 ALTER TABLE `user_token` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -601,4 +635,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-21 17:44:17
+-- Dump completed on 2026-06-23  9:54:05
