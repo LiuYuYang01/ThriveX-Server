@@ -1,67 +1,123 @@
 <!DOCTYPE html>
 <html lang="zh" xmlns:th="http://www.thymeleaf.org">
-
 <head>
-    <meta charset="UTF-8" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>新评论通知</title>
 </head>
+<body style="margin:0;padding:0;background-color:#f4f3f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f3f0;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;border:1px solid #e3e1dc;background-color:#ffffff;">
+          <!-- top accent -->
+          <tr>
+            <td style="height:3px;background-color:#18181b;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
 
-<style>
-    .container {
-        margin: 5% 10%;
-    }
+          <!-- header -->
+          <tr>
+            <td style="padding:28px 32px 20px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td>
+                    <span style="display:inline-block;padding:4px 10px;border:1px solid #e3e1dc;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:10px;letter-spacing:0.14em;color:#71717a;text-transform:uppercase;">Comment</span>
+                  </td>
+                  <td align="right" style="vertical-align:top;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                  </td>
+                </tr>
+              </table>
 
-    .box {
-        padding: 10px 20px;
-        margin: 15px 0;
-        border-radius: 10px;
-        border-left: 4px solid #539dfd;
-        background-color: #ecf7fe;
-    }
+              <h1 style="margin:16px 0 0;font-size:22px;line-height:1.35;font-weight:600;color:#18181b;letter-spacing:-0.02em;">
+                <span th:text="${title}">标题</span>
+              </h1>
+              <p style="margin:8px 0 0;font-size:13px;line-height:1.6;color:#71717a;">有人在你的站点留下了新评论，请及时查看与审核。</p>
+            </td>
+          </tr>
 
-    .title {
-        font-size: 15px;
-        font-weight: 400;
-        margin: 5px 0;
-    }
+          <!-- meta -->
+          <tr>
+            <td style="padding:0 32px 20px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #f0efec;border-bottom:1px solid #f0efec;">
+                <tr>
+                  <td style="padding:14px 0;width:50%;vertical-align:top;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding-right:8px;vertical-align:middle;">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                          </svg>
+                        </td>
+                        <td style="vertical-align:middle;">
+                          <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#a1a1aa;">发送方</div>
+                          <div style="margin-top:2px;font-size:13px;font-weight:500;color:#3f3f46;"><span th:text="${recipient}">访客</span></div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td style="padding:14px 0;width:50%;vertical-align:top;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding-right:8px;vertical-align:middle;">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                          </svg>
+                        </td>
+                        <td style="vertical-align:middle;">
+                          <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#a1a1aa;">时间</div>
+                          <div style="margin-top:2px;font-size:13px;font-weight:500;color:#3f3f46;"><span th:text="${time}">时间</span></div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-    .time {
-        color: #539dfd;
-        border-bottom: 1px dashed #539dfd;
-    }
+          <!-- content -->
+          <tr>
+            <td style="padding:0 32px 28px;">
+              <div style="padding:18px 20px;border:1px solid #eceae5;background-color:#faf9f7;">
+                <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#a1a1aa;margin-bottom:10px;">评论内容</div>
+                <div style="font-size:15px;line-height:1.75;color:#27272a;word-break:break-word;" th:utext="${content}">内容</div>
+              </div>
+            </td>
+          </tr>
 
-    .jump {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        height: 40px;
-        border-radius: 20px;
-        font-size: 14px;
-        color: #fff;
-        text-align: center;
-        background: #539dfd;
-        text-decoration: none;
-    }
-</style>
+          <!-- cta -->
+          <tr>
+            <td style="padding:0 32px 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center">
+                    <a th:href="${url}" target="_blank" style="display:inline-block;padding:12px 28px;background-color:#18181b;color:#ffffff;font-size:13px;font-weight:500;text-decoration:none;letter-spacing:0.02em;cursor:pointer;">
+                      查看完整内容
+                      <span style="display:inline-block;margin-left:6px;vertical-align:middle;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;" aria-hidden="true">
+                          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                      </span>
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-<body>
-    <div class="container">
-        <div style="text-align: center;">
-            <h1 style="font-size: 20px; text-align: center;">《<span th:text="${title}" />》</h1>
-
-            <div style="display: flex; justify-content: center; font-size: 12px;">
-                <h3 class="title" style="font-size: 12px;">发送方：<span th:text="${recipient}" /></h3>
-                <h3 class="title" style="margin-left: 20px; font-size: 12px;">时间：<span th:text="${time}" class="time" />
-                </h3>
-            </div>
-        </div>
-
-        <div class="box">
-            <h3 class="title" style="line-height: 25px;"><span th:utext="${content}"></span></h3>
-        </div>
-
-        <a th:href="${url}" target="_blank" class="jump">查看完整回复内容</a>
-    </div>
+          <!-- footer -->
+          <tr>
+            <td style="padding:16px 32px;border-top:1px solid #f0efec;background-color:#faf9f7;">
+              <p style="margin:0;font-size:11px;line-height:1.6;color:#a1a1aa;text-align:center;">此邮件由 ThriveX 自动发送，请勿直接回复。</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
-
 </html>

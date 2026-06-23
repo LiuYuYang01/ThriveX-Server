@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.CommonUtils;
+import liuyuyang.net.core.utils.EmailUtils;
 import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.record.RecordCommentFilterDTO;
 import liuyuyang.net.dto.record.RecordCommentFormDTO;
@@ -14,11 +15,16 @@ import liuyuyang.net.vo.record.RecordCommentVO;
 import liuyuyang.net.web.mapper.RecordCommentMapper;
 import liuyuyang.net.web.mapper.RecordMapper;
 import liuyuyang.net.web.service.RecordCommentService;
+import liuyuyang.net.web.service.WebConfigService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -36,9 +42,15 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
     private RecordMapper recordMapper;
     @Resource
     private CommonUtils commonUtils;
+    @Resource
+    private EmailUtils emailUtils;
+    @Resource
+    private TemplateEngine templateEngine;
+    @Resource
+    private WebConfigService configService;
 
     @Override
-    public void addRecordCommentData(RecordCommentFormDTO recordCommentFormDTO) {
+    public void addRecordCommentData(RecordCommentFormDTO recordCommentFormDTO) throws Exception {
         Record record = recordMapper.selectById(recordCommentFormDTO.getRecordId());
         if (record == null) {
             throw new CustomException("该说说不存在");
@@ -60,6 +72,46 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
             comment.setStatus(0);
         }
         recordCommentMapper.insert(comment);
+
+        sendCommentEmail(comment);
+    }
+
+    private void sendCommentEmail(RecordComment comment) {
+        String title = recordContentOf(comment.getRecordId());
+        if (title == null || title.isEmpty()) {
+            title = "闪念";
+        }
+
+        StringBuilder content = new StringBuilder();
+        RecordComment prevComment = null;
+        if (comment.getCommentId() != null && comment.getCommentId() != 0) {
+            prevComment = recordCommentMapper.selectById(comment.getCommentId());
+            if (prevComment != null) {
+                content.append(prevComment.getName()).append("：").append(prevComment.getContent()).append("<br>");
+            }
+        }
+        content.append(comment.getName()).append("：").append(comment.getContent());
+
+        Context context = new Context();
+        context.setVariable("title", title);
+        context.setVariable("recipient", comment.getName());
+
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm:ss");
+        context.setVariable("time", now.format(formatter));
+        context.setVariable("content", content.toString());
+
+        String url = (String) configService.getByName("web").getValue().get("url");
+        context.setVariable("url", String.format("%s/record", url));
+
+        String template = templateEngine.process("comment_email", context);
+
+        String email = null;
+        if (prevComment != null && prevComment.getEmail() != null && !prevComment.getEmail().isEmpty()) {
+            email = prevComment.getEmail();
+        }
+        String emailTitle = email != null ? "您有最新回复~" : title;
+        emailUtils.send(email, emailTitle, template);
     }
 
     @Override

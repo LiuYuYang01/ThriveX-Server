@@ -35,7 +35,7 @@ public class RecordCommentController {
     @PostMapping
     @ApiOperation("新增说说评论")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
-    public Result<String> addRecordCommentData(@RequestBody @Validated(ValidationGroups.Create.class) RecordCommentFormDTO recordCommentFormDTO) {
+    public Result<String> addRecordCommentData(@RequestBody @Validated(ValidationGroups.Create.class) RecordCommentFormDTO recordCommentFormDTO) throws Exception {
         recordCommentFormDTO.setId(null);
         recordCommentService.addRecordCommentData(recordCommentFormDTO);
         return Result.success();

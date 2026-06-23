@@ -9,7 +9,7 @@ import liuyuyang.net.vo.record.RecordCommentVO;
 import java.util.List;
 
 public interface RecordCommentService {
-    void addRecordCommentData(RecordCommentFormDTO recordCommentFormDTO);
+    void addRecordCommentData(RecordCommentFormDTO recordCommentFormDTO) throws Exception;
 
     void delRecordCommentData(Integer id);
 
