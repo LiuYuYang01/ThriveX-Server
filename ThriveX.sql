@@ -178,7 +178,7 @@ CREATE TABLE `cate` (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `name` (`name`) USING BTREE,
   UNIQUE KEY `cate_pk` (`mark`)
-) ENGINE=InnoDB AUTO_INCREMENT=90 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=92 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -187,7 +187,7 @@ CREATE TABLE `cate` (
 
 LOCK TABLES `cate` WRITE;
 /*!40000 ALTER TABLE `cate` DISABLE KEYS */;
-INSERT INTO `cate` VALUES (1,'💎 默认分类','/','kfbj',0,'cate',0,1),(68,'⛳️ 足迹','/footprint','zj',83,'page',0,1),(69,'👋 关于我','/my','my',83,'page',0,8),(70,'😇 朋友圈','/friend','pyq',83,'page',0,4),(71,'💌 留言墙','/wall/all','wall',83,'page',0,5),(72,'🔥 GitHub','https://github.com/LiuYuYang01/ThriveX-Blog','github',83,'page',0,10),(73,'📊 统计','/data','data',83,'page',0,11),(74,'🏕️ 闪念','/record','record',83,'page',0,2),(77,'🔭 我的设备','/equipment','wdsb',83,'page',0,7),(78,'🏷️ 标签墙','/tags','bqy',83,'page',0,6),(79,'💪 我的履历','/resume','wdll',83,'page',0,9),(81,'🐟 鱼塘','/fishpond','yt',83,'page',0,3),(83,'🧩 探索','/','ts',0,'page',0,2),(89,'🌟 人生大事件','/milestone','rsdsj',83,'page',0,12);
+INSERT INTO `cate` VALUES (1,'💎 默认分类','/','kfbj',0,'cate',0,1),(68,'⛳️ 足迹','/footprint','zj',83,'page',0,1),(69,'👋 关于我','/my','my',83,'page',0,8),(70,'😇 朋友圈','/friend','pyq',83,'page',0,4),(71,'💌 留言墙','/wall/all','wall',83,'page',0,5),(72,'🔥 GitHub','https://github.com/LiuYuYang01/ThriveX-Blog','github',83,'page',0,10),(73,'📊 统计','/data','data',83,'page',0,11),(74,'🏕️ 闪念','/record','record',83,'page',0,2),(77,'🔭 我的设备','/equipment','wdsb',83,'page',0,7),(78,'🏷️ 标签墙','/tags','bqy',83,'page',0,6),(79,'💪 我的履历','/resume','wdll',83,'page',0,9),(81,'🐟 鱼塘','/fishpond','yt',83,'page',0,3),(83,'🧩 探索','/','ts',0,'page',0,3),(90,'🏆 里程碑','/milestone','lcb',0,'page',0,2),(91,'👀 一些互动','/echoes','echoes',83,'page',0,12);
 /*!40000 ALTER TABLE `cate` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -357,7 +357,7 @@ CREATE TABLE `milestone` (
   `event_date` bigint NOT NULL COMMENT '事件时间戳',
   PRIMARY KEY (`id`),
   UNIQUE KEY `milestone_pk_2` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='人生里程碑';
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='人生里程碑';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -366,7 +366,7 @@ CREATE TABLE `milestone` (
 
 LOCK TABLES `milestone` WRITE;
 /*!40000 ALTER TABLE `milestone` DISABLE KEYS */;
-INSERT INTO `milestone` VALUES (2,'第一次接触电脑','第一次真正接触电脑，被屏幕里的世界深深吸引，也在心里种下了对技术和互联网的好奇。','https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=450&fit=crop&q=80','[\"启蒙\", \"电脑\"]',1285776000000),(3,'中考夺魁 · 迈入省重点','三年磨一剑，以优异成绩考入省级重点高中，开启了追逐梦想的新篇章。','https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800&h=450&fit=crop&q=80','[\"学业\", \"突破\"]',1529424000000),(4,'踏入大学 · 计算机之路','怀揣对代码与创造的热爱，正式成为计算机相关专业学生，在技术的海洋中扬帆远航。','https://images.unsplash.com/photo-1562774053-701939374585?w=800&h=450&fit=crop&q=80','[\"大学\", \"技术\"]',1630425600000),(5,'开源项目 Star 破千','独立开发的开源项目逐渐被更多开发者看到和认可，技术影响力开始显现。','https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=450&fit=crop&q=80','[\"开源\", \"里程碑\"]',1724083200000),(6,'毕业答辩 · 全优通过','以创新项目完成毕业答辩，获得评审认可，为学生时代画上阶段性的句号，也为下一段旅程打开新的大门。','https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&h=450&fit=crop&q=80','[\"毕业\", \"新起点\"]',1778947200000);
+INSERT INTO `milestone` VALUES (7,'开启自学编程之路',NULL,'https://res.liuyuyang.net/thrive/milestone/d1130c87c70e493389f49d94e98aa790.jpg','[\"学习\", \"HTML\"]',1548864000000),(8,'个人博客网站诞生','使用的 WordPress 系统，忘记哪个主题了','https://res.liuyuyang.net/thrive/article/c96bce5748cd4e97b088f68cb380b4f8.png','[\"博客\", \"网站\"]',1547568000000),(9,'江苏和兴汽车科技有限公司','17 岁背井离乡来到了离家 500 公里的江苏淮安打工','https://res.liuyuyang.net/thrive/milestone/71479770311a441fb6139633a60fd326.jpg','[\"打工\", \"电子厂\"]',1599926400000),(11,'凌晨 3 点的街道','为了买台属于自己的电脑，趁着疫情延缓开学找了份临时工，在郑州方团结胡辣汤，每天工作内容是熬汤、包包子、刷锅刷碗，凌晨 3 点工作到中午 12 点，当时每个月才 2200 块钱','https://res.liuyuyang.net/thrive/milestone/cd6d9792f17d4aaf98169560e1f022ca.jpg','[\"郑州\", \"胡辣汤\", \"方团结\", \"临时工\"]',1595347200000),(12,'jQuery 搞定!','跟着 Pink 老师学的','https://res.liuyuyang.net/thrive/milestone/77ca014da38a4833b7b23dbc690ee147.jpg','[\"Pink 老师\", \"jQuery\"]',1591977600000),(13,'域名 liuyuyang.net 备案成功','终于有了属于自己的顶级域名','https://res.liuyuyang.net/thrive/milestone/4657016a5e79469194d8111b29139ac6.jpg','[]',1603814400000),(14,'你好 Python','	虽然我是前端，但我现在越来越喜欢后端这个领域了','https://res.liuyuyang.net/thrive/usr/uploads/2023/04/681224643.png','[]',1682611200000),(15,'报名上海计算机大赛','希望可以拿个不错的每次','https://res.liuyuyang.net/thrive/usr/uploads/2023/06/8b42e5b40b711c06e0cedf775994fe8.jpg','[]',1671724800000),(16,'报名 IT 培训机构','报名传智专修学院是我人生中最后悔的决定','https://res.liuyuyang.net/thrive/milestone/6fcb709769ed44dcba6a7d85a0200e17.jpg','[]',1633190400000),(17,'离职复学',NULL,'https://res.liuyuyang.net/thrive/milestone/d55392bdd1e14e4da63d061cac52594e.jpg','[]',1628611200000),(18,'一战成名','月考满分，经此一战，名声大震，成为了班级的焦点','https://res.liuyuyang.net/thrive/milestone/5e7878beb2c8407fbccec8791600dc25.jpeg','[]',1638979200000),(19,'Thrive 1.0 正式发布','技术栈 Vue3 + Python Flask','https://res.liuyuyang.net/thrive/milestone/0202ee14025241289219ce367a91867e.png','[]',1670601600000),(20,'上海市计算机大赛三等奖','上海市第十五届计算机应用能力大赛三等奖，拿捏','https://res.liuyuyang.net/thrive/milestone/619c0451b772438f82053db94eae264c.png','[]',1684771200000),(21,'ThriveX 2.0 发布','这是一次规模较大的升级，前端技术栈从 Vue3 转变为了 NextJS，后端从 Flask 转变为了 Spring Boot','https://res.liuyuyang.net/thrive/milestone/c5453b9e219f461b9e1e684abbe583e7.png','[]',1728489600000),(22,'ThriveX 3.0 发布','这个版本发布后被知名大佬阮一峰老师推荐了，吸引了大量粉丝 😁','https://res.liuyuyang.net/thrive/milestone/ffdd6b1ee1c34b70b772b9303a42ecb3.jpg','[]',1749916800000),(23,'小有所成','我的参赛项目，主题为：云上校园','https://res.liuyuyang.net/thrive/milestone/ecd51226ea3f41979987ea13625f63d6.png','[]',1672761600000),(24,'ThriveX 4.0 发布','又是一波大规模更新','https://res.liuyuyang.net/thrive/milestone/d8d42d8db1614c86a61c8dc822f6fb30.jpg','[]',1782489600000),(25,'正式换上了自己的博客系统',NULL,'https://res.liuyuyang.net/thrive/article/074038120e3246bc9f15c8082ce79de9.png','[]',1728489600000),(26,'还是轻薄本好用','兜兜转转还是换回了轻薄本','https://res.liuyuyang.net/thrive/milestone/e0723c46a0b84ae4ab454d3176c407f8.jpg','[]',1703174400000),(27,'第一台电脑','人生中第一台电脑：联想小新 14','https://res.liuyuyang.net/thrive/milestone/5b637b8974be4d9cbcee8fbc3039a412.jpeg','[]',1597420800000),(28,'第一次坐飞机','从上海飞往成都的航班','https://res.liuyuyang.net/thrive/record/f1b9fd69b04ed28d0803cc9b40c79e86.jpg','[]',1715875200000),(29,'传智毕业',NULL,'https://res.liuyuyang.net/thrive/record/6860dffa60b234e60ba1b487.jpg','[]',1718812800000),(30,'ThriveX 官网发布',NULL,'https://res.liuyuyang.net/thrive/record/539f02be2bbf6ac47b5663c7a649b34b.jpg','[]',1734019200000),(31,'软件著作权拿下','终于办下来了，也是有版权的人了 🎉','https://res.liuyuyang.net/thrive/record/680620ba60b25e33e3232263.jpg','[]',1745164800000),(32,'	 第一次喝星巴克','	第一次喝星巴克，同事送的，针不戳','https://res.liuyuyang.net/thrive/record/684e8f8560b21d998925898f.jpg','[]',1749744000000),(33,'3333 次 Commit','记录此刻，GitHub 3333 次 Commit 记录\n\n','https://res.liuyuyang.net/thrive/record/6871029860b24174ce20ff00.png','[]',1752163200000),(34,'又收获一堆粉丝',NULL,'https://res.liuyuyang.net/thrive/record/1ab4837af2d94b13978ffb66bd304d69.jpg?imageslim/zlevel/1','[]',1781280000000);
 /*!40000 ALTER TABLE `milestone` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -487,7 +487,7 @@ CREATE TABLE `swiper` (
 
 LOCK TABLES `swiper` WRITE;
 /*!40000 ALTER TABLE `swiper` DISABLE KEYS */;
-INSERT INTO `swiper` VALUES (1,'ThriveX 4.0 还是那个起点，还是那份炽热','','https://bu.dusays.com/2026/06/16/6a30b75a0dad5.jpg','https://github.com/LiuYuYang01/ThriveX-Admin',2);
+INSERT INTO `swiper` VALUES (1,'ThriveX 3.0 来袭，不忘初心，保持热爱','','https://bu.dusays.com/2025/08/29/68b16f22981d4.jpg','https://github.com/LiuYuYang01/ThriveX-Admin',2),(17,'ThriveX 官网全新发布 🎉',NULL,'https://bu.dusays.com/2025/01/21/678f4a609f91f.png','https://thrivex.liuyuyang.net/',1),(18,'Notidc - 本站服务器赞助商，鼎力推荐',NULL,'https://bu.dusays.com/2026/01/06/695cfb272caae.jpg','https://www.notidc.com/',3);
 /*!40000 ALTER TABLE `swiper` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -560,7 +560,7 @@ CREATE TABLE `user_token` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_token_pk_2` (`id`),
   UNIQUE KEY `user_token_pk_3` (`uid`)
-) ENGINE=InnoDB AUTO_INCREMENT=163 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户 token';
+) ENGINE=InnoDB AUTO_INCREMENT=164 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户 token';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -569,7 +569,7 @@ CREATE TABLE `user_token` (
 
 LOCK TABLES `user_token` WRITE;
 /*!40000 ALTER TABLE `user_token` DISABLE KEYS */;
-INSERT INTO `user_token` VALUES (162,1,'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3ODM4NDQ2NzR9.DssIrLosoUgKrpilIfP8a8baaDcrHFc_dT88VGJcKXg');
+INSERT INTO `user_token` VALUES (163,1,'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3ODQ3ODQ4OTF9.Gj0F8g3vXicSmNtOB4DBxU7tSEl9oclIC1GhJwEo-L8');
 /*!40000 ALTER TABLE `user_token` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -669,4 +669,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-07-09 16:31:56
+-- Dump completed on 2026-07-20 13:41:35
