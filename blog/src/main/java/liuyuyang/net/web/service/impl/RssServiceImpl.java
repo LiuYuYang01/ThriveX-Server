@@ -126,9 +126,9 @@ public class RssServiceImpl implements RssService {
         // 等待所有异步任务完成
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        // 按发布时间降序排序后返回
+        // 按发布时间降序排序后返回（新的在前）
         List<Rss> list = rssList.stream()
-                .sorted(Comparator.comparingLong(Rss::getCreateTime))
+                .sorted(Comparator.comparingLong(Rss::getCreateTime).reversed())
                 .collect(Collectors.toList());
 
         return commonUtils.paginate(pageDTO, list);
