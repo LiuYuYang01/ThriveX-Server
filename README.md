@@ -126,7 +126,7 @@ ThriveX-Server/
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=LiuYuYang01/ThriveX-Server&type=Date)](https://star-history.com/#LiuYuYang01/ThriveX-Server&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=LiuYuYang01/ThriveX-Server&type=Date)](https://star-history.dera.page/#LiuYuYang01/ThriveX-Server&Date)
 
 
 
