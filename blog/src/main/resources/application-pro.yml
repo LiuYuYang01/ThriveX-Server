@@ -7,3 +7,7 @@ spring:
     url: jdbc:mysql://${DB_INFO}?characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+
+jwt:
+  # 设置jwt签名加密时使用的秘钥
+  secret-key: ${JWT_SECRET_KEY:yuyang}

@@ -14,8 +14,6 @@ logging.level.org.springframework.mail: DEBUG
 logging.level.org.springframework.boot.autoconfigure.mail: DEBUG
 
 jwt:
-  # 设置jwt签名加密时使用的秘钥
-  secret-key: yuyang
   # 设置jwt过期时间
   ttl: 259200000
   # 设置前端传递过来的令牌名称
