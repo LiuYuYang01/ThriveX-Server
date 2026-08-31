@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.util.Map;
 
-@Api(tags = "说说管理")
+@Api(tags = "闪念管理")
 @RestController
 @RequestMapping("/record")
 @Transactional
