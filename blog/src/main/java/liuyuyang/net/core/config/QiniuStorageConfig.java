@@ -214,11 +214,13 @@ public class QiniuStorageConfig {
     }
 
     /**
-     * 按目录列举文件（平铺结构，已过滤占位对象），按上传时间降序；分页由业务层统一处理。
+     * 按目录列举<strong>直接子文件</strong>（不含子目录内文件），已过滤占位对象，按上传时间降序；分页由业务层统一处理。
      * <p>
      * 占位逻辑：
-     * - 过滤 `.keep`（应用内目录占位）；
-     * - 过滤 key 以 `/` 结尾的对象（七牛控制台「新建文件夹」产生的目录占位），避免当成文件展示。
+     * - 过滤 {@code .keep}（应用内目录占位）；
+     * - 过滤 key 以 {@code /} 结尾的对象（七牛控制台「新建文件夹」产生的目录占位），避免当成文件展示。
+     * <p>
+     * 使用 delimiter {@code /} 仅取当前目录一层；并再校验相对路径不含 {@code /}，避免子目录文件误入列表。
      * <p>
      * 每条结果中的 {@code date} 为上传时间的<strong>毫秒</strong>时间戳。
      */
@@ -227,17 +229,22 @@ public class QiniuStorageConfig {
         BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
                 new Configuration(Region.autoRegion()));
         List<FileInfo> allFiles = new ArrayList<>();
-        // 按前缀列举：返回 key 以 prefix 开头的所有对象（扁平列表，marker 用于翻页）
-        String prefix = combineStorageDir(config.getRootDir(), dir);
+        // delimiter="/"：只返回当前目录下的对象，子目录走 commonPrefixes，不会摊平进文件列表
+        String prefix = normalizeDirPrefix(combineStorageDir(config.getRootDir(), dir));
         String marker = null;
 
         do {
-            FileListing listing = bucketManager.listFiles(config.getBucketName(), prefix, marker, 1000, null);
+            FileListing listing = bucketManager.listFiles(config.getBucketName(), prefix, marker, 1000, "/");
             if (listing.items != null) {
                 for (FileInfo item : listing.items) {
-                    if (!isPlaceholderFileKey(item.key) && !isDirectoryMarkerKey(item.key)) {
-                        allFiles.add(item);
+                    if (isPlaceholderFileKey(item.key) || isDirectoryMarkerKey(item.key)) {
+                        continue;
                     }
+                    // 双重保险：去掉前缀后仍含 / 说明是更深层级，跳过
+                    if (!isDirectChildKey(prefix, item.key)) {
+                        continue;
+                    }
+                    allFiles.add(item);
                 }
             }
             marker = listing.marker;
@@ -268,6 +275,19 @@ public class QiniuStorageConfig {
             result.add(data);
         }
         return result;
+    }
+
+    /** 判断 object key 是否为指定目录前缀下的直接子文件（相对路径不含 /） */
+    private boolean isDirectChildKey(String dirPrefix, String key) {
+        if (key == null || key.isEmpty()) {
+            return false;
+        }
+        String prefix = dirPrefix == null ? "" : dirPrefix;
+        if (!prefix.isEmpty() && !key.startsWith(prefix)) {
+            return false;
+        }
+        String relative = prefix.isEmpty() ? key : key.substring(prefix.length());
+        return !relative.isEmpty() && !relative.contains("/");
     }
 
     /**
