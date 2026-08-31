@@ -15,14 +15,19 @@ import liuyuyang.net.vo.link.LinkVO;
 import liuyuyang.net.web.mapper.LinkMapper;
 import liuyuyang.net.web.mapper.LinkTypeMapper;
 import liuyuyang.net.web.service.LinkService;
+import liuyuyang.net.web.service.WebConfigService;
 import liuyuyang.net.core.utils.EmailUtils;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.core.utils.UrlSecurityUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -39,6 +44,34 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
     private LinkTypeMapper linkTypeMapper;
     @Resource
     private EmailUtils emailUtils;
+    @Resource
+    private TemplateEngine templateEngine;
+    @Resource
+    private WebConfigService configService;
+
+    private void sendLinkNotifyEmail(Link link) {
+        LinkType linkType = linkTypeMapper.selectById(link.getTypeId());
+
+        Context context = new Context();
+        context.setVariable("title", link.getTitle());
+        context.setVariable("description", link.getDescription());
+        context.setVariable("site_url", link.getUrl());
+        context.setVariable("email", link.getEmail() != null && !link.getEmail().isEmpty() ? link.getEmail() : "未填写");
+        context.setVariable("type", linkType != null ? linkType.getName() : "未知");
+        if (link.getRss() != null && !link.getRss().isEmpty()) {
+            context.setVariable("rss", link.getRss());
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm:ss");
+        context.setVariable("time", now.format(formatter));
+
+        String siteUrl = (String) configService.getByName("web").getValue().get("url");
+        context.setVariable("url", String.format("%s/friend", siteUrl));
+
+        String template = templateEngine.process("link_notify_email", context);
+        emailUtils.send(null, "您有新的友联等待审核", template);
+    }
 
     @Override
     public void addLinkData(LinkFormDTO linkFormDTO, String token) throws Exception {
@@ -54,8 +87,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
                 throw new CustomException("该类型需要管理员权限才能添加");
             linkMapper.insert(link);
 
-            // 邮件提醒
-            emailUtils.send(null, "您有新的友联等待审核", link.toString());
+            sendLinkNotifyEmail(link);
             return;
         }
 

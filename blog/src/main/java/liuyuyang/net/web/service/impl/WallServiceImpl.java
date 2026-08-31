@@ -17,11 +17,16 @@ import liuyuyang.net.vo.wall.WallVO;
 import liuyuyang.net.web.mapper.WallCateMapper;
 import liuyuyang.net.web.mapper.WallMapper;
 import liuyuyang.net.web.service.WallService;
+import liuyuyang.net.web.service.WebConfigService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -37,6 +42,42 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
     private WallCateMapper wallCateMapper;
     @Resource
     private EmailUtils emailUtils;
+    @Resource
+    private TemplateEngine templateEngine;
+    @Resource
+    private WebConfigService configService;
+
+    private void sendWallNotifyEmail(Wall wall) {
+        WallCate cate = wallCateMapper.selectById(wall.getCateId());
+
+        Context context = new Context();
+        context.setVariable("recipient", wall.getName());
+        context.setVariable("cate", cate != null ? cate.getName() : "未知");
+        context.setVariable("email", wall.getEmail() != null && !wall.getEmail().isEmpty() ? wall.getEmail() : "未填写");
+
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm:ss");
+        context.setVariable("time", now.format(formatter));
+        context.setVariable("content", wall.getContent());
+
+        String siteUrl = (String) configService.getByName("web").getValue().get("url");
+        context.setVariable("url", String.format("%s/wall", siteUrl));
+
+        String template = templateEngine.process("wall_notify_email", context);
+        emailUtils.send(null, "您有新的留言等待审核", template);
+    }
+
+    private void validateSubmitCate(Integer cateId) {
+        WallCate wallCate = wallCateMapper.selectById(cateId);
+        if (wallCate == null) {
+            throw new CustomException("留言分类不存在");
+        }
+        // 不让这俩类型提交留言
+        String mark = wallCate.getMark();
+        if (Objects.equals(mark, "all") || Objects.equals(mark, "choice")) {
+            throw new CustomException("该分类不允许提交留言");
+        }
+    }
 
     private static WallVO toWallVO(Wall wall) {
         if (wall == null) {
@@ -49,13 +90,15 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
 
     @Override
     public void addWallData(WallFormDTO wallFormDTO) throws Exception {
+        validateSubmitCate(wallFormDTO.getCateId());
+
         Wall wall = new Wall();
         BeanUtils.copyProperties(wallFormDTO, wall);
         if (wall.getStatus() == null) {
             wall.setStatus(WallAuditStatusEnum.PENDING);
         }
         wallMapper.insert(wall);
-        emailUtils.send(null, "您有新的留言等待审核", "");
+        sendWallNotifyEmail(wall);
     }
 
     @Override
