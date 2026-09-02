@@ -125,6 +125,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
     public void editLinkData(LinkFormDTO linkFormDTO) {
         Link link = new Link();
         BeanUtils.copyProperties(linkFormDTO, link);
+        UrlSecurityUtils.validateExternalHttpUrl("RSS 地址", link.getRss());
         updateById(link);
     }
 

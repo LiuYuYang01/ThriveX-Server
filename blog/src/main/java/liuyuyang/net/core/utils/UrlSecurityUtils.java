@@ -20,7 +20,7 @@ import java.util.Locale;
  * 1) 仅允许 http/https 协议（拒绝 file/gopher/ftp 等协议）。
  * 2) host 必须存在，且禁止 localhost。
  * 3) 对 host 做 DNS 解析，任一解析结果命中内网/本地地址则整体拒绝。
- * 4) 同时覆盖 IPv4 与 IPv6 的回环、私网、链路本地等地址段。
+ * 4) 同时覆盖 IPv4 与 IPv6 的回环、私网、链路本地，以及 IPv6 过渡地址（NAT64、6to4、Teredo、IPv4-compatible）内嵌的 IPv4。
  *
  * 推荐用法：
  * - 写入时校验：阻止恶意 URL 入库（第一道防线）。
@@ -102,14 +102,62 @@ public final class UrlSecurityUtils {
         }
 
         if (address instanceof Inet6Address) {
-            return address.isLoopbackAddress()
+            if (address.isLoopbackAddress()
                     || address.isSiteLocalAddress()
                     || address.isLinkLocalAddress()
                     || address.isAnyLocalAddress()
                     || address.getHostAddress().startsWith("fc")
-                    || address.getHostAddress().startsWith("fd");
+                    || address.getHostAddress().startsWith("fd")) {
+                return true;
+            }
+
+            InetAddress embeddedIpv4 = extractEmbeddedIpv4FromTransition(address.getAddress());
+            if (embeddedIpv4 != null) {
+                return isInternalAddress(embeddedIpv4);
+            }
         }
 
         return false;
+    }
+
+    private static InetAddress extractEmbeddedIpv4FromTransition(byte[] bytes) {
+        if (bytes == null || bytes.length != 16) {
+            return null;
+        }
+
+        try {
+            if (bytes[0] == 0x00 && bytes[1] == 0x64 && (bytes[2] & 0xFF) == 0xFF && (bytes[3] & 0xFF) == 0x9B) {
+                return InetAddress.getByAddress(new byte[]{bytes[12], bytes[13], bytes[14], bytes[15]});
+            }
+
+            if ((bytes[0] & 0xFF) == 0x20 && bytes[1] == 0x02) {
+                return InetAddress.getByAddress(new byte[]{bytes[2], bytes[3], bytes[4], bytes[5]});
+            }
+
+            if ((bytes[0] & 0xFF) == 0x20 && bytes[1] == 0x01 && bytes[2] == 0x00 && bytes[3] == 0x00) {
+                byte[] ipv4 = new byte[4];
+                for (int i = 0; i < 4; i++) {
+                    ipv4[i] = (byte) (~bytes[12 + i] & 0xFF);
+                }
+                return InetAddress.getByAddress(ipv4);
+            }
+
+            if (isIpv4CompatibleAddress(bytes)) {
+                return InetAddress.getByAddress(new byte[]{bytes[12], bytes[13], bytes[14], bytes[15]});
+            }
+        } catch (Exception ignored) {
+            return null;
+        }
+
+        return null;
+    }
+
+    private static boolean isIpv4CompatibleAddress(byte[] bytes) {
+        for (int i = 0; i < 12; i++) {
+            if (bytes[i] != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 }
