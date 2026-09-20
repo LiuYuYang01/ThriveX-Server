@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.Map;
@@ -12,16 +12,16 @@ import java.util.Map;
 @Data
 public class Config {
     @TableId(type = IdType.AUTO)
-    @ApiModelProperty(value = "环境配置ID")
+    @Schema(description = "环境配置ID")
     private Integer id;
 
-    @ApiModelProperty(value = "配置名称", example = "database_config", required = true)
+    @Schema(description = "配置名称", example = "database_config", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
     @TableField(typeHandler = JacksonTypeHandler.class)
-    @ApiModelProperty(value = "配置值(JSON格式)", example = "{\"name\":\"宇阳\"}", required = true)
+    @Schema(description = "配置值(JSON格式)", example = "{\"name\":\"宇阳\"}", requiredMode = Schema.RequiredMode.REQUIRED)
     private Map<String, Object> value;
 
-    @ApiModelProperty(value = "配置备注")
+    @Schema(description = "配置备注")
     private String notes;
 }

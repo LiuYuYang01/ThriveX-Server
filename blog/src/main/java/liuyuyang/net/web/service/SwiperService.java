@@ -1,7 +1,7 @@
 package liuyuyang.net.web.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import liuyuyang.net.dto.swiper.SwiperFilterDTO;
 import liuyuyang.net.dto.swiper.SwiperFormDTO;
 import liuyuyang.net.model.Swiper;

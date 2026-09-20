@@ -1,15 +1,14 @@
 package liuyuyang.net.vo.file;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
-@ApiModel(value = "FileDirDeleteVO", description = "删除逻辑目录结果")
+@Schema(name = "FileDirDeleteVO", description = "删除逻辑目录结果")
 public class FileDirDeleteVO {
-    @ApiModelProperty(value = "被删除的目录前缀")
+    @Schema(description = "被删除的目录前缀")
     private String dir;
 
-    @ApiModelProperty(value = "删除的对象数量")
+    @Schema(description = "删除的对象数量")
     private Integer deleted;
 }

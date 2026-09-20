@@ -1,8 +1,7 @@
 package liuyuyang.net.web.controller;
 
-import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.dto.PageDTO;
@@ -17,12 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.validation.constraints.NotEmpty;
+import jakarta.annotation.Resource;
+import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
-@Api(tags = "评论管理")
+@Tag(name = "评论管理")
 @RestController
 @RequestMapping("/comment")
 @Transactional
@@ -34,8 +33,7 @@ public class CommentController {
     @NoTokenRequired
     @RateLimit
     @PostMapping
-    @ApiOperation("新增评论")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
+    @Operation(summary = "新增评论")
     public Result<String> addCommentData(@RequestBody @Validated(ValidationGroups.Create.class) CommentFormDTO commentFormDTO) throws Exception {
         commentFormDTO.setId(null);
         commentService.addCommentData(commentFormDTO);
@@ -43,24 +41,21 @@ public class CommentController {
     }
 
     @DeleteMapping("/{id}")
-    @ApiOperation("删除评论")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
+    @Operation(summary = "删除评论")
     public Result<String> delCommentData(@PathVariable Integer id) {
         commentService.delCommentData(id);
         return Result.success();
     }
 
     @DeleteMapping("/batch")
-    @ApiOperation("批量删除评论")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
+    @Operation(summary = "批量删除评论")
     public Result<String> batchDelCommentData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         commentService.batchDelCommentData(ids);
         return Result.success();
     }
 
     @PatchMapping
-    @ApiOperation("编辑评论")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
+    @Operation(summary = "编辑评论")
     public Result<String> editCommentData(@RequestBody @Validated(ValidationGroups.Update.class) CommentFormDTO commentFormDTO) {
         commentService.editCommentData(commentFormDTO);
         return Result.success();
@@ -69,8 +64,7 @@ public class CommentController {
     @NoTokenRequired
     @RateLimit
     @GetMapping("/{id}")
-    @ApiOperation("获取评论")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
+    @Operation(summary = "获取评论")
     public Result<CommentVO> getCommentData(@PathVariable Integer id) {
         CommentVO data = commentService.getCommentData(id);
         return Result.success(data);
@@ -79,8 +73,7 @@ public class CommentController {
     @NoTokenRequired
     @RateLimit
     @GetMapping
-    @ApiOperation(value = "获取评论列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
+    @Operation(summary = "获取评论列表")
     public Result<Map<String, Object>> getCommentList(CommentFilterDTO linkFilterDTO) {
         return Result.success(Paging.filter(commentService.getCommentList(linkFilterDTO)));
     }
@@ -88,15 +81,13 @@ public class CommentController {
     @NoTokenRequired
     @RateLimit
     @GetMapping("/article/{articleId}")
-    @ApiOperation("获取指定文章中所有评论")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    @Operation(summary = "获取指定文章中所有评论")
     public Result<Map<String, Object>> getArticleCommentList(@PathVariable Integer articleId, PageDTO pageDTO) {
         return Result.success(Paging.filter(commentService.getArticleCommentList(articleId, pageDTO)));
     }
 
     @PatchMapping("/audit/{id}")
-    @ApiOperation("审核指定评论")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
+    @Operation(summary = "审核指定评论")
     public Result<String> auditCommentData(@PathVariable Integer id) {
         commentService.auditCommentData(id);
         return Result.success();

@@ -23,18 +23,18 @@ public class WebConfig implements WebMvcConfigurer {
     private String uploadDir;
 
     private static final Set<String> EXCLUDED_PATHS = new HashSet<>(Arrays.asList(
-            "/",
-            "/doc.html",
-            "/swagger-resources",
-            "/webjars",
-            "/v2/api-docs",
-            "/swagger-ui.html"
+            "/"
     ));
 
     @Override
     public void configurePathMatch(PathMatchConfigurer configurer) {
         // 指定统一API访问前缀
         configurer.addPathPrefix("/api", c -> {
+            // springdoc 的文档控制器（方法级 @RequestMapping）保持原路径，不加前缀
+            if (c.getName().startsWith("org.springdoc")) {
+                return false;
+            }
+
             RequestMapping requestMapping = c.getAnnotation(RequestMapping.class);
 
             if (requestMapping != null && requestMapping.value().length > 0) {

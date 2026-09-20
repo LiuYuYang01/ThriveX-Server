@@ -1,9 +1,8 @@
 package liuyuyang.net.web.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.core.utils.Paging;
@@ -17,12 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.validation.constraints.NotEmpty;
+import jakarta.annotation.Resource;
+import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
-@Api(tags = "人生里程碑管理")
+@Tag(name = "人生里程碑管理")
 @RestController
 @RequestMapping("/milestone")
 @Transactional
@@ -32,8 +31,7 @@ public class MilestoneController {
     private MilestoneService milestoneService;
 
     @PostMapping
-    @ApiOperation("新增里程碑")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
+    @Operation(summary = "新增里程碑")
     public Result<String> addMilestoneData(@RequestBody @Validated(ValidationGroups.Create.class) MilestoneFormDTO milestoneFormDTO) {
         milestoneFormDTO.setId(null);
         milestoneService.addMilestoneData(milestoneFormDTO);
@@ -41,24 +39,21 @@ public class MilestoneController {
     }
 
     @DeleteMapping("/{id}")
-    @ApiOperation("删除里程碑")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
+    @Operation(summary = "删除里程碑")
     public Result<String> delMilestoneData(@PathVariable Integer id) {
         milestoneService.delMilestoneData(id);
         return Result.success();
     }
 
     @DeleteMapping("/batch")
-    @ApiOperation("批量删除里程碑")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
+    @Operation(summary = "批量删除里程碑")
     public Result<String> batchDelMilestoneData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         milestoneService.batchDelMilestoneData(ids);
         return Result.success();
     }
 
     @PatchMapping
-    @ApiOperation("编辑里程碑")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
+    @Operation(summary = "编辑里程碑")
     public Result<String> editMilestoneData(@RequestBody @Validated(ValidationGroups.Update.class) MilestoneFormDTO milestoneFormDTO) {
         milestoneService.editMilestoneData(milestoneFormDTO);
         return Result.success();
@@ -67,8 +62,7 @@ public class MilestoneController {
     @NoTokenRequired
     @RateLimit
     @GetMapping
-    @ApiOperation(value = "获取里程碑列表", notes = "不传 pageNum/pageSize 返回全部，传则分页")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
+    @Operation(summary = "获取里程碑列表", description = "不传 pageNum/pageSize 返回全部，传则分页")
     public Result<Map<String, Object>> getMilestoneList(MilestoneFilterDTO milestoneFilterDTO) {
         Page<MilestoneVO> data = milestoneService.getMilestoneList(milestoneFilterDTO);
         Map<String, Object> result = Paging.filter(data);
@@ -78,8 +72,7 @@ public class MilestoneController {
     @NoTokenRequired
     @RateLimit
     @GetMapping("/{id}")
-    @ApiOperation("获取里程碑详情")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
+    @Operation(summary = "获取里程碑详情")
     public Result<MilestoneVO> getMilestoneData(@PathVariable Integer id) {
         MilestoneVO data = milestoneService.getMilestoneData(id);
         return Result.success(data);

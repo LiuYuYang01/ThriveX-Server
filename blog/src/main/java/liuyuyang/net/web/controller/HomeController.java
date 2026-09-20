@@ -1,9 +1,9 @@
 package liuyuyang.net.web.controller;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
-@Api(tags = "首页")
+@Tag(name = "首页")
 @RestController
 @RequestMapping("/")
 public class HomeController {

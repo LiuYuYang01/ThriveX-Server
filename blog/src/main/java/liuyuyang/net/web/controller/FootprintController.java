@@ -1,9 +1,8 @@
 package liuyuyang.net.web.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.core.utils.Paging;
@@ -17,12 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.validation.constraints.NotEmpty;
+import jakarta.annotation.Resource;
+import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
-@Api(tags = "足迹管理")
+@Tag(name = "足迹管理")
 @RestController
 @RequestMapping("/footprint")
 @Transactional
@@ -32,8 +31,7 @@ public class FootprintController {
     private FootprintService footprintService;
 
     @PostMapping
-    @ApiOperation("新增足迹")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
+    @Operation(summary = "新增足迹")
     public Result<String> addFootprintData(@RequestBody @Validated(ValidationGroups.Create.class) FootprintFormDTO footprintFormDTO) {
         footprintFormDTO.setId(null);
         footprintService.addFootprintData(footprintFormDTO);
@@ -41,24 +39,21 @@ public class FootprintController {
     }
 
     @DeleteMapping("/{id}")
-    @ApiOperation("删除足迹")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
+    @Operation(summary = "删除足迹")
     public Result<String> delFootprintData(@PathVariable Integer id) {
         footprintService.delFootprintData(id);
         return Result.success();
     }
 
     @DeleteMapping("/batch")
-    @ApiOperation("批量删除足迹")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
+    @Operation(summary = "批量删除足迹")
     public Result<String> batchDelFootprintData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         footprintService.batchDelFootprintData(ids);
         return Result.success();
     }
 
     @PatchMapping
-    @ApiOperation("编辑足迹")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
+    @Operation(summary = "编辑足迹")
     public Result<String> editFootprintData(@RequestBody @Validated(ValidationGroups.Update.class) FootprintFormDTO footprintFormDTO) {
         footprintService.editFootprintData(footprintFormDTO);
         return Result.success();
@@ -66,8 +61,7 @@ public class FootprintController {
 
     @RateLimit
     @GetMapping("/{id}")
-    @ApiOperation("获取足迹")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
+    @Operation(summary = "获取足迹")
     public Result<FootprintVO> getFootprintData(@PathVariable Integer id) {
         FootprintVO data = footprintService.getFootprintData(id);
         return Result.success(data);
@@ -76,8 +70,7 @@ public class FootprintController {
     @NoTokenRequired
     @RateLimit
     @GetMapping
-    @ApiOperation(value = "获取足迹列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
+    @Operation(summary = "获取足迹列表")
     public Result<Map<String, Object>> getFootprintList(FootprintFilterDTO filterVo) {
         Page<FootprintVO> data = footprintService.getFootprintList(filterVo);
         Map<String, Object> result = Paging.filter(data);

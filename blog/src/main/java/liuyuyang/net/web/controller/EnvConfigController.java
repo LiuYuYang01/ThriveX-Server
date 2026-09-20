@@ -1,9 +1,8 @@
 package liuyuyang.net.web.controller;
 
-import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.model.EnvConfig;
@@ -14,14 +13,14 @@ import org.springframework.util.DigestUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
+import jakarta.annotation.Resource;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Api(tags = "环境配置管理")
+@Tag(name = "环境配置管理")
 @RestController
 @RequestMapping("/env_config")
 @Validated
@@ -31,64 +30,57 @@ public class EnvConfigController {
     @Resource
     private UserService userService;
 
-    @ApiOperation("获取环境配置列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
+    @Operation(summary = "获取环境配置列表")
     @GetMapping("/list")
     public Result<List<EnvConfig>> list() {
         List<EnvConfig> data = envConfigService.list();
         return Result.success("获取成功", data);
     }
 
-    @ApiOperation("根据ID获取环境配置")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
+    @Operation(summary = "根据ID获取环境配置")
     @GetMapping("/{id}")
     public Result<EnvConfig> getById(
-            @ApiParam(value = "环境配置ID", required = true, example = "1") @PathVariable Integer id) {
+            @Parameter(description = "环境配置ID", required = true, example = "1") @PathVariable Integer id) {
         EnvConfig envConfig = envConfigService.getById(id);
         return envConfig != null ? Result.success("获取成功", envConfig) : Result.error("配置不存在");
     }
 
-    @ApiOperation("根据名称获取环境配置")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
+    @Operation(summary = "根据名称获取环境配置")
     @GetMapping("/name/{name}")
     public Result<EnvConfig> getByName(
-            @ApiParam(value = "配置名称", required = true, example = "database_config") @PathVariable String name) {
+            @Parameter(description = "配置名称", required = true, example = "database_config") @PathVariable String name) {
         EnvConfig envConfig = envConfigService.getByName(name);
         return envConfig != null ? Result.success("获取成功", envConfig) : Result.error("配置不存在");
     }
 
-    @ApiOperation("根据ID获取配置")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
+    @Operation(summary = "根据ID获取配置")
     @PatchMapping("/json/{id}")
     public Result<String> updateJsonValue(
-            @ApiParam(value = "环境配置ID", required = true, example = "1") @PathVariable Integer id,
-            @ApiParam(value = "JSON配置值", required = true) @RequestBody @NotEmpty(message = "配置内容不能为空") Map<String, Object> jsonValue) {
+            @Parameter(description = "环境配置ID", required = true, example = "1") @PathVariable Integer id,
+            @Parameter(description = "JSON配置值", required = true) @RequestBody @NotEmpty(message = "配置内容不能为空") Map<String, Object> jsonValue) {
         boolean success = envConfigService.updateJsonValue(id, jsonValue);
         return success ? Result.success("JSON配置更新成功") : Result.error("更新失败");
     }
 
-    @ApiOperation("根据ID更新配置")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
+    @Operation(summary = "根据ID更新配置")
     @PatchMapping("/{id}/field/{fieldName}")
     public Result<String> updateJsonFieldValue(
-            @ApiParam(value = "环境配置ID", required = true, example = "1") @PathVariable Integer id,
-            @ApiParam(value = "字段名称", required = true, example = "host") @PathVariable @NotBlank(message = "字段名称不能为空") String fieldName,
-            @ApiParam(value = "字段值", required = true) @RequestBody Object value) {
+            @Parameter(description = "环境配置ID", required = true, example = "1") @PathVariable Integer id,
+            @Parameter(description = "字段名称", required = true, example = "host") @PathVariable @NotBlank(message = "字段名称不能为空") String fieldName,
+            @Parameter(description = "字段值", required = true) @RequestBody Object value) {
         boolean success = envConfigService.updateJsonFieldValue(id, fieldName, value);
         return success ? Result.success() : Result.error();
     }
 
     @NoTokenRequired
-    @ApiOperation("获取公开的配置")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
+    @Operation(summary = "获取公开的配置")
     @GetMapping("/public_config")
     public Result<Map<String, Object>> getPublicConfig() {
         return Result.success(envConfigService.getPublicConfig());
     }
 
     @NoTokenRequired
-    @ApiOperation("获取系统初始化状态")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
+    @Operation(summary = "获取系统初始化状态")
     @GetMapping("/is_system_init")
     public Result<Map<String, Object>> getSystemInitStatus() {
         EnvConfig envConfig = envConfigService.getByName("is_system_init");
@@ -106,8 +98,7 @@ public class EnvConfigController {
         return Result.success(data);
     }
 
-    @ApiOperation("更新系统初始化状态")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 10)
+    @Operation(summary = "更新系统初始化状态")
     @PostMapping("/is_system_init")
     public Result<String> updateSystemInitStatus() {
         EnvConfig envConfig = envConfigService.getByName("is_system_init");

@@ -1,6 +1,6 @@
 package liuyuyang.net.web.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import liuyuyang.net.web.mapper.ArticleCateMapper;
 import liuyuyang.net.model.ArticleCate;
 import liuyuyang.net.web.service.ArticleCateService;

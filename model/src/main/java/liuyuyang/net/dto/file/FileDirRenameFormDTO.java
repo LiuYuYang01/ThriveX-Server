@@ -1,21 +1,20 @@
 package liuyuyang.net.dto.file;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Data
-@ApiModel(value = "FileDirRenameFormDTO", description = "重命名逻辑目录")
+@Schema(name = "FileDirRenameFormDTO", description = "重命名逻辑目录")
 public class FileDirRenameFormDTO {
-    @ApiModelProperty(value = "原目录路径", required = true)
+    @Schema(description = "原目录路径", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "原目录路径不能为空")
     @Size(max = 200, message = "原目录路径不能超过200个字符")
     private String fromDir;
 
-    @ApiModelProperty(value = "新目录路径", required = true)
+    @Schema(description = "新目录路径", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "新目录路径不能为空")
     @Size(max = 200, message = "新目录路径不能超过200个字符")
     private String toDir;

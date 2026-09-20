@@ -19,34 +19,14 @@ jwt:
   # 设置前端传递过来的令牌名称
   token-name: Authorization
 
-# API文档配置
-knife4j:
-  enable: true
-
-  # 自定义主页内容
-  openapi:
-    title: ThriveX 在线API文档
-    description: 有些梦虽然遥不可及，但并不是不可能实现!
-    email: liuyuyang1024@yeah.net
-    concat: 刘宇阳
-    url: https://liuyuyang.net
-    version: v4.0
-    license: Apache 2.0
-    terms-of-service-url: https://stackoverflow.com/
-
-    # 分组
-    group:
-      default:
-        group-name: default
-        api-rule: package
-        api-rule-resources:
-          - liuyuyang.net
-
-  # 自定义页脚内容
-  setting:
-    enable-footer: false
-    enable-footer-custom: true
-    footer-custom-content: 互联网从不缺乏天才，而努力才是最终的入场劵!
+# API文档配置（springdoc + Swagger UI：文档元数据在 OpenApiConfig 的 OpenAPI Bean 中）
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
 
 file:
   dir: ./upload/

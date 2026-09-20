@@ -1,8 +1,7 @@
 package liuyuyang.net.web.controller;
 
-import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.dto.user.EditUserPassDTO;
 import liuyuyang.net.dto.user.EditUserInfoDTO;
@@ -17,11 +16,11 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.validation.Valid;
+import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import java.util.Map;
 
-@Api(tags = "用户管理")
+@Tag(name = "用户管理")
 @RestController
 @RequestMapping("/user")
 @Transactional
@@ -30,16 +29,14 @@ public class UserController {
     private UserService userService;
 
     @PatchMapping
-    @ApiOperation("编辑管理员")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
+    @Operation(summary = "编辑管理员")
     public Result<String> editUserData(@RequestBody @Valid EditUserInfoDTO user) {
         userService.editUserData(user);
         return Result.success();
     }
 
     @GetMapping("/info")
-    @ApiOperation("获取当前登录的管理员信息")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
+    @Operation(summary = "获取当前登录的管理员信息")
     @NoTokenRequired
     public Result<UserVO> getUserData(String token) {
         User user = userService.getUserInfo(token);
@@ -49,8 +46,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    @ApiOperation("管理员登录")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
+    @Operation(summary = "管理员登录")
     @RateLimit(tokens = 5, duration = 60, message = "登录尝试过于频繁，请 60 秒后再试")
     public Result<Map<String, Object>> login(@RequestBody @Valid UserLoginDTO user) {
         Map<String, Object> result = userService.login(user);
@@ -58,8 +54,7 @@ public class UserController {
     }
 
     @PatchMapping("/pass")
-    @ApiOperation("修改管理员密码")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
+    @Operation(summary = "修改管理员密码")
     public Result<String> editPass(@RequestBody @Valid EditUserPassDTO data) {
         userService.editUserPass(data);
         return Result.success("密码修改成功");
@@ -67,8 +62,7 @@ public class UserController {
 
     // 后续删掉
     @GetMapping("/check")
-    @ApiOperation("校验当前管理员Token是否有效")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 10)
+    @Operation(summary = "校验当前管理员Token是否有效")
     public Result<String> checkToken() {
         userService.checkToken();
         return Result.success();
@@ -77,8 +71,7 @@ public class UserController {
     @NoTokenRequired
     @RateLimit
     @GetMapping("/author")
-    @ApiOperation("获取作者信息")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 11)
+    @Operation(summary = "获取作者信息")
     public Result<AuthorVO> getAuthor() {
         User user = userService.getById(1);
         AuthorVO author = new AuthorVO();

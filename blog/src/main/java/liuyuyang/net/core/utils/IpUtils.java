@@ -1,6 +1,6 @@
 package liuyuyang.net.core.utils;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * IP工具类

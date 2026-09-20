@@ -1,9 +1,8 @@
 package liuyuyang.net.web.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.model.LinkType;
@@ -19,13 +18,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
+import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
-@Api(tags = "网站管理")
+@Tag(name = "网站管理")
 @RestController
 @RequestMapping("/link")
 @Transactional
@@ -37,8 +36,7 @@ public class LinkController {
     @RateLimit
     @PostMapping
     @NoTokenRequired
-    @ApiOperation("新增网站")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
+    @Operation(summary = "新增网站")
     public Result<String> addLinkData(@RequestBody @Validated(ValidationGroups.Create.class) LinkFormDTO linkFormDTO, @RequestHeader(value = "Authorization", required = false) String token) throws Exception {
         linkFormDTO.setId(null);
         linkService.addLinkData(linkFormDTO, token);
@@ -46,24 +44,21 @@ public class LinkController {
     }
 
     @DeleteMapping("/{id}")
-    @ApiOperation("删除网站")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
+    @Operation(summary = "删除网站")
     public Result<String> delLinkData(@PathVariable Integer id) {
         linkService.delLinkData(id);
         return Result.success();
     }
 
     @DeleteMapping("/batch")
-    @ApiOperation("批量删除网站")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
+    @Operation(summary = "批量删除网站")
     public Result<String> batchDelLinkData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         linkService.batchDelLinkData(ids);
         return Result.success();
     }
 
     @PatchMapping
-    @ApiOperation("编辑网站")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
+    @Operation(summary = "编辑网站")
     public Result<String> editLinkData(@RequestBody @Validated(ValidationGroups.Update.class) LinkFormDTO linkFormDTO) {
         linkService.editLinkData(linkFormDTO);
         return Result.success();
@@ -71,8 +66,7 @@ public class LinkController {
 
     @RateLimit
     @GetMapping("/{id}")
-    @ApiOperation("获取网站")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
+    @Operation(summary = "获取网站")
     public Result<LinkVO> getLinkData(@PathVariable Integer id) {
         LinkVO data = linkService.getLinkData(id);
         return Result.success(data);
@@ -81,8 +75,7 @@ public class LinkController {
     @RateLimit
     @NoTokenRequired
     @GetMapping
-    @ApiOperation(value = "获取网站列表", notes = "不传 page/size 返回全部，传则分页（来自 filterVo）")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
+    @Operation(summary = "获取网站列表", description = "不传 page/size 返回全部，传则分页（来自 filterVo）")
     public Result<Map<String, Object>> getLinkList(LinkFilterDTO filterVo) {
         Page<LinkVO> data = linkService.getLinkList(filterVo);
         Map<String, Object> result = Paging.filter(data);
@@ -92,24 +85,21 @@ public class LinkController {
     @NoTokenRequired
     @RateLimit
     @GetMapping("/type")
-    @ApiOperation("获取网站类型列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    @Operation(summary = "获取网站类型列表")
     public Result<List<LinkType>> getLinkTypeList() {
         List<LinkType> data = linkService.getLinkTypeList();
         return Result.success(data);
     }
 
     @PatchMapping("/audit/{id}")
-    @ApiOperation("审核指定网站")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
+    @Operation(summary = "审核指定网站")
     public Result<String> auditLinkData(@PathVariable Integer id) {
         linkService.auditLinkData(id);
         return Result.success();
     }
 
     @PatchMapping("/sort")
-    @ApiOperation("网站拖拽排序（同类型内）")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
+    @Operation(summary = "网站拖拽排序（同类型内）")
     public Result<String> sortLinkData(@RequestBody @Valid LinkSortDTO linkSortDTO) {
         linkService.sortLinkData(linkSortDTO);
         return Result.success();
