@@ -71,11 +71,10 @@
             <artifactId>spring-boot-devtools</artifactId>
         </dependency>
 
-        <!-- 用于支持MySQL数据库的连接（Boot 3 托管新坐标） -->
+        <!-- 用于支持MySQL数据库的连接 -->
         <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <scope>runtime</scope>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
         </dependency>
 
         <!--  内存缓存库   -->

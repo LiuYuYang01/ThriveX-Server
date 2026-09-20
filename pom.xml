@@ -28,6 +28,8 @@
         <java.version>21</java.version>
         <spring-boot.version>3.5.16</spring-boot.version>
         <mybatis-plus.version>3.5.17</mybatis-plus.version>
+        <!-- MySQL 驱动保持项目原有的 8.0.x 版本（Connector/J 9.x 对旧版 MySQL 服务端兼容性欠佳） -->
+        <mysql.version>8.0.23</mysql.version>
         <!-- knife4j 4.5.0 与 Boot 3.5 不兼容，已移除，API 文档改用 springdoc -->
         <springdoc.version>2.8.17</springdoc.version>
         <!-- 与 springdoc 2.8.x 使用的 swagger-annotations 保持一致 -->
@@ -74,6 +76,13 @@
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-jsqlparser</artifactId>
                 <version>${mybatis-plus.version}</version>
+            </dependency>
+
+            <!-- MySQL 驱动（还原项目原版本，Boot 3 不再托管旧坐标） -->
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql.version}</version>
             </dependency>
 
         <!-- API 文档：knife4j 4.5.0 与 Boot 3.5 不兼容（其钉死的 springdoc 2.2.0 在 Spring 6.2 下报
