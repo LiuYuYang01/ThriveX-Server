@@ -1,12 +1,12 @@
 package liuyuyang.net.dto.email;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
 public class EmailDTO {
-    @ApiModelProperty(value = "邮件接收者", example = "3311118881@qq.com")
+    @Schema(description = "邮件接收者", example = "3311118881@qq.com")
     private String to;
-    @ApiModelProperty(value = "邮件标题", example = "这是一段标题", required = true)
+    @Schema(description = "邮件标题", example = "这是一段标题", requiredMode = Schema.RequiredMode.REQUIRED)
     private String subject;
 }

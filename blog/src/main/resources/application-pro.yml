@@ -10,4 +10,4 @@ spring:
 
 jwt:
   # 设置jwt签名加密时使用的秘钥
-  secret-key: ${JWT_SECRET_KEY:yuyang}
+  secret-key: ${JWT_SECRET_KEY:thrivex-default-jwt-secret-key-please-change}

@@ -1,5 +1,5 @@
 # 使用国内代理 Maven 镜像
-FROM docker.m.daocloud.io/library/maven:3.9.9-eclipse-temurin-8 AS builder
+FROM docker.m.daocloud.io/library/maven:3.9.9-eclipse-temurin-21 AS builder
 # 设置应用目录
 WORKDIR /app
 # 复制 Maven 配置
@@ -12,8 +12,8 @@ COPY blog/pom.xml blog/pom.xml
 COPY . .
 # 打包后端服务
 RUN mvn clean package -DskipTests
-# 使用国内代理 Java8 镜像
-FROM docker.m.daocloud.io/library/eclipse-temurin:8-jre-alpine AS runner
+# 使用国内代理 Java21 镜像
+FROM docker.m.daocloud.io/library/eclipse-temurin:21-jre-alpine AS runner
 # 设置应用目录
 WORKDIR /app
 # 设置运行端口

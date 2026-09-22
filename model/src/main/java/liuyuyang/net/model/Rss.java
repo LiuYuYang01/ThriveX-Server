@@ -1,24 +1,24 @@
 package liuyuyang.net.model;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
 public class Rss {
-    @ApiModelProperty(value = "作者", example = "宇阳")
+    @Schema(description = "作者", example = "宇阳")
     private String author;
-    @ApiModelProperty(value = "网站图片", example = "http://127.0.0.1:5000/1.jpg")
+    @Schema(description = "网站图片", example = "http://127.0.0.1:5000/1.jpg")
     private String image;
-    @ApiModelProperty(value = "网站邮箱", example = "liuyuyang1024@yeah.net")
+    @Schema(description = "网站邮箱", example = "liuyuyang1024@yeah.net")
     private String email;
-    @ApiModelProperty(value = "网站类型", example = "技术类")
+    @Schema(description = "网站类型", example = "技术类")
     private String type;
-    @ApiModelProperty(value = "网站标题", example = "这是一个网站")
+    @Schema(description = "网站标题", example = "这是一个网站")
     private String title;
-    @ApiModelProperty(value = "网站描述", example = "这是一个网站的描述")
+    @Schema(description = "网站描述", example = "这是一个网站的描述")
     private String description;
-    @ApiModelProperty(value = "网站链接", example = "/")
+    @Schema(description = "网站链接", example = "/")
     private String url;
-    @ApiModelProperty(value = "网站创建时间", example = "1723533206613")
+    @Schema(description = "网站创建时间", example = "1723533206613")
     private Long createTime;
 }

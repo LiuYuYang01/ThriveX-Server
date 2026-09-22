@@ -1,6 +1,6 @@
 package liuyuyang.net.vo.article;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import liuyuyang.net.model.ArticleConfig;
 import liuyuyang.net.model.Tag;
 import liuyuyang.net.vo.cate.CateVO;
@@ -16,53 +16,53 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class ArticleVO {
     private Integer id;
 
-    @ApiModelProperty(value = "文章标题", example = "示例文章标题", required = true)
+    @Schema(description = "文章标题", example = "示例文章标题", requiredMode = Schema.RequiredMode.REQUIRED)
     private String title;
 
-    @ApiModelProperty(value = "文章介绍", example = "示例文章介绍")
+    @Schema(description = "文章介绍", example = "示例文章介绍")
     private String description;
     public String getDescription() {
         return description == null ? "" : description;
     }
 
-    @ApiModelProperty(value = "文章主要内容", example = "示例文章内容", required = true)
+    @Schema(description = "文章主要内容", example = "示例文章内容", requiredMode = Schema.RequiredMode.REQUIRED)
     private String content;
 
-    @ApiModelProperty(value = "文章封面链接", example = "http://123.com/images/example.jpg")
+    @Schema(description = "文章封面链接", example = "http://123.com/images/example.jpg")
     private String cover;
     public String getCover() {
         return cover == null ? "" : cover;
     }
 
-    @ApiModelProperty(value = "文章配置项")
+    @Schema(description = "文章配置项")
     private ArticleConfig config;
 
-    @ApiModelProperty(value = "文章浏览量", example = "100")
+    @Schema(description = "文章浏览量", example = "100")
     private Integer view;
 
-    @ApiModelProperty(value = "文章评论数量", example = "20")
+    @Schema(description = "文章评论数量", example = "20")
     private Integer comment;
 
-    @ApiModelProperty(value = "点赞数", example = "0")
+    @Schema(description = "点赞数", example = "0")
     private Integer likeCount;
 
-    @ApiModelProperty(value = "分享数", example = "0")
+    @Schema(description = "分享数", example = "0")
     private Integer shareCount;
 
-    @ApiModelProperty(value = "分类列表")
+    @Schema(description = "分类列表")
     private List<CateVO> cateList = new ArrayList<>();
 
-    @ApiModelProperty(value = "标签列表")
+    @Schema(description = "标签列表")
     private List<Tag> tagList = new ArrayList<>();
 
-    @ApiModelProperty(value = "上一篇文章")
+    @Schema(description = "上一篇文章")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Map<String, Object> prev;
 
-    @ApiModelProperty(value = "下一篇文章")
+    @Schema(description = "下一篇文章")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Map<String, Object> next;
 
-    @ApiModelProperty(value = "创建时间", example = "1723533206613", required = true)
+    @Schema(description = "创建时间", example = "1723533206613", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long createTime;
 }

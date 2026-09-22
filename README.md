@@ -31,7 +31,7 @@
 
 - 🚀 **高性能架构**：基于 Spring Boot 框架，提供稳定可靠的 API 服务
 - 🗄️ **数据持久化**：集成 MyBatis-Plus ORM，高效操作 MySQL 数据库
-- ⚡ **缓存加速**：Redis 缓存机制，大幅提升系统响应速度
+- ⚡ **缓存加速**：Caffeine 本地缓存，提升系统响应速度
 - 🔐 **安全认证**：完善的权限认证机制，保障系统安全
 - 📦 **文件管理**：集成 X File Storage，支持多种存储策略
 - 📊 **数据统计**：支持百度统计和高德地图数据集成
@@ -58,32 +58,20 @@ https://docs.liuyuyang.net/docs/项目部署/1Panel.html
 
 ```
 ThriveX-Server/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── net/
-│   │   │       └── liuyuyang/
-│   │   │           └── thrivex/
-│   │   │               ├── ThriveXApplication.java
-│   │   │               ├── config/          # 配置类
-│   │   │               ├── controller/      # 控制器层
-│   │   │               ├── service/         # 服务层
-│   │   │               ├── mapper/          # 数据访问层
-│   │   │               ├── entity/          # 实体类
-│   │   │               ├── dto/             # 数据传输对象
-│   │   │               ├── vo/              # 视图对象
-│   │   │               ├── util/            # 工具类
-│   │   │               └── aspect/          # 切面编程
-│   │   └── resources/
-│   │       ├── mapper/          # MyBatis Mapper XML
-│   │       ├── application.yml  # 应用配置
-│   │       └── application-dev.yml # 开发环境配置
-│   └── test/
-│       └── java/                # 单元测试
-├── docker/                      # Docker 相关配置
-├── docs/                        # 文档
-├── sql/                         # 数据库脚本
-├── pom.xml                      # Maven 配置
+├── model/                       # 实体模块（entity / dto / vo / enums）
+│   └── src/main/java/liuyuyang/net/
+├── blog/                        # 核心业务模块
+│   └── src/main/
+│       ├── java/liuyuyang/net/
+│       │   ├── Main.java            # 启动类
+│       │   ├── core/                # 配置、切面、拦截器、工具类
+│       │   └── web/                 # controller / service / mapper
+│       └── resources/
+│           ├── application.yml      # 应用配置
+│           └── application-*.yml    # 多环境配置
+├── ThriveX.sql                  # 数据库脚本
+├── Dockerfile                   # Docker 构建（JDK 21）
+├── pom.xml                      # Maven 父配置（Spring Boot 3.5 / Java 21）
 └── README.md                    # 项目说明
 ```
 

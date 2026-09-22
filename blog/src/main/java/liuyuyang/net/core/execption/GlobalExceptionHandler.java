@@ -10,10 +10,13 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import javax.annotation.Resource;
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
+import jakarta.annotation.Resource;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 
 @Slf4j
 @ControllerAdvice
@@ -65,6 +68,18 @@ public class GlobalExceptionHandler {
             return Result.error(e.code(), e.error());
         }
         return Result.error(GENERIC_MESSAGE);
+    }
+
+    // Boot 3 起未知路径会抛 NoResourceFoundException，这里还原为标准 404 而非包装成业务错误
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Void> noResourceFound(NoResourceFoundException e) {
+        return ResponseEntity.notFound().build();
+    }
+
+    // 请求方法不匹配还原为标准 405
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Void> methodNotSupported(HttpRequestMethodNotSupportedException e) {
+        return ResponseEntity.status(405).build();
     }
 
     @ResponseBody

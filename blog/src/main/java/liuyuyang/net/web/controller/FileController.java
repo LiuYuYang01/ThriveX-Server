@@ -1,11 +1,10 @@
 package liuyuyang.net.web.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import com.qiniu.common.QiniuException;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.file.FileBatchDeleteFormDTO;
@@ -29,8 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
-import javax.validation.Valid;
+import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,7 @@ import java.util.Map;
  * @author laifeng
  * @date 2024/12/14
  */
-@Api(tags = "文件管理")
+@Tag(name = "文件管理")
 @RestController
 @RequestMapping("/file")
 @Transactional
@@ -50,43 +49,38 @@ public class FileController {
     private FileService fileService;
 
     @PostMapping
-    @ApiOperation("文件上传")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
+    @Operation(summary = "文件上传")
     public Result<FileUploadVO> addFileData(
-            @ApiParam(value = "业务相对目录", required = true) @RequestParam String dir,
-            @ApiParam(value = "待上传文件", required = true) @RequestParam MultipartFile[] files) throws IOException {
+            @Parameter(description = "业务相对目录", required = true) @RequestParam String dir,
+            @Parameter(description = "待上传文件", required = true) @RequestParam MultipartFile[] files) throws IOException {
         FileUploadVO data = fileService.addFileData(dir, files);
         return Result.success("文件上传成功：", data);
     }
 
     @DeleteMapping
-    @ApiOperation("删除文件")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
+    @Operation(summary = "删除文件")
     public Result<String> delFileData(
-            @ApiParam(value = "文件 URL 或 key", required = true) @RequestParam String filePath) throws QiniuException {
+            @Parameter(description = "文件 URL 或 key", required = true) @RequestParam String filePath) throws QiniuException {
         fileService.delFileData(filePath);
         return Result.success();
     }
 
     @DeleteMapping("/batch")
-    @ApiOperation("批量删除文件")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
+    @Operation(summary = "批量删除文件")
     public Result<String> batchDelFileData(@RequestBody @Valid FileBatchDeleteFormDTO dto) throws QiniuException {
         fileService.batchDelFileData(dto);
         return Result.success();
     }
 
     @GetMapping("/info")
-    @ApiOperation("获取文件信息")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
+    @Operation(summary = "获取文件信息")
     public Result<FileInfoVO> getFileData(
-            @ApiParam(value = "文件 URL 或 key", required = true) @RequestParam String filePath) throws QiniuException {
+            @Parameter(description = "文件 URL 或 key", required = true) @RequestParam String filePath) throws QiniuException {
         return Result.success(fileService.getFileData(filePath));
     }
 
     @GetMapping("/list")
-    @ApiOperation("获取指定目录中的文件")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
+    @Operation(summary = "获取指定目录中的文件")
     public Result<Map<String, Object>> getFileList(FileFilterDTO fileFilterDTO) throws QiniuException {
         Page<FileListItemVO> list = fileService.getFileList(fileFilterDTO);
         Map<String, Object> result = Paging.filter(list);
@@ -94,51 +88,44 @@ public class FileController {
     }
 
     @GetMapping("/tree")
-    @ApiOperation("获取文件目录树")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
+    @Operation(summary = "获取文件目录树")
     public Result<FileTreeVO> getFileTreeData() throws QiniuException {
         return Result.success(fileService.getFileTreeData());
     }
 
     @PostMapping("/dir")
-    @ApiOperation("新增目录")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    @Operation(summary = "新增目录")
     public Result<FileDirCreateVO> addFileDirData(@RequestBody @Valid FileDirCreateFormDTO dto) throws IOException {
         return Result.success(fileService.addFileDirData(dto));
     }
 
     @PatchMapping("/dir")
-    @ApiOperation("重命名目录")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 8)
+    @Operation(summary = "重命名目录")
     public Result<FileDirRenameVO> renameFileDirData(@RequestBody @Valid FileDirRenameFormDTO dto) throws QiniuException {
         return Result.success(fileService.renameFileDirData(dto));
     }
 
     @DeleteMapping("/dir")
-    @ApiOperation("删除目录")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 9)
+    @Operation(summary = "删除目录")
     public Result<FileDirDeleteVO> delFileDirData(@RequestBody @Valid FileDirDeleteFormDTO dto) throws QiniuException {
         return Result.success(fileService.delFileDirData(dto));
     }
 
     @PostMapping("/compress")
-    @ApiOperation("图片瘦身（七牛 pfop 异步）")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 10)
+    @Operation(summary = "图片瘦身（七牛 pfop 异步）")
     public Result<FileCompressVO> compressFileData(@RequestBody @Valid FileCompressFormDTO dto) {
         return Result.success(fileService.compressFileData(dto));
     }
 
     @GetMapping("/compress/task/{taskId}")
-    @ApiOperation("查询单个瘦身任务状态")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 11)
+    @Operation(summary = "查询单个瘦身任务状态")
     public Result<FileCompressItemVO> queryCompressTask(
-            @ApiParam(value = "七牛 pfop persistentId", required = true) @PathVariable String taskId) {
+            @Parameter(description = "七牛 pfop persistentId", required = true) @PathVariable String taskId) {
         return Result.success(fileService.queryCompressTask(taskId));
     }
 
     @PostMapping("/compress/tasks")
-    @ApiOperation("批量查询瘦身任务状态")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 12)
+    @Operation(summary = "批量查询瘦身任务状态")
     public Result<List<FileCompressItemVO>> queryCompressTasks(@RequestBody @Valid FileCompressTaskQueryDTO dto) {
         return Result.success(fileService.queryCompressTasks(dto));
     }

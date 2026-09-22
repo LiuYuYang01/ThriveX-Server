@@ -1,9 +1,8 @@
 package liuyuyang.net.web.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.core.utils.Paging;
@@ -19,12 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.validation.constraints.NotEmpty;
+import jakarta.annotation.Resource;
+import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
 
-@Api(tags = "标签管理")
+@Tag(name = "标签管理")
 @RestController
 @RequestMapping("/tag")
 @Transactional
@@ -34,8 +33,7 @@ public class TagController {
     private TagService tagService;
 
     @PostMapping
-    @ApiOperation("新增标签")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
+    @Operation(summary = "新增标签")
     public Result<String> addTagData(@RequestBody @Validated(ValidationGroups.Create.class) TagFormDTO tagFormDTO) {
         tagFormDTO.setId(null);
         tagService.addTagData(tagFormDTO);
@@ -43,24 +41,21 @@ public class TagController {
     }
 
     @DeleteMapping("/{id}")
-    @ApiOperation("删除标签")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 2)
+    @Operation(summary = "删除标签")
     public Result<String> delTagData(@PathVariable Integer id) {
         tagService.delTagData(id);
         return Result.success();
     }
 
     @DeleteMapping("/batch")
-    @ApiOperation("批量删除标签")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 3)
+    @Operation(summary = "批量删除标签")
     public Result<String> batchDelTagData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         tagService.batchDelTagData(ids);
         return Result.success();
     }
 
     @PatchMapping
-    @ApiOperation("编辑标签")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 4)
+    @Operation(summary = "编辑标签")
     public Result<String> editTagData(@RequestBody @Validated(ValidationGroups.Update.class) TagFormDTO tagFormDTO) {
         tagService.editTagData(tagFormDTO);
         return Result.success();
@@ -69,8 +64,7 @@ public class TagController {
     @NoTokenRequired
     @RateLimit
     @GetMapping("/{id}")
-    @ApiOperation("获取标签")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 5)
+    @Operation(summary = "获取标签")
     public Result<TagVO> getTagData(@PathVariable Integer id) {
         TagVO data = tagService.getTagData(id);
         return Result.success(data);
@@ -79,8 +73,7 @@ public class TagController {
     @NoTokenRequired
     @RateLimit
     @GetMapping
-    @ApiOperation(value = "获取标签列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 6)
+    @Operation(summary = "获取标签列表")
     public Result<Map<String, Object>> getTagList(TagFilterDTO tagFilterDTO) {
         Page<TagVO> list = tagService.getTagList(tagFilterDTO);
         Map<String, Object> result = Paging.filter(list);
@@ -90,8 +83,7 @@ public class TagController {
     @NoTokenRequired
     @RateLimit
     @GetMapping("/{id}/articles")
-    @ApiOperation("获取标签关联的文章列表")
-    @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 7)
+    @Operation(summary = "获取标签关联的文章列表")
     public Result<Map<String, Object>> getTagArticleList(@PathVariable Integer id, PageDTO pageDTO) {
         Page<ArticleVO> list = tagService.getTagArticleList(id, pageDTO);
         Map<String, Object> result = Paging.filter(list);
