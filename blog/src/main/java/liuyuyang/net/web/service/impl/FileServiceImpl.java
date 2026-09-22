@@ -17,6 +17,7 @@ import liuyuyang.net.dto.file.FileDirDeleteFormDTO;
 import liuyuyang.net.dto.file.FileDirRenameFormDTO;
 import liuyuyang.net.dto.file.FileFilterDTO;
 import liuyuyang.net.enums.file.FileImageExtensionEnum;
+import liuyuyang.net.enums.file.FileVideoExtensionEnum;
 import liuyuyang.net.vo.file.FileCompressItemVO;
 import liuyuyang.net.vo.file.FileCompressVO;
 import liuyuyang.net.vo.file.FileDirCreateVO;
@@ -60,7 +61,7 @@ public class FileServiceImpl implements FileService {
 
         List<String> urls = new ArrayList<>();
         for (MultipartFile file : files) {
-            validateImageFile(file);
+            validateFile(file);
             urls.add(qiniuStorageConfig.upload(dir, file));
         }
 
@@ -70,33 +71,38 @@ public class FileServiceImpl implements FileService {
     }
 
     /**
-     * 与控制器原逻辑一致：扩展名、MIME、解码校验。
+     * 按扩展名分流：图片走扩展名 + MIME + 解码三层校验，视频只做扩展名 + MIME 校验（ImageIO 不适用于视频）。
      */
-    private void validateImageFile(MultipartFile file) throws IOException {
+    private void validateFile(MultipartFile file) throws IOException {
         if (file.isEmpty()) {
             throw new CustomException("文件不能为空");
         }
 
-        Set<String> allowedExt = FileImageExtensionEnum.allowedExtensions();
         String originalFilename = file.getOriginalFilename();
         String ext = "";
         if (originalFilename != null && originalFilename.contains(".")) {
             ext = originalFilename.substring(originalFilename.lastIndexOf('.') + 1).toLowerCase();
         }
 
-        if (!allowedExt.contains(ext)) {
-            throw new CustomException("仅支持上传图片类型文件（jpg、jpeg、png、webp）");
+        Set<String> imageExt = FileImageExtensionEnum.allowedExtensions();
+        Set<String> videoExt = FileVideoExtensionEnum.allowedExtensions();
+        if (!imageExt.contains(ext) && !videoExt.contains(ext)) {
+            throw new CustomException("仅支持上传图片（jpg、jpeg、png、webp）或视频（mp4、webm、ogg、ogv、mov、m4v、avi、mkv、flv）");
         }
 
-        Set<String> allowedContentTypes = FileImageExtensionEnum.allowedMimeTypes();
+        Set<String> allowedContentTypes = imageExt.contains(ext)
+                ? FileImageExtensionEnum.allowedMimeTypes()
+                : FileVideoExtensionEnum.allowedMimeTypes();
         String contentType = file.getContentType();
         if (contentType == null || !allowedContentTypes.contains(contentType.toLowerCase())) {
-            throw new CustomException("文件类型不合法，仅支持上传图片类型文件");
+            throw new CustomException("文件类型不合法，仅支持上传图片或视频类型文件");
         }
 
-        BufferedImage image = ImageIO.read(file.getInputStream());
-        if (image == null) {
-            throw new CustomException("文件内容不是有效的图片");
+        if (imageExt.contains(ext)) {
+            BufferedImage image = ImageIO.read(file.getInputStream());
+            if (image == null) {
+                throw new CustomException("文件内容不是有效的图片");
+            }
         }
     }
 

@@ -8,8 +8,10 @@ import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.user.EditUserPassDTO;
 import liuyuyang.net.dto.user.EditUserInfoDTO;
 import liuyuyang.net.dto.user.UserLoginDTO;
+import liuyuyang.net.model.EnvConfig;
 import liuyuyang.net.model.User;
 import liuyuyang.net.model.UserToken;
+import liuyuyang.net.web.mapper.EnvConfigMapper;
 import liuyuyang.net.web.mapper.UserMapper;
 import liuyuyang.net.web.mapper.UserTokenMapper;
 import liuyuyang.net.web.service.UserService;
@@ -36,6 +38,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private UserMapper userMapper;
     @Resource
     private UserTokenMapper userTokenMapper;
+    @Resource
+    private EnvConfigMapper envConfigMapper;
 
     @Override
     public void editUserData(EditUserInfoDTO user) {
@@ -102,12 +106,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public void editUserPass(EditUserPassDTO data) {
         if (data.getOldUsername() == null) throw new CustomException("请输入旧用户名");
         if (data.getNewUsername() == null) throw new CustomException("请输入新用户名");
-        if (data.getOldPassword() == null) throw new CustomException("请输入旧密码");
         if (data.getNewPassword() == null) throw new CustomException("请输入新密码");
 
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getUsername, data.getOldUsername());
-        queryWrapper.eq(User::getPassword, DigestUtils.md5DigestAsHex(data.getOldPassword().getBytes()));
+
+        String oldPassword = data.getOldPassword();
+        if (oldPassword == null || oldPassword.isEmpty()) {
+            // 初始化阶段允许直接设置新密码，初始化完成后必须校验旧密码
+            if (isSystemInit()) throw new CustomException("请输入旧密码");
+        } else {
+            queryWrapper.eq(User::getPassword, DigestUtils.md5DigestAsHex(oldPassword.getBytes()));
+        }
 
         User user = userMapper.selectOne(queryWrapper);
 
@@ -118,6 +128,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setUsername(data.getNewUsername());
         user.setPassword(DigestUtils.md5DigestAsHex(data.getNewPassword().getBytes()));
         userMapper.updateById(user);
+    }
+
+    // 系统是否已完成初始化
+    private boolean isSystemInit() {
+        LambdaQueryWrapper<EnvConfig> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(EnvConfig::getName, "is_system_init");
+        EnvConfig envConfig = envConfigMapper.selectOne(queryWrapper);
+        if (envConfig == null || envConfig.getValue() == null) return false;
+
+        Object value = envConfig.getValue().get("value");
+        if (value instanceof Boolean) return (Boolean) value;
+        return value != null && Boolean.parseBoolean(String.valueOf(value));
     }
 
     @Override

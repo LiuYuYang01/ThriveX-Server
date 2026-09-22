@@ -16,9 +16,8 @@ public class EditUserPassDTO {
     @NotBlank(message = "新账号不能为空")
     @Size(max = 50, message = "新账号不能超过50个字符")
     private String newUsername;
-    @ApiModelProperty(value = "旧密码", required = true)
-    @NotBlank(message = "旧密码不能为空")
-    @Size(min = 1, max = 50, message = "旧密码长度必须在1到50个字符之间")
+    @ApiModelProperty(value = "旧密码，系统初始化阶段可不填")
+    @Size(max = 50, message = "旧密码不能超过50个字符")
     private String oldPassword;
     @ApiModelProperty(value = "新密码", required = true)
     @NotBlank(message = "新密码不能为空")

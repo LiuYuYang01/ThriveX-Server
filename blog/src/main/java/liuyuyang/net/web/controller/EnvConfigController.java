@@ -7,10 +7,7 @@ import io.swagger.annotations.ApiParam;
 import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.model.EnvConfig;
-import liuyuyang.net.model.User;
 import liuyuyang.net.web.service.EnvConfigService;
-import liuyuyang.net.web.service.UserService;
-import org.springframework.util.DigestUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,8 +25,6 @@ import java.util.Map;
 public class EnvConfigController {
     @Resource
     private EnvConfigService envConfigService;
-    @Resource
-    private UserService userService;
 
     @ApiOperation("获取环境配置列表")
     @ApiOperationSupport(author = "刘宇阳 | liuyuyang1024@yeah.net", order = 1)
@@ -113,13 +108,6 @@ public class EnvConfigController {
         EnvConfig envConfig = envConfigService.getByName("is_system_init");
         if (envConfig == null) {
             return Result.error("is_system_init配置不存在");
-        }
-
-        // 管理员仍使用默认密码时禁止完成初始化，确保初始化完成即默认凭据已失效
-        User admin = userService.getById(1);
-        String defaultPasswordMd5 = DigestUtils.md5DigestAsHex("123456".getBytes());
-        if (admin != null && defaultPasswordMd5.equals(admin.getPassword())) {
-            return Result.error("管理员仍在使用默认密码，请先修改管理员账号密码后再完成初始化");
         }
 
         envConfigService.updateJsonFieldValue(envConfig.getId(), "value", true);

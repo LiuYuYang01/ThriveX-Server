@@ -20,6 +20,9 @@ public class Record extends BaseModel {
     @ApiModelProperty(value = "图片", example = "[]")
     @Size(max = 5000, message = "图片数据不能超过5000个字符", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private String images;
+    @ApiModelProperty(value = "视频", example = "https://example.com/video.mp4")
+    @Size(max = 1000, message = "视频链接不能超过1000个字符", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
+    private String video;
     @ApiModelProperty(value = "点赞数", example = "0")
     private Integer likeCount;
     @ApiModelProperty(value = "心情", example = "😊")
