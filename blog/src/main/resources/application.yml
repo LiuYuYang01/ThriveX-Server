@@ -19,14 +19,17 @@ jwt:
   # 设置前端传递过来的令牌名称
   token-name: Authorization
 
-# API文档配置（springdoc + Swagger UI：文档元数据在 OpenApiConfig 的 OpenAPI Bean 中）
+# API文档配置（springdoc + Scalar UI：文档元数据在 OpenApiConfig 的 OpenAPI Bean 中）
 springdoc:
   api-docs:
     enabled: true
     path: /v3/api-docs
-  swagger-ui:
-    enabled: true
-    path: /swagger-ui.html
+
+# Scalar 文档 UI（入口 /scalar，主题：default/moon/purple 等）
+scalar:
+  enabled: true
+  path: /scalar
+  theme: default
 
 file:
   dir: ./upload/

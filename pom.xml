@@ -85,13 +85,12 @@
                 <version>${mysql.version}</version>
             </dependency>
 
-        <!-- API 文档：knife4j 4.5.0 与 Boot 3.5 不兼容（其钉死的 springdoc 2.2.0 在 Spring 6.2 下报
-             ControllerAdviceBean NoSuchMethodError），改用 springdoc + 自带 Swagger UI -->
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>${springdoc.version}</version>
-        </dependency>
+            <!-- Scalar：更现代的文档 UI，入口 /scalar -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-scalar</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
 
             <!-- v3 版 OpenAPI 注解（@Schema/@Tag/@Operation） -->
             <dependency>

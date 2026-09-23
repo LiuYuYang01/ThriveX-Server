@@ -20,7 +20,7 @@ public class PrintConfig {
          log.info("\n----------------------------------------------------------\n\t\t" +
                         "服务已启动: 欢迎使用 ThriveX 博客管理系统 \n\t\t" +
                         "接口地址: \thttp://localhost:{}/api\n\t\t" +
-                        "API文档: \thttp://localhost:{}/swagger-ui.html\n\t\t" +
+                        "API文档: \thttp://localhost:{}/scalar\n\t\t" +
                         "加入项目交流群: liuyuyang2023\n" +
                         "----------------------------------------------------------",
                 environment.getProperty("server.port"), environment.getProperty("server.port"));

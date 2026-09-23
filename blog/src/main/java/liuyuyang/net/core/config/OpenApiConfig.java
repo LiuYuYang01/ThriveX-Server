@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * OpenAPI 文档元数据（原 knife4j yml 分组信息改由该 Bean 提供，UI 入口 /swagger-ui.html）
+ * OpenAPI 文档元数据（原 knife4j yml 分组信息改由该 Bean 提供，UI 入口 /scalar）
  */
 @Configuration
 public class OpenApiConfig {
