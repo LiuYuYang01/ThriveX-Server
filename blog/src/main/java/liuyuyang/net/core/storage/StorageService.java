@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * 文件存储统一抽象：由 {@link StorageServiceRouter} 根据 env_config 的 storage.type 分发到具体实现。
  * <p>
- * 两套实现的 key 语义保持一致：{@code root_dir + 业务相对目录 + UUID + 扩展名}，
+ * 两套实现的 key 均为 {@code 业务相对目录 + UUID + 扩展名}（七牛实现会额外拼上其配置的 root_dir 前缀），
  * 业务数据中保存的均为完整可访问 URL，切换存储方式不影响已发布内容。
  */
 public interface StorageService {

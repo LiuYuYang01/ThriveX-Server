@@ -11,8 +11,6 @@ import liuyuyang.net.vo.file.FileTreeFileVO;
 import liuyuyang.net.vo.file.FileTreeNodeVO;
 import liuyuyang.net.vo.file.FileTreeVO;
 import liuyuyang.net.web.service.EnvConfigService;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,7 +38,7 @@ import java.util.stream.Stream;
  * 服务器本地磁盘存储实现：文件落盘到 {@code file.dir}（application.yml 的 ./upload/），
  * 经 {@code /static/upload/**} 静态资源映射对外提供访问。
  * <p>
- * key 语义与七牛实现保持一致（{@code root_dir + 业务相对目录 + UUID + 扩展名}），
+ * key 为 {@code 业务相对目录 + UUID + 扩展名}，直接相对上传根目录（无额外前缀），
  * URL 为 {@code storage.domain + /static/upload/ + key}；目录占位同样使用 {@code .keep} 空文件，
  * 保证前端文件管理页在两种存储方式下行为一致。
  * <p>
@@ -68,14 +66,14 @@ public class LocalStorageService implements StorageService {
 
     @Override
     public String upload(String dir, MultipartFile file) throws IOException {
-        LocalConfig config = getConfig();
-        String key = buildObjectKey(combineStorageDir(config.getRootDir(), dir), file.getOriginalFilename());
+        String domain = getConfigDomain();
+        String key = buildObjectKey(dir, file.getOriginalFilename());
         Path target = resolveSecurePath(key);
         Files.createDirectories(target.getParent());
         try (InputStream in = file.getInputStream()) {
             Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
         }
-        return buildPublicUrl(config, key);
+        return buildPublicUrl(domain, key);
     }
 
     @Override
@@ -101,7 +99,7 @@ public class LocalStorageService implements StorageService {
         if (!Files.isRegularFile(target)) {
             throw new CustomException("文件不存在");
         }
-        LocalConfig config = getConfig();
+        String domain = getConfigDomain();
 
         FileInfoVO data = new FileInfoVO();
         data.setName(target.getFileName().toString());
@@ -116,14 +114,14 @@ public class LocalStorageService implements StorageService {
         data.setHash("");
         String mimeType = probeMimeType(target);
         data.setMimeType(mimeType);
-        data.setUrl(buildPublicUrl(config, key));
+        data.setUrl(buildPublicUrl(domain, key));
         return data;
     }
 
     @Override
     public List<FileListItemVO> listFileItems(String dir) {
-        LocalConfig config = getConfig();
-        String prefix = combineStorageDir(config.getRootDir(), dir);
+        String domain = getConfigDomain();
+        String prefix = normalizeDirPrefix(dir);
         Path target = resolveSecurePath(prefix);
         if (!Files.isDirectory(target)) {
             return new ArrayList<>();
@@ -151,14 +149,14 @@ public class LocalStorageService implements StorageService {
             if (extIndex >= 0 && extIndex < name.length() - 1) {
                 ext = name.substring(extIndex + 1).toLowerCase();
             }
-            data.setBasePath(buildPublicBasePath(config));
+            data.setBasePath(buildPublicBasePath(domain));
             data.setDir(dir);
             data.setPath(prefix + name);
             data.setName(name);
             data.setSize(sizeOf(file));
             data.setType(ext);
             data.setDate(mtimeOf(file));
-            data.setUrl(buildPublicUrl(config, prefix + name));
+            data.setUrl(buildPublicUrl(domain, prefix + name));
             result.add(data);
         }
         return result;
@@ -172,8 +170,7 @@ public class LocalStorageService implements StorageService {
      */
     @Override
     public FileTreeVO listFileTree() {
-        LocalConfig config = getConfig();
-        ensureBaseRoot(config);
+        String domain = getConfigDomain();
         Path base = baseDirPath();
         List<Path> allFiles = new ArrayList<>();
         if (Files.isDirectory(base)) {
@@ -186,7 +183,7 @@ public class LocalStorageService implements StorageService {
 
         List<FileTreeNodeVO> roots = new ArrayList<>();
         Map<String, FileTreeNodeVO> rootIndex = new LinkedHashMap<>();
-        String basePath = buildPublicBasePath(config);
+        String basePath = buildPublicBasePath(domain);
 
         for (Path file : allFiles) {
             // Windows 下 relativize 产生 \ 分隔，统一为 key 语义使用的 /
@@ -220,7 +217,7 @@ public class LocalStorageService implements StorageService {
             if (isPlaceholder) {
                 continue;
             }
-            current.getFiles().add(createFileNode(file, key, config));
+            current.getFiles().add(createFileNode(file, key, domain));
         }
 
         sortTreeNodes(roots);
@@ -238,8 +235,7 @@ public class LocalStorageService implements StorageService {
      */
     @Override
     public FileDirCreateVO createDirectory(String dir) throws IOException {
-        LocalConfig config = getConfig();
-        String normalizedDir = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), dir));
+        String normalizedDir = normalizeDirectoryPath(dir);
         Path target = resolveSecurePath(normalizedDir);
         Files.createDirectories(target);
         Path keep = target.resolve(PLACEHOLDER_FILE_NAME);
@@ -257,9 +253,8 @@ public class LocalStorageService implements StorageService {
     // 重命名目录：本地磁盘直接整目录 move，等价于七牛按前缀批量 move。
     @Override
     public FileDirRenameVO renameDirectory(String fromDir, String toDir) {
-        LocalConfig config = getConfig();
-        String fromPrefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), fromDir));
-        String toPrefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), toDir));
+        String fromPrefix = normalizeDirectoryPath(fromDir);
+        String toPrefix = normalizeDirectoryPath(toDir);
         if (Objects.equals(fromPrefix, toPrefix)) {
             throw new CustomException("新旧目录不能相同");
         }
@@ -294,8 +289,7 @@ public class LocalStorageService implements StorageService {
      */
     @Override
     public FileDirDeleteVO deleteDirectory(String dir) {
-        LocalConfig config = getConfig();
-        String prefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), dir));
+        String prefix = normalizeDirectoryPath(dir);
         Path target = resolveSecurePath(prefix);
 
         FileDirDeleteVO result = new FileDirDeleteVO();
@@ -344,28 +338,6 @@ public class LocalStorageService implements StorageService {
         return target;
     }
 
-    /**
-     * 确保上传根目录（root_dir）存在且带 {@code .keep} 占位。
-     * <p>
-     * 本地存储初始化时磁盘为空，文件树将没有任何节点，前端会因"无当前目录"而禁用新建/上传入口，
-     * 造成死锁；拉取文件树时自动补齐根目录，保证空存储下也存在唯一的根节点（与七牛 root_dir 语义一致）。
-     */
-    private void ensureBaseRoot(LocalConfig config) {
-        String rootDir = normalizeDirPrefix(config.getRootDir());
-        try {
-            Path root = rootDir.isEmpty() ? baseDirPath() : resolveSecurePath(rootDir);
-            Files.createDirectories(root);
-            if (!rootDir.isEmpty()) {
-                Path keep = root.resolve(PLACEHOLDER_FILE_NAME);
-                if (!Files.exists(keep)) {
-                    Files.createFile(keep);
-                }
-            }
-        } catch (IOException e) {
-            throw new CustomException("初始化上传根目录失败：" + e.getMessage());
-        }
-    }
-
     private Path baseDirPath() {
         return Paths.get(baseDir).toAbsolutePath().normalize();
     }
@@ -387,26 +359,6 @@ public class LocalStorageService implements StorageService {
         }
         String cleanDir = normalizeDirPrefix(dir);
         return cleanDir + UUID.randomUUID().toString().replace("-", "") + ext;
-    }
-
-    /**
-     * 将 {@code storage.root_dir} 与业务相对路径拼接为完整 key 前缀，拼接规则与七牛实现一致。
-     */
-    private String combineStorageDir(String baseDirFromConfig, String relativeDir) {
-        String base = normalizeDirPrefix(baseDirFromConfig == null ? "" : baseDirFromConfig);
-        String rel = normalizeDirPrefix(relativeDir == null ? "" : relativeDir);
-        if (rel.isEmpty()) {
-            return base;
-        }
-        if (base.isEmpty()) {
-            return rel;
-        }
-        // 兼容前端传入已含 root_dir 的完整路径，避免重复前缀
-        String baseSeg = base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
-        if (!baseSeg.isEmpty() && (rel.equals(base) || rel.startsWith(baseSeg + "/"))) {
-            return rel;
-        }
-        return base + rel;
     }
 
     // 规范化目录前缀：去掉前导 /，补齐尾部 /
@@ -456,12 +408,12 @@ public class LocalStorageService implements StorageService {
         return path.startsWith("/") ? path.substring(1) : path;
     }
 
-    private String buildPublicBasePath(LocalConfig config) {
-        return normalizeDomain(config.getDomain()) + URL_PREFIX;
+    private String buildPublicBasePath(String domain) {
+        return normalizeDomain(domain) + URL_PREFIX;
     }
 
-    private String buildPublicUrl(LocalConfig config, String key) {
-        return buildPublicBasePath(config) + key;
+    private String buildPublicUrl(String domain, String key) {
+        return buildPublicBasePath(domain) + key;
     }
 
     // 规范化域名：补协议、去尾 /
@@ -479,8 +431,8 @@ public class LocalStorageService implements StorageService {
         return value;
     }
 
-    // 从 env_config 读取并校验本地存储配置
-    private LocalConfig getConfig() {
+    // 从 env_config 读取本地存储的访问域名
+    private String getConfigDomain() {
         EnvConfig envConfig = envConfigService.getByName(CONFIG_NAME);
         if (envConfig == null || envConfig.getValue() == null) {
             throw new CustomException("未找到 storage 配置");
@@ -490,8 +442,7 @@ public class LocalStorageService implements StorageService {
         if (domain == null || domain.trim().isEmpty()) {
             throw new CustomException("storage 配置缺少字段: domain");
         }
-        String rootDir = readString(value, "root_dir");
-        return new LocalConfig(rootDir == null ? "" : rootDir.trim(), domain.trim());
+        return domain.trim();
     }
 
     private String readString(Map<String, Object> config, String key) {
@@ -538,7 +489,7 @@ public class LocalStorageService implements StorageService {
     }
 
     // 将磁盘文件转为树中的 file 节点（含 url、扩展名、父级 dir 等）；date 为修改时间的毫秒时间戳。
-    private FileTreeFileVO createFileNode(Path file, String key, LocalConfig config) {
+    private FileTreeFileVO createFileNode(Path file, String key, String domain) {
         FileTreeFileVO data = new FileTreeFileVO();
         String name = file.getFileName().toString();
         String ext = "";
@@ -548,13 +499,13 @@ public class LocalStorageService implements StorageService {
         }
         data.setType("file");
         data.setPath(key);
-        data.setBasePath(buildPublicBasePath(config));
+        data.setBasePath(buildPublicBasePath(domain));
         data.setSize(sizeOf(file));
         data.setName(name);
         data.setDir(key.contains("/") ? key.substring(0, key.lastIndexOf('/')) : "");
         data.setExt(ext);
         data.setDate(mtimeOf(file));
-        data.setUrl(buildPublicUrl(config, key));
+        data.setUrl(buildPublicUrl(domain, key));
         return data;
     }
 
@@ -599,14 +550,5 @@ public class LocalStorageService implements StorageService {
             name = clean.substring(index + 1);
         }
         return createDirNode(name, normalizedDir);
-    }
-
-    @Data
-    @AllArgsConstructor
-    private static class LocalConfig {
-        // 本地存储根目录前缀
-        private String rootDir;
-        // 本地存储访问域名
-        private String domain;
     }
 }

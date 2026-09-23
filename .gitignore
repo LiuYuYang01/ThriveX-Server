@@ -8,3 +8,5 @@ docker/backup
 
 .DS_Store
 **/.DS_Store
+# 本地存储模式的文件落盘目录
+upload/
