@@ -173,6 +173,7 @@ public class LocalStorageService implements StorageService {
     @Override
     public FileTreeVO listFileTree() {
         LocalConfig config = getConfig();
+        ensureBaseRoot(config);
         Path base = baseDirPath();
         List<Path> allFiles = new ArrayList<>();
         if (Files.isDirectory(base)) {
@@ -341,6 +342,28 @@ public class LocalStorageService implements StorageService {
             throw new CustomException("非法的文件路径");
         }
         return target;
+    }
+
+    /**
+     * 确保上传根目录（root_dir）存在且带 {@code .keep} 占位。
+     * <p>
+     * 本地存储初始化时磁盘为空，文件树将没有任何节点，前端会因"无当前目录"而禁用新建/上传入口，
+     * 造成死锁；拉取文件树时自动补齐根目录，保证空存储下也存在唯一的根节点（与七牛 root_dir 语义一致）。
+     */
+    private void ensureBaseRoot(LocalConfig config) {
+        String rootDir = normalizeDirPrefix(config.getRootDir());
+        try {
+            Path root = rootDir.isEmpty() ? baseDirPath() : resolveSecurePath(rootDir);
+            Files.createDirectories(root);
+            if (!rootDir.isEmpty()) {
+                Path keep = root.resolve(PLACEHOLDER_FILE_NAME);
+                if (!Files.exists(keep)) {
+                    Files.createFile(keep);
+                }
+            }
+        } catch (IOException e) {
+            throw new CustomException("初始化上传根目录失败：" + e.getMessage());
+        }
     }
 
     private Path baseDirPath() {
