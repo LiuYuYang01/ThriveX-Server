@@ -1,7 +1,6 @@
 package liuyuyang.net.web.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.qiniu.common.QiniuException;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -60,14 +59,14 @@ public class FileController {
     @DeleteMapping
     @Operation(summary = "删除文件")
     public Result<String> delFileData(
-            @Parameter(description = "文件 URL 或 key", required = true) @RequestParam String filePath) throws QiniuException {
+            @Parameter(description = "文件 URL 或 key", required = true) @RequestParam String filePath) {
         fileService.delFileData(filePath);
         return Result.success();
     }
 
     @DeleteMapping("/batch")
     @Operation(summary = "批量删除文件")
-    public Result<String> batchDelFileData(@RequestBody @Valid FileBatchDeleteFormDTO dto) throws QiniuException {
+    public Result<String> batchDelFileData(@RequestBody @Valid FileBatchDeleteFormDTO dto) {
         fileService.batchDelFileData(dto);
         return Result.success();
     }
@@ -75,13 +74,13 @@ public class FileController {
     @GetMapping("/info")
     @Operation(summary = "获取文件信息")
     public Result<FileInfoVO> getFileData(
-            @Parameter(description = "文件 URL 或 key", required = true) @RequestParam String filePath) throws QiniuException {
+            @Parameter(description = "文件 URL 或 key", required = true) @RequestParam String filePath) {
         return Result.success(fileService.getFileData(filePath));
     }
 
     @GetMapping("/list")
     @Operation(summary = "获取指定目录中的文件")
-    public Result<Map<String, Object>> getFileList(FileFilterDTO fileFilterDTO) throws QiniuException {
+    public Result<Map<String, Object>> getFileList(FileFilterDTO fileFilterDTO) {
         Page<FileListItemVO> list = fileService.getFileList(fileFilterDTO);
         Map<String, Object> result = Paging.filter(list);
         return Result.success(result);
@@ -89,7 +88,7 @@ public class FileController {
 
     @GetMapping("/tree")
     @Operation(summary = "获取文件目录树")
-    public Result<FileTreeVO> getFileTreeData() throws QiniuException {
+    public Result<FileTreeVO> getFileTreeData() {
         return Result.success(fileService.getFileTreeData());
     }
 
@@ -101,13 +100,13 @@ public class FileController {
 
     @PatchMapping("/dir")
     @Operation(summary = "重命名目录")
-    public Result<FileDirRenameVO> renameFileDirData(@RequestBody @Valid FileDirRenameFormDTO dto) throws QiniuException {
+    public Result<FileDirRenameVO> renameFileDirData(@RequestBody @Valid FileDirRenameFormDTO dto) {
         return Result.success(fileService.renameFileDirData(dto));
     }
 
     @DeleteMapping("/dir")
     @Operation(summary = "删除目录")
-    public Result<FileDirDeleteVO> delFileDirData(@RequestBody @Valid FileDirDeleteFormDTO dto) throws QiniuException {
+    public Result<FileDirDeleteVO> delFileDirData(@RequestBody @Valid FileDirDeleteFormDTO dto) {
         return Result.success(fileService.delFileDirData(dto));
     }
 

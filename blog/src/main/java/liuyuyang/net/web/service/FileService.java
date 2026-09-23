@@ -1,7 +1,6 @@
 package liuyuyang.net.web.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.qiniu.common.QiniuException;
 import liuyuyang.net.dto.file.FileBatchDeleteFormDTO;
 import liuyuyang.net.dto.file.FileCompressFormDTO;
 import liuyuyang.net.dto.file.FileCompressTaskQueryDTO;
@@ -26,21 +25,21 @@ import java.util.List;
 public interface FileService {
     FileUploadVO addFileData(String dir, MultipartFile[] files) throws IOException;
 
-    void delFileData(String filePath) throws QiniuException;
+    void delFileData(String filePath);
 
-    void batchDelFileData(FileBatchDeleteFormDTO dto) throws QiniuException;
+    void batchDelFileData(FileBatchDeleteFormDTO dto);
 
-    FileInfoVO getFileData(String filePath) throws QiniuException;
+    FileInfoVO getFileData(String filePath);
 
-    Page<FileListItemVO> getFileList(FileFilterDTO fileFilterDTO) throws QiniuException;
+    Page<FileListItemVO> getFileList(FileFilterDTO fileFilterDTO);
 
-    FileTreeVO getFileTreeData() throws QiniuException;
+    FileTreeVO getFileTreeData();
 
     FileDirCreateVO addFileDirData(FileDirCreateFormDTO dto) throws IOException;
 
-    FileDirRenameVO renameFileDirData(FileDirRenameFormDTO dto) throws QiniuException;
+    FileDirRenameVO renameFileDirData(FileDirRenameFormDTO dto);
 
-    FileDirDeleteVO delFileDirData(FileDirDeleteFormDTO dto) throws QiniuException;
+    FileDirDeleteVO delFileDirData(FileDirDeleteFormDTO dto);
 
     FileCompressVO compressFileData(FileCompressFormDTO dto);
 

@@ -38,6 +38,7 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
         DEFAULT_CONFIGS.put("gaode_map_key", new String[]{"{\"key_code\": \"\", \"security_code\": \"\"}", "高德地图配置"});
         DEFAULT_CONFIGS.put("gaode_coordinate", new String[]{"{\"key\": \"xxx\"}", "高德地图坐标配置"});
         DEFAULT_CONFIGS.put("qiniu_storage", new String[]{"{\"domain\": \"\", \"zlevel\": 1, \"root_dir\": \"static\", \"end_point\": \"\", \"access_key\": \"\", \"secret_key\": \"\", \"bucket_name\": \"\"}", "七牛云存储"});
+        DEFAULT_CONFIGS.put("storage", new String[]{"{\"type\": \"local\", \"domain\": \"\", \"root_dir\": \"\"}", "文件存储方式：type 为 local/qiniu，domain 为本地存储的访问域名"});
         DEFAULT_CONFIGS.put("baidu_statis_key", new String[]{"{\"key\": \"\"}", "A 百度统计：在前端获取该配置来激活统计功能"});
         DEFAULT_CONFIGS.put("hcaptcha_key", new String[]{"{\"key\": \"\"}", "人机验证配置"});
         DEFAULT_CONFIGS.put("is_system_init", new String[]{"{\"value\": false}", "系统是否初始化"});
@@ -53,9 +54,14 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
             DEFAULT_CONFIGS.forEach((name, config) -> {
                 if (existing.containsKey(name)) return;
                 try {
+                    String valueJson = config[0];
+                    // 老用户（已配置七牛 AK）自动保持七牛存储，避免升级后被切到本地存储
+                    if ("storage".equals(name) && hasConfiguredQiniu(existing.get("qiniu_storage"))) {
+                        valueJson = "{\"type\": \"qiniu\", \"domain\": \"\", \"root_dir\": \"\"}";
+                    }
                     EnvConfig envConfig = new EnvConfig();
                     envConfig.setName(name);
-                    envConfig.setValue(mapper.readValue(config[0], new TypeReference<Map<String, Object>>() {
+                    envConfig.setValue(mapper.readValue(valueJson, new TypeReference<Map<String, Object>>() {
                     }));
                     envConfig.setNotes(config[1]);
                     this.save(envConfig);
@@ -67,6 +73,13 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
         } catch (Exception e) {
             log.error("自动补齐默认环境配置失败", e);
         }
+    }
+
+    // 判断七牛配置是否已填写过 AK（视为老用户已启用七牛存储）
+    private boolean hasConfiguredQiniu(EnvConfig qiniuConfig) {
+        return qiniuConfig != null && qiniuConfig.getValue() != null
+                && qiniuConfig.getValue().get("access_key") instanceof String accessKey
+                && !accessKey.isBlank();
     }
 
     @Override
