@@ -68,9 +68,8 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
 
         RecordComment comment = new RecordComment();
         BeanUtils.copyProperties(recordCommentFormDTO, comment);
-        if (comment.getStatus() == null) {
-            comment.setStatus(0);
-        }
+        // 匿名提交一律置为待审核，请求体中的 status 不生效
+        comment.setStatus(0);
         recordCommentMapper.insert(comment);
 
         sendCommentEmail(comment);

@@ -66,7 +66,6 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
 
         // 校验令牌
         try {
-            log.info("jwt校验：{}", token);
             if (token == null || token.trim().isEmpty()) {
                 throw new CustomException(401, "请先登录");
             }

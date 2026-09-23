@@ -51,6 +51,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     public void addCommentData(CommentFormDTO commentFormDTO) throws Exception {
         Comment comment = new Comment();
         BeanUtils.copyProperties(commentFormDTO, comment);
+        // 匿名提交一律置为待审核，请求体中的 status 不生效
+        comment.setStatus(0);
         commentMapper.insert(comment);
 
         // 文章标题
@@ -175,7 +177,15 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 
     private List<Comment> queryFlatComments(CommentFilterDTO commentFilterDTO) {
         QueryWrapper<Comment> queryWrapper = commonUtils.queryWrapperDateFilter(commentFilterDTO);
-        queryWrapper.eq("status", commentFilterDTO.getStatus());
+        if (commonUtils.isAdmin()) {
+            // 管理员可按状态筛选，不传则查看全部
+            if (commentFilterDTO.getStatus() != null) {
+                queryWrapper.eq("status", commentFilterDTO.getStatus());
+            }
+        } else {
+            // 非管理员强制只看已审核，防止翻看待审核内容
+            queryWrapper.eq("status", 1);
+        }
 
         if (commentFilterDTO.getContent() != null) {
             queryWrapper.like("content", "%" + commentFilterDTO.getContent() + "%");

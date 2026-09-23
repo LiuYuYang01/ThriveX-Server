@@ -85,6 +85,8 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
             Integer isAdmin = linkTypeMapper.selectById(link.getTypeId()).getIsAdmin();
             if (isAdmin == 1)
                 throw new CustomException("该类型需要管理员权限才能添加");
+            // 匿名提交一律置为待审核，请求体中的 status 不生效
+            link.setStatus(LinkStatusEnum.PENDING);
             linkMapper.insert(link);
 
             sendLinkNotifyEmail(link);

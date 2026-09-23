@@ -94,9 +94,9 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
 
         Wall wall = new Wall();
         BeanUtils.copyProperties(wallFormDTO, wall);
-        if (wall.getStatus() == null) {
-            wall.setStatus(WallAuditStatusEnum.PENDING);
-        }
+        // 匿名提交一律待审核且非精选，请求体中的 status/isChoice 不生效
+        wall.setStatus(WallAuditStatusEnum.PENDING);
+        wall.setIsChoice(0);
         wallMapper.insert(wall);
         sendWallNotifyEmail(wall);
     }
@@ -137,7 +137,8 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
 
     private List<Wall> queryWallList(WallFilterDTO wallFilterDTO) {
         QueryWrapper<Wall> queryWrapper = commonUtils.queryWrapperDateFilter(wallFilterDTO);
-        WallAuditStatusEnum status = wallFilterDTO.getStatus() != null
+        // 非管理员强制只看已审核，防止翻看待审核内容
+        WallAuditStatusEnum status = commonUtils.isAdmin() && wallFilterDTO.getStatus() != null
                 ? wallFilterDTO.getStatus()
                 : WallAuditStatusEnum.APPROVED;
         queryWrapper.eq("status", status.getValue());
