@@ -17,12 +17,17 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @Transactional
 public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig> implements EnvConfigService {
+
+    // 接口响应中敏感字段的掩码值，写入时据此还原为库中原值
+    public static final String SECRET_MASK = "******";
+    private static final Set<String> SECRET_FIELDS = Set.of("password", "secret_key", "access_key", "access_token");
 
     // 默认环境配置：name -> [valueJson, notes]，与 ThriveX.sql 保持一致
     private static final Map<String, String[]> DEFAULT_CONFIGS = new LinkedHashMap<>();
@@ -88,11 +93,17 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
     @Override
     public boolean updateJsonValue(Integer id, Map<String, Object> jsonValue) {
         EnvConfig envConfig = this.getById(id);
-        if (envConfig != null) {
-            envConfig.setValue(jsonValue);
-            return this.updateById(envConfig);
+        if (envConfig == null) {
+            return false;
         }
-        return false;
+        // 前端提交整包配置时，掩码字段还原为库中原值
+        Map<String, Object> stored = envConfig.getValue();
+        if (stored != null) {
+            jsonValue.replaceAll((key, value) ->
+                    SECRET_MASK.equals(value) && stored.containsKey(key) ? stored.get(key) : value);
+        }
+        envConfig.setValue(jsonValue);
+        return this.updateById(envConfig);
     }
 
     @Override
@@ -107,16 +118,32 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
     @Override
     public boolean updateJsonFieldValue(Integer id, String fieldName, Object value) {
         EnvConfig envConfig = this.getById(id);
-        if (envConfig != null) {
-            Map<String, Object> jsonValue = envConfig.getValue();
-            if (jsonValue == null) {
-                jsonValue = new HashMap<>();
-            }
-            jsonValue.put(fieldName, value);
-            envConfig.setValue(jsonValue);
-            return this.updateById(envConfig);
+        if (envConfig == null) {
+            return false;
         }
-        return false;
+        // 掩码值视为未修改，跳过写入
+        if (SECRET_MASK.equals(value)) {
+            return true;
+        }
+        Map<String, Object> jsonValue = envConfig.getValue();
+        if (jsonValue == null) {
+            jsonValue = new HashMap<>();
+        }
+        jsonValue.put(fieldName, value);
+        envConfig.setValue(jsonValue);
+        return this.updateById(envConfig);
+    }
+
+    @Override
+    public EnvConfig maskSecrets(EnvConfig config) {
+        if (config == null || config.getValue() == null) {
+            return config;
+        }
+        Map<String, Object> masked = new LinkedHashMap<>(config.getValue());
+        masked.replaceAll((key, value) ->
+                SECRET_FIELDS.contains(key) && value instanceof String s && !s.isBlank() ? SECRET_MASK : value);
+        config.setValue(masked);
+        return config;
     }
 
     @Override

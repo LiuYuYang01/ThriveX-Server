@@ -39,4 +39,9 @@ public interface EnvConfigService {
      * 获取公开的配置
      */
     Map<String, Object> getPublicConfig();
+
+    /**
+     * 脱敏配置值中的敏感字段，用于接口响应；原值仅保存在服务端
+     */
+    EnvConfig maskSecrets(EnvConfig config);
 } 

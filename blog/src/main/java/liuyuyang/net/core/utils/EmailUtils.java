@@ -34,7 +34,6 @@ public class EmailUtils {
 
         try {
             Map<String, Object> config = getEmailConfig();
-            System.out.println("邮件配置: " + config);
 
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 

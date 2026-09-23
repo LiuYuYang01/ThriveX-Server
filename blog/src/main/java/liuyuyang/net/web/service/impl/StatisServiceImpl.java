@@ -65,7 +65,6 @@ public class StatisServiceImpl implements StatisService {
             }
 
             String url = urlBuilder.toString();
-            log.info("调用{}API，URL: {}", apiName, url);
 
             // 发起请求
             String response = webClient.get()

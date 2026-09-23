@@ -28,7 +28,9 @@ public class EnvConfigController {
     @Operation(summary = "获取环境配置列表")
     @GetMapping("/list")
     public Result<List<EnvConfig>> list() {
-        List<EnvConfig> data = envConfigService.list();
+        List<EnvConfig> data = envConfigService.list().stream()
+                .map(envConfigService::maskSecrets)
+                .toList();
         return Result.success("获取成功", data);
     }
 
@@ -36,7 +38,7 @@ public class EnvConfigController {
     @GetMapping("/{id}")
     public Result<EnvConfig> getById(
             @Parameter(description = "环境配置ID", required = true, example = "1") @PathVariable Integer id) {
-        EnvConfig envConfig = envConfigService.getById(id);
+        EnvConfig envConfig = envConfigService.maskSecrets(envConfigService.getById(id));
         return envConfig != null ? Result.success("获取成功", envConfig) : Result.error("配置不存在");
     }
 
@@ -44,7 +46,7 @@ public class EnvConfigController {
     @GetMapping("/name/{name}")
     public Result<EnvConfig> getByName(
             @Parameter(description = "配置名称", required = true, example = "database_config") @PathVariable String name) {
-        EnvConfig envConfig = envConfigService.getByName(name);
+        EnvConfig envConfig = envConfigService.maskSecrets(envConfigService.getByName(name));
         return envConfig != null ? Result.success("获取成功", envConfig) : Result.error("配置不存在");
     }
 
