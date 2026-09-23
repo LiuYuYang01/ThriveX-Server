@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.web.service.impl.StatisServiceImpl;
 import lombok.extern.slf4j.Slf4j;
@@ -67,9 +68,13 @@ public class StatisController {
 
             return Result.success(successMsg, data);
 
+        } catch (CustomException e) {
+            // 业务提示（如 token 失效）不含内部细节，可直接返回
+            return Result.error(600, e.getMessage());
         } catch (Exception e) {
+            // 内部异常细节只进日志，不回显给客户端
             log.error("获取{}类型统计数据失败", type, e);
-            return Result.error(600, "获取" + type + "类型统计数据失败: " + e.getMessage());
+            return Result.error(600, "获取" + type + "类型统计数据失败");
         }
     }
 }

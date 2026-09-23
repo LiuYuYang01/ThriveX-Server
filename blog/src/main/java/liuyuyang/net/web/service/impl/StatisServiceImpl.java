@@ -86,9 +86,12 @@ public class StatisServiceImpl implements StatisService {
                 log.info("{}API调用成功", apiName);
                 return jsonNode;
             }
+        } catch (CustomException e) {
+            throw e;
         } catch (Exception e) {
+            // 底层异常（如 WebClient 报错）可能含带 access_token 的完整 URL，不能直接透传
             log.error("调用{}API失败", apiName, e);
-            throw new CustomException(e.getMessage());
+            throw new CustomException("调用百度统计接口失败，请稍后再试");
         }
 
         return null;
