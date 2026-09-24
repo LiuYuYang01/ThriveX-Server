@@ -34,7 +34,8 @@ CREATE TABLE `article` (
   `share_count` int NOT NULL DEFAULT '0' COMMENT '分享数',
   `is_top` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否置顶',
   `create_time` bigint DEFAULT NULL COMMENT '文章创建时间',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  FULLTEXT KEY `ft_article_title` (`title`) WITH PARSER ngram
 ) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -417,7 +418,8 @@ CREATE TABLE `record` (
   `location` varchar(255) DEFAULT NULL COMMENT '位置',
   `create_time` bigint NOT NULL COMMENT '时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `record_pk_2` (`id`)
+  UNIQUE KEY `record_pk_2` (`id`),
+  FULLTEXT KEY `ft_record_content` (`content`) WITH PARSER ngram
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
