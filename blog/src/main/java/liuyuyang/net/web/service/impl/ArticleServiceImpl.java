@@ -67,7 +67,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @NotNull
     private static LambdaQueryWrapper<Article> getArticleQueryWrapper(ArticleFilterDTO articleFilterDTO) {
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.orderByDesc(Article::getCreateTime);
+        queryWrapper.orderByDesc(Article::getIsTop).orderByDesc(Article::getCreateTime);
 
         // 根据关键字通过标题过滤出对应文章数据
         if (articleFilterDTO.getTitle() != null && !articleFilterDTO.getTitle().isEmpty()) {
@@ -222,6 +222,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 修改文章
         articleMapper.updateById(article);
+    }
+
+    @Override
+    public void topArticleData(Integer id, Boolean isTop) {
+        Article article = articleMapper.selectById(id);
+        if (article == null)
+            throw new CustomException("该文章不存在");
+
+        Article update = new Article();
+        update.setId(id);
+        update.setIsTop(isTop);
+        articleMapper.updateById(update);
     }
 
     @Override
@@ -408,6 +420,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         // 构建文章查询条件
         LambdaQueryWrapper<Article> queryWrapperArticle = new LambdaQueryWrapper<Article>()
                 .in(Article::getId, articleIds)
+                .orderByDesc(Article::getIsTop)
                 .orderByDesc(Article::getCreateTime);
 
         List<Article> articles = articleMapper.selectList(queryWrapperArticle);
@@ -443,7 +456,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 构建文章查询条件
         LambdaQueryWrapper<Article> queryWrapperArticle = new LambdaQueryWrapper<>();
-        queryWrapperArticle.in(Article::getId, articleIds).orderByDesc(Article::getCreateTime);
+        queryWrapperArticle.in(Article::getId, articleIds)
+                .orderByDesc(Article::getIsTop)
+                .orderByDesc(Article::getCreateTime);
 
         List<Article> articles = articleMapper.selectList(queryWrapperArticle);
         List<ArticleVO> vos = processArticleList(articles);

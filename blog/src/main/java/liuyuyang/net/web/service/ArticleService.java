@@ -25,6 +25,8 @@ public interface ArticleService extends IService<Article> {
 
     void editArticleData(ArticleFormDTO articleFormDTO);
 
+    void topArticleData(Integer id, Boolean isTop);
+
     ArticleVO getArticleData(Integer id, String password);
 
     List<ArticleVO> processArticleData(ArticleFilterDTO articleFilterDTO);
