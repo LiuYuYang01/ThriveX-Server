@@ -735,3 +735,27 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2026-07-20 13:41:35
+
+--
+-- 数据库备份记录表（增量：数据库备份功能）
+-- 已有部署请单独执行下面这条建表语句
+--
+
+CREATE TABLE `backup_record` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `type` varchar(20) NOT NULL DEFAULT 'manual' COMMENT '备份类型：manual手动/scheduled定时（预留）',
+  `format` varchar(10) NOT NULL DEFAULT 'json' COMMENT '导出格式：json/sql（预留）',
+  `file_name` varchar(255) NOT NULL COMMENT '备份文件名',
+  `size` bigint DEFAULT NULL COMMENT '文件大小（字节）',
+  `checksum` varchar(64) DEFAULT NULL COMMENT '文件SHA-256校验值',
+  `storage` varchar(20) NOT NULL DEFAULT 'local' COMMENT '存储位置：local本盘/第三方对象存储（预留）',
+  `storage_key` varchar(500) NOT NULL COMMENT '存储key（本地为文件名）',
+  `status` varchar(20) NOT NULL COMMENT '状态：running进行中/success成功/failed失败',
+  `table_count` int DEFAULT NULL COMMENT '导出表数量',
+  `row_total` bigint DEFAULT NULL COMMENT '导出总行数',
+  `table_stats` json DEFAULT NULL COMMENT '各表行数统计',
+  `duration_ms` bigint DEFAULT NULL COMMENT '耗时（毫秒）',
+  `error` varchar(1000) DEFAULT NULL COMMENT '失败原因',
+  `create_time` bigint NOT NULL COMMENT '创建时间（毫秒时间戳）',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='数据库备份记录';

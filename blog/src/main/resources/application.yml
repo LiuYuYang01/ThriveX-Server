@@ -34,6 +34,10 @@ scalar:
 file:
   dir: ./upload/
 
+# 数据库备份文件目录（本地存储实现；Docker/宝塔/1Panel 部署可用 BACKUP_DIR 环境变量重定向）
+backup:
+  dir: ${BACKUP_DIR:./backup}
+
 # 使用 @EnumValue 与数据库整型互转（否则默认按枚举名映射会报错）
 mybatis-plus:
   configuration:

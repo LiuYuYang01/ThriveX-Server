@@ -100,6 +100,38 @@ http://服务器IP:9003/static/upload/文件名
 - 图片瘦身（压缩）仅在七牛云存储模式下可用，本地存储模式下入口会自动禁用
 - 数据备份时请连同 `thrivex-upload` 卷一起备份
 
+## 备份目录（数据库备份功能）
+
+后台「数据库备份」导出的 JSON 文件默认保存在后端进程工作目录的 `backup/` 下。**容器部署必须挂载卷**，否则重建容器（`docker rm -f` + 重新构建）会丢失全部备份文件。
+
+### Docker run 部署
+
+```powershell
+docker run -d --name thrivex-server -p 9003:9003 -v thrivex-upload:/app/upload -v thrivex-backup:/app/backup -e DB_INFO=你的数据库地址:3306/ThriveX -e DB_USERNAME=你的数据库账号 -e DB_PASSWORD=你的数据库密码 thrivex-server
+```
+
+### Docker Compose / 1Panel 部署
+
+在服务的 `volumes` 下增加一行（1Panel 中可在容器编排的 compose 文件里直接加）：
+
+```yaml
+services:
+  thrivex-server:
+    volumes:
+      - thrivex-upload:/app/upload
+      - thrivex-backup:/app/backup
+    environment:
+      - BACKUP_DIR=/app/backup   # 缺省即为 ./backup，一般无需设置
+```
+
+### 宝塔面板（Java 项目管理器直跑 jar）
+
+备份文件落在 Java 项目「工作目录」下的 `backup/` 子目录（如 `/www/wwwroot/thrivex/backup`）。如需放到其他磁盘位置，在项目的环境变量中配置 `BACKUP_DIR=/绝对路径` 即可，无需改动代码。该目录是普通固定目录，可直接纳入宝塔「计划任务 - 备份目录」做二次保护。
+
+### 数据库在远程服务器
+
+备份通过应用现有的数据库连接（`DB_INFO`）远程读取数据，文件只落在**后端服务器**本地，数据库服务器无需安装任何工具或修改任何配置。
+
 ## 访问接口
 
 本地访问：
