@@ -13,6 +13,7 @@ import liuyuyang.net.dto.wall.WallFormDTO;
 import liuyuyang.net.model.WallCate;
 import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.wall.WallVO;
+import liuyuyang.net.web.service.CaptchaService;
 import liuyuyang.net.web.service.WallService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -31,12 +32,15 @@ import java.util.Map;
 public class WallController {
     @Resource
     private WallService wallService;
+    @Resource
+    private CaptchaService captchaService;
 
     @NoTokenRequired
     @RateLimit
     @PostMapping
     @Operation(summary = "新增留言")
     public Result<String> addWallData(@RequestBody @Validated(ValidationGroups.Create.class) WallFormDTO wallFormDTO) throws Exception {
+        captchaService.check(wallFormDTO.getCaptchaToken());
         wallFormDTO.setId(null);
         wallService.addWallData(wallFormDTO);
         return Result.success();

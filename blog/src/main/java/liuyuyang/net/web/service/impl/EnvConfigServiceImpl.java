@@ -27,7 +27,7 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
 
     // 接口响应中敏感字段的掩码值，写入时据此还原为库中原值
     public static final String SECRET_MASK = "******";
-    private static final Set<String> SECRET_FIELDS = Set.of("password", "secret_key", "access_key", "access_token");
+    private static final Set<String> SECRET_FIELDS = Set.of("password", "secret_key", "access_key", "access_token", "secret");
 
     // 默认环境配置：name -> [valueJson, notes]，与 ThriveX.sql 保持一致
     private static final Map<String, String[]> DEFAULT_CONFIGS = new LinkedHashMap<>();
@@ -40,7 +40,7 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
         DEFAULT_CONFIGS.put("qiniu_storage", new String[]{"{\"domain\": \"\", \"zlevel\": 1, \"root_dir\": \"static\", \"end_point\": \"\", \"access_key\": \"\", \"secret_key\": \"\", \"bucket_name\": \"\"}", "七牛云存储"});
         DEFAULT_CONFIGS.put("storage", new String[]{"{\"type\": \"local\", \"domain\": \"\"}", "文件存储方式：type 为 local/qiniu，domain 为本地存储的访问域名"});
         DEFAULT_CONFIGS.put("baidu_statis_key", new String[]{"{\"key\": \"\"}", "A 百度统计：在前端获取该配置来激活统计功能"});
-        DEFAULT_CONFIGS.put("hcaptcha_key", new String[]{"{\"key\": \"\"}", "人机验证配置"});
+        DEFAULT_CONFIGS.put("hcaptcha_key", new String[]{"{\"key\": \"\", \"secret\": \"\", \"enabled\": false}", "人机验证配置：enabled 为功能开关，key 为站点密钥（公钥），secret 为服务端校验密钥（私钥），开启后登录/评论等接口强制人机验证"});
         DEFAULT_CONFIGS.put("is_system_init", new String[]{"{\"value\": false}", "系统是否初始化"});
     }
 
@@ -161,13 +161,21 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
 
     @Override
     public Map<String, Object> getPublicConfig() {
+        // 白名单式公开：只下发本来就是给前端用的配置（key 类公钥、高德地图密钥）
         Map<String, Object> data = new HashMap<>(3);
         EnvConfig baidu = this.getByName("baidu_statis_key");
         EnvConfig hcaptcha = this.getByName("hcaptcha_key");
-        EnvConfig gaodeMap = this.getByName("gaode_map_kay");
+        EnvConfig gaodeMap = this.getByName("gaode_map_key");
         data.put("baidu_statis_key", baidu != null ? baidu.getValue() : null);
-        data.put("hcaptcha_key", hcaptcha != null ? hcaptcha.getValue() : null);
-        data.put("gaode_map_kay", gaodeMap != null ? gaodeMap.getValue() : null);
+        // hcaptcha 的 secret 是服务端私钥，绝不能下发给前端，这里只暴露站点密钥 key
+        // 开关关闭时不下发，前端据此不渲染验证码组件
+        if (CaptchaServiceImpl.isEnabled(hcaptcha)) {
+            Object sitekey = hcaptcha.getValue().get("key");
+            data.put("hcaptcha_key", Map.of("key", sitekey instanceof String s ? s : ""));
+        } else {
+            data.put("hcaptcha_key", null);
+        }
+        data.put("gaode_map_key", gaodeMap != null ? gaodeMap.getValue() : null);
         return data;
     }
 } 

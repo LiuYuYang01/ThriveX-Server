@@ -249,7 +249,7 @@ CREATE TABLE `env_config` (
 
 LOCK TABLES `env_config` WRITE;
 /*!40000 ALTER TABLE `env_config` DISABLE KEYS */;
-INSERT INTO `env_config` VALUES (1,'baidu_statis','{\"site_id\": 17256142, \"access_token\": \"\"}','B 百度统计：在控制端首页显示网站数据'),(2,'email','{\"host\": \"smtp.qq.com\", \"port\": 465, \"password\": \"123\", \"username\": \"xxx@qq.com\"}','邮件发送配置'),(3,'gaode_map_key','{\"key_code\": \"\", \"security_code\": \"\"}','高德地图配置'),(4,'gaode_coordinate','{\"key\": \"xxx\"}','高德地图坐标配置'),(5,'qiniu_storage','{\"domain\": \"\", \"zlevel\": 1, \"root_dir\": \"static\", \"end_point\": \"\", \"access_key\": \"\", \"secret_key\": \"\", \"bucket_name\": \"\"}','七牛云存储'),(6,'baidu_statis_key','{\"key\": \"\"}','A 百度统计：在前端获取该配置来激活统计功能'),(7,'hcaptcha_key','{\"key\": \"\"}','人机验证配置'),(8,'is_system_init','{\"value\": false}','系统是否初始化'),(9,'storage','{\"type\": \"local\", \"domain\": \"\"}','文件存储方式：type 为 local/qiniu，domain 为本地存储的访问域名');
+INSERT INTO `env_config` VALUES (1,'baidu_statis','{\"site_id\": 17256142, \"access_token\": \"\"}','B 百度统计：在控制端首页显示网站数据'),(2,'email','{\"host\": \"smtp.qq.com\", \"port\": 465, \"password\": \"123\", \"username\": \"xxx@qq.com\"}','邮件发送配置'),(3,'gaode_map_key','{\"key_code\": \"\", \"security_code\": \"\"}','高德地图配置'),(4,'gaode_coordinate','{\"key\": \"xxx\"}','高德地图坐标配置'),(5,'qiniu_storage','{\"domain\": \"\", \"zlevel\": 1, \"root_dir\": \"static\", \"end_point\": \"\", \"access_key\": \"\", \"secret_key\": \"\", \"bucket_name\": \"\"}','七牛云存储'),(6,'baidu_statis_key','{\"key\": \"\"}','A 百度统计：在前端获取该配置来激活统计功能'),(7,'hcaptcha_key','{\"key\": \"\", \"secret\": \"\", \"enabled\": false}','人机验证配置：enabled 为功能开关，key 为站点密钥（公钥），secret 为服务端校验密钥（私钥），开启后登录/评论等接口强制人机验证'),(8,'is_system_init','{\"value\": false}','系统是否初始化'),(9,'storage','{\"type\": \"local\", \"domain\": \"\"}','文件存储方式：type 为 local/qiniu，domain 为本地存储的访问域名');
 /*!40000 ALTER TABLE `env_config` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -371,6 +371,32 @@ LOCK TABLES `milestone` WRITE;
 INSERT INTO `milestone` VALUES (7,'开启自学编程之路',NULL,'https://res.liuyuyang.net/thrive/milestone/d1130c87c70e493389f49d94e98aa790.jpg','[\"学习\", \"HTML\"]',1548864000000),(8,'个人博客网站诞生','使用的 WordPress 系统，忘记哪个主题了','https://res.liuyuyang.net/thrive/article/c96bce5748cd4e97b088f68cb380b4f8.png','[\"博客\", \"网站\"]',1547568000000),(9,'江苏和兴汽车科技有限公司','17 岁背井离乡来到了离家 500 公里的江苏淮安打工','https://res.liuyuyang.net/thrive/milestone/71479770311a441fb6139633a60fd326.jpg','[\"打工\", \"电子厂\"]',1599926400000),(11,'凌晨 3 点的街道','为了买台属于自己的电脑，趁着疫情延缓开学找了份临时工，在郑州方团结胡辣汤，每天工作内容是熬汤、包包子、刷锅刷碗，凌晨 3 点工作到中午 12 点，当时每个月才 2200 块钱','https://res.liuyuyang.net/thrive/milestone/cd6d9792f17d4aaf98169560e1f022ca.jpg','[\"郑州\", \"胡辣汤\", \"方团结\", \"临时工\"]',1595347200000),(12,'jQuery 搞定!','跟着 Pink 老师学的','https://res.liuyuyang.net/thrive/milestone/77ca014da38a4833b7b23dbc690ee147.jpg','[\"Pink 老师\", \"jQuery\"]',1591977600000),(13,'域名 liuyuyang.net 备案成功','终于有了属于自己的顶级域名','https://res.liuyuyang.net/thrive/milestone/4657016a5e79469194d8111b29139ac6.jpg','[]',1603814400000),(14,'你好 Python','	虽然我是前端，但我现在越来越喜欢后端这个领域了','https://res.liuyuyang.net/thrive/usr/uploads/2023/04/681224643.png','[]',1682611200000),(15,'报名上海计算机大赛','希望可以拿个不错的每次','https://res.liuyuyang.net/thrive/usr/uploads/2023/06/8b42e5b40b711c06e0cedf775994fe8.jpg','[]',1671724800000),(16,'报名 IT 培训机构','报名传智专修学院是我人生中最后悔的决定','https://res.liuyuyang.net/thrive/milestone/6fcb709769ed44dcba6a7d85a0200e17.jpg','[]',1633190400000),(17,'离职复学',NULL,'https://res.liuyuyang.net/thrive/milestone/d55392bdd1e14e4da63d061cac52594e.jpg','[]',1628611200000),(18,'一战成名','月考满分，经此一战，名声大震，成为了班级的焦点','https://res.liuyuyang.net/thrive/milestone/5e7878beb2c8407fbccec8791600dc25.jpeg','[]',1638979200000),(19,'Thrive 1.0 正式发布','技术栈 Vue3 + Python Flask','https://res.liuyuyang.net/thrive/milestone/0202ee14025241289219ce367a91867e.png','[]',1670601600000),(20,'上海市计算机大赛三等奖','上海市第十五届计算机应用能力大赛三等奖，拿捏','https://res.liuyuyang.net/thrive/milestone/619c0451b772438f82053db94eae264c.png','[]',1684771200000),(21,'ThriveX 2.0 发布','这是一次规模较大的升级，前端技术栈从 Vue3 转变为了 NextJS，后端从 Flask 转变为了 Spring Boot','https://res.liuyuyang.net/thrive/milestone/c5453b9e219f461b9e1e684abbe583e7.png','[]',1728489600000),(22,'ThriveX 3.0 发布','这个版本发布后被知名大佬阮一峰老师推荐了，吸引了大量粉丝 😁','https://res.liuyuyang.net/thrive/milestone/ffdd6b1ee1c34b70b772b9303a42ecb3.jpg','[]',1749916800000),(23,'小有所成','我的参赛项目，主题为：云上校园','https://res.liuyuyang.net/thrive/milestone/ecd51226ea3f41979987ea13625f63d6.png','[]',1672761600000),(24,'ThriveX 4.0 发布','又是一波大规模更新','https://res.liuyuyang.net/thrive/milestone/d8d42d8db1614c86a61c8dc822f6fb30.jpg','[]',1782489600000),(25,'正式换上了自己的博客系统',NULL,'https://res.liuyuyang.net/thrive/article/074038120e3246bc9f15c8082ce79de9.png','[]',1728489600000),(26,'还是轻薄本好用','兜兜转转还是换回了轻薄本','https://res.liuyuyang.net/thrive/milestone/e0723c46a0b84ae4ab454d3176c407f8.jpg','[]',1703174400000),(27,'第一台电脑','人生中第一台电脑：联想小新 14','https://res.liuyuyang.net/thrive/milestone/5b637b8974be4d9cbcee8fbc3039a412.jpeg','[]',1597420800000),(28,'第一次坐飞机','从上海飞往成都的航班','https://res.liuyuyang.net/thrive/record/f1b9fd69b04ed28d0803cc9b40c79e86.jpg','[]',1715875200000),(29,'传智毕业',NULL,'https://res.liuyuyang.net/thrive/record/6860dffa60b234e60ba1b487.jpg','[]',1718812800000),(30,'ThriveX 官网发布',NULL,'https://res.liuyuyang.net/thrive/record/539f02be2bbf6ac47b5663c7a649b34b.jpg','[]',1734019200000),(31,'软件著作权拿下','终于办下来了，也是有版权的人了 🎉','https://res.liuyuyang.net/thrive/record/680620ba60b25e33e3232263.jpg','[]',1745164800000),(32,'	 第一次喝星巴克','	第一次喝星巴克，同事送的，针不戳','https://res.liuyuyang.net/thrive/record/684e8f8560b21d998925898f.jpg','[]',1749744000000),(33,'3333 次 Commit','记录此刻，GitHub 3333 次 Commit 记录\n\n','https://res.liuyuyang.net/thrive/record/6871029860b24174ce20ff00.png','[]',1752163200000),(34,'又收获一堆粉丝',NULL,'https://res.liuyuyang.net/thrive/record/1ab4837af2d94b13978ffb66bd304d69.jpg?imageslim/zlevel/1','[]',1781280000000);
 /*!40000 ALTER TABLE `milestone` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `operation_log`
+--
+
+DROP TABLE IF EXISTS `operation_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `operation_log` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `module` varchar(50) DEFAULT NULL COMMENT '操作模块',
+  `type` varchar(20) DEFAULT NULL COMMENT '操作类型',
+  `description` varchar(255) DEFAULT NULL COMMENT '操作描述',
+  `username` varchar(50) DEFAULT NULL COMMENT '操作人',
+  `method` varchar(10) DEFAULT NULL COMMENT '请求方式',
+  `url` varchar(255) DEFAULT NULL COMMENT '请求地址',
+  `ip` varchar(50) DEFAULT NULL COMMENT '操作IP',
+  `params` text COMMENT '请求参数（敏感字段已脱敏）',
+  `status` int DEFAULT '1' COMMENT '操作状态：1 成功，0 失败',
+  `error_msg` text COMMENT '失败时的错误信息',
+  `elapsed` int DEFAULT '0' COMMENT '耗时（毫秒）',
+  `create_time` bigint DEFAULT NULL COMMENT '操作时间（毫秒时间戳）',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `page_config`
