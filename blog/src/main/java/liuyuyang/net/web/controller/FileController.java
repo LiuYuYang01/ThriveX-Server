@@ -117,10 +117,8 @@ public class FileController {
 
     @GetMapping("/cleanup/scan")
     @Operation(summary = "扫描未被引用的文件")
-    public Result<FileCleanupScanVO> scanUnreferencedFiles(
-            @Parameter(description = "保护期天数：最近 N 天内上传的文件不参与清理，0 表示不保护")
-            @RequestParam(required = false, defaultValue = "7") Integer days) {
-        return Result.success(fileCleanupService.scan(days));
+    public Result<FileCleanupScanVO> scanUnreferencedFiles() {
+        return Result.success(fileCleanupService.scan());
     }
 
     @PostMapping("/compress")

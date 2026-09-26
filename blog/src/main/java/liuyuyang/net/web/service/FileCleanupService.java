@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
  * 形态保存、无论存储域名如何变更，文件名都会原样出现在引用文本里，按文件名 containment 判定
  * 无需解析 URL。该方向的误判只会把“已引用”误判为“已引用”（多保护），不会误删。
  * <p>
- * 已知盲区：仅存在于前端本地草稿中的图片引用后端不可见，靠保护期（days 参数）兜底；
+ * 已知盲区：仅存在于前端本地草稿中的图片引用后端不可见，扫描结果需人工核对；
  * 手工放到存储里的非 UUID 命名文件（如含中文/空格）可能无法被 token 匹配保护，扫描结果中可人工勾掉。
  */
 @Slf4j
@@ -50,9 +50,6 @@ public class FileCleanupService {
     private static final String PLACEHOLDER_FILE_NAME = ".keep";
     // 与 ImagePfopUtils.TMP_SUFFIX 一致的瘦身临时文件后缀
     private static final String PFOP_TMP_SUFFIX = ".thrive-pfop.tmp";
-
-    private static final int DEFAULT_PROTECT_DAYS = 7;
-    private static final int MAX_PROTECT_DAYS = 365;
 
     /**
      * 文件名 token：一段不含 URL 结构符（空白、/?#"'<>()[]{}|;%,* 等）的连续字符 + 1~10 位字母数字扩展名。
@@ -91,17 +88,12 @@ public class FileCleanupService {
 
     /**
      * 扫描当前存储中未被任何业务数据引用的文件。
-     *
-     * @param days 保护期天数：最近 N 天内上传的文件一律不列入候选（默认 7，0 表示不保护，上限 365）
      */
-    public FileCleanupScanVO scan(Integer days) {
-        int protectDays = days == null ? DEFAULT_PROTECT_DAYS : Math.max(0, Math.min(days, MAX_PROTECT_DAYS));
-
+    public FileCleanupScanVO scan() {
         Set<String> referencedNames = extractReferencedNames(collectReferenceText());
-        long protectLine = System.currentTimeMillis() - protectDays * 24L * 60 * 60 * 1000;
 
         List<FileCleanupItemVO> candidates = new ArrayList<>();
-        collectCandidates(storageServiceRouter.service().listFileTree().getResult(), referencedNames, protectLine, candidates);
+        collectCandidates(storageServiceRouter.service().listFileTree().getResult(), referencedNames, candidates);
         candidates.sort(Comparator.comparing(FileCleanupItemVO::getDate,
                 Comparator.nullsLast(Comparator.reverseOrder())));
 
@@ -110,7 +102,6 @@ public class FileCleanupService {
         vo.setCount(candidates.size());
         vo.setTotalSize(candidates.stream().mapToLong(item -> item.getSize() == null ? 0L : item.getSize()).sum());
         vo.setScanTime(System.currentTimeMillis());
-        vo.setProtectDays(protectDays);
         return vo;
     }
 
@@ -190,10 +181,10 @@ public class FileCleanupService {
 
     /**
      * 深度遍历文件树，收集同时满足以下条件的文件：
-     * 非 {@code .keep} 占位、非七牛瘦身临时文件、超出保护期、文件名未出现在引用集合中。
+     * 非 {@code .keep} 占位、非七牛瘦身临时文件、文件名未出现在引用集合中。
      */
     private void collectCandidates(List<FileTreeNodeVO> nodes, Set<String> referencedNames,
-                                   long protectLine, List<FileCleanupItemVO> candidates) {
+                                   List<FileCleanupItemVO> candidates) {
         if (nodes == null) {
             return;
         }
@@ -202,10 +193,6 @@ public class FileCleanupService {
                 for (FileTreeFileVO file : node.getFiles()) {
                     String name = file.getName();
                     if (name == null || PLACEHOLDER_FILE_NAME.equals(name) || name.endsWith(PFOP_TMP_SUFFIX)) {
-                        continue;
-                    }
-                    // 保护期内的新文件不参与清理，兜住草稿箱等后端不可见的引用
-                    if (file.getDate() != null && file.getDate() > protectLine) {
                         continue;
                     }
                     if (referencedNames.contains(name.toLowerCase())) {
@@ -221,7 +208,7 @@ public class FileCleanupService {
                     candidates.add(item);
                 }
             }
-            collectCandidates(node.getChildren(), referencedNames, protectLine, candidates);
+            collectCandidates(node.getChildren(), referencedNames, candidates);
         }
     }
 }

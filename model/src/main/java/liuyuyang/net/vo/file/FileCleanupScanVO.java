@@ -19,7 +19,4 @@ public class FileCleanupScanVO {
 
     @Schema(description = "扫描时间（毫秒时间戳）")
     private Long scanTime;
-
-    @Schema(description = "本次扫描使用的保护期天数")
-    private Integer protectDays;
 }
