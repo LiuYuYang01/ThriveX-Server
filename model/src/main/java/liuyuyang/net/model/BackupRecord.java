@@ -16,7 +16,7 @@ public class BackupRecord extends BaseModel {
     @Schema(description = "备份类型：manual 手动 / scheduled 定时（定时备份预留）", example = "manual")
     private String type;
 
-    @Schema(description = "导出格式：json / sql（SQL 格式预留）", example = "json")
+    @Schema(description = "导出格式：sql", example = "sql")
     private String format;
 
     @Schema(description = "备份文件名", example = "thrivex-backup-20260926-153000-a1b2c3.json")

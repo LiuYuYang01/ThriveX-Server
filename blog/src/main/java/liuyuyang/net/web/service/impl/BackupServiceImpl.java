@@ -3,12 +3,10 @@ package liuyuyang.net.web.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import liuyuyang.net.core.backup.BackupStorage;
-import liuyuyang.net.core.backup.DataExporter;
-import liuyuyang.net.core.backup.JsonDataExporter;
+import liuyuyang.net.core.backup.SqlDataExporter;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.dto.FilterDTO;
-import liuyuyang.net.dto.backup.BackupExportDTO;
 import liuyuyang.net.model.BackupRecord;
 import liuyuyang.net.web.mapper.BackupRecordMapper;
 import liuyuyang.net.web.service.BackupService;
@@ -28,11 +26,8 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * 备份编排：生成记录（running）→ 委托导出器写文件 → 落位 → 更新（success/failed）。
@@ -43,6 +38,7 @@ import java.util.stream.Collectors;
 @Service
 public class BackupServiceImpl implements BackupService {
     private static final String TYPE_MANUAL = "manual";
+    private static final String FORMAT_SQL = "sql";
     private static final String STATUS_RUNNING = "running";
     private static final String STATUS_SUCCESS = "success";
     private static final String STATUS_FAILED = "failed";
@@ -51,32 +47,22 @@ public class BackupServiceImpl implements BackupService {
 
     private final BackupRecordMapper backupRecordMapper;
     private final BackupStorage backupStorage;
-    private final Map<String, DataExporter> exporters;
+    private final SqlDataExporter sqlDataExporter;
 
-    // 导出器按 format() 自动装配：后续新增 SQL 格式等实现只需注册为 Bean 即被识别
     public BackupServiceImpl(BackupRecordMapper backupRecordMapper,
                              BackupStorage backupStorage,
-                             List<DataExporter> exporterList) {
+                             SqlDataExporter sqlDataExporter) {
         this.backupRecordMapper = backupRecordMapper;
         this.backupStorage = backupStorage;
-        this.exporters = exporterList.stream()
-                .collect(Collectors.toMap(DataExporter::format, Function.identity()));
+        this.sqlDataExporter = sqlDataExporter;
     }
 
     @Override
-    public BackupRecord export(BackupExportDTO dto) {
-        String format = dto == null || !StringUtils.hasText(dto.getFormat())
-                ? JsonDataExporter.FORMAT
-                : dto.getFormat().trim().toLowerCase();
-        DataExporter exporter = exporters.get(format);
-        if (exporter == null) {
-            throw new CustomException("暂不支持 " + format + " 格式的备份导出");
-        }
-
-        String fileName = buildFileName(format);
+    public BackupRecord export() {
+        String fileName = buildFileName();
         BackupRecord record = new BackupRecord();
         record.setType(TYPE_MANUAL);
-        record.setFormat(format);
+        record.setFormat(FORMAT_SQL);
         record.setStatus(STATUS_RUNNING);
         record.setStorage(backupStorage.type());
         record.setFileName(fileName);
@@ -89,13 +75,12 @@ public class BackupServiceImpl implements BackupService {
         Path tempFile = null;
         try {
             tempFile = backupStorage.newTempFile(fileName);
-            DataExporter.ExportResult result = exporter.export(tempFile);
+            SqlDataExporter.ExportResult result = sqlDataExporter.export(tempFile);
             long size = Files.size(tempFile);
             String key = backupStorage.store(tempFile, fileName);
             tempFile = null; // 已被移走，失败时不再尝试清理
 
             record.setStatus(STATUS_SUCCESS);
-            record.setFileName(fileName);
             record.setStorageKey(key);
             record.setSize(size);
             record.setChecksum(result.checksum());
@@ -127,7 +112,10 @@ public class BackupServiceImpl implements BackupService {
 
     @Override
     public Map<String, Object> getBackupList(FilterDTO filterDTO) {
-        Page<BackupRecord> page = new Page<>(filterDTO.getPageNum(), filterDTO.getPageSize());
+        // 分页参数缺省时给默认值，避免 null 拆箱 NPE（与"不传返回全部"的接口语义对齐为默认第一页）
+        long pageNum = filterDTO.getPageNum() == null ? 1 : filterDTO.getPageNum();
+        long pageSize = filterDTO.getPageSize() == null ? 10 : filterDTO.getPageSize();
+        Page<BackupRecord> page = new Page<>(pageNum, pageSize);
         backupRecordMapper.selectPage(page, new LambdaQueryWrapper<BackupRecord>().orderByDesc(BackupRecord::getId));
         return Paging.filter(page);
     }
@@ -167,9 +155,9 @@ public class BackupServiceImpl implements BackupService {
         return record;
     }
 
-    private String buildFileName(String format) {
+    private String buildFileName() {
         return "thrivex-backup-" + LocalDateTime.now().format(FILE_TIME)
-                + "-" + UUID.randomUUID().toString().substring(0, 6) + "." + format;
+                + "-" + UUID.randomUUID().toString().substring(0, 6) + ".sql";
     }
 
     private String abbreviate(String message) {

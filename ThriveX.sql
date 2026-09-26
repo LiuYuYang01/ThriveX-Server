@@ -744,7 +744,7 @@ UNLOCK TABLES;
 CREATE TABLE `backup_record` (
   `id` int NOT NULL AUTO_INCREMENT,
   `type` varchar(20) NOT NULL DEFAULT 'manual' COMMENT '备份类型：manual手动/scheduled定时（预留）',
-  `format` varchar(10) NOT NULL DEFAULT 'json' COMMENT '导出格式：json/sql（预留）',
+  `format` varchar(10) NOT NULL DEFAULT 'sql' COMMENT '导出格式：sql',
   `file_name` varchar(255) NOT NULL COMMENT '备份文件名',
   `size` bigint DEFAULT NULL COMMENT '文件大小（字节）',
   `checksum` varchar(64) DEFAULT NULL COMMENT '文件SHA-256校验值',

@@ -7,7 +7,6 @@ import liuyuyang.net.core.annotation.AuditLog;
 import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.dto.FilterDTO;
-import liuyuyang.net.dto.backup.BackupExportDTO;
 import liuyuyang.net.model.BackupRecord;
 import liuyuyang.net.web.service.BackupService;
 import jakarta.annotation.Resource;
@@ -16,14 +15,13 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
 /**
- * 数据库备份：一键导出全量数据（JSON）、备份记录管理、下载。
+ * 数据库备份：一键导出全量数据（SQL）、备份记录管理、下载。
  * 下载/删除均要求管理员登录（默认 JWT 鉴权），备份文件包含用户表等敏感数据，禁止豁免鉴权。
  */
 @Tag(name = "数据库备份")
@@ -34,11 +32,11 @@ public class BackupController {
     private BackupService backupService;
 
     @PostMapping("/export")
-    @Operation(summary = "导出数据库备份", description = "全量导出为 JSON 文件（不含日志表），同步返回备份记录")
+    @Operation(summary = "导出数据库备份", description = "全量导出为 SQL 文件（不含日志表），同步返回备份记录")
     @AuditLog(module = "数据库备份", type = "导出", description = "导出数据库备份")
     @RateLimit(tokens = 3, duration = 60, message = "备份操作过于频繁，请 60 秒后再试")
-    public Result<BackupRecord> exportBackupData(@RequestBody(required = false) BackupExportDTO dto) {
-        return Result.success("备份成功", backupService.export(dto));
+    public Result<BackupRecord> exportBackupData() {
+        return Result.success("备份成功", backupService.export());
     }
 
     @GetMapping("/list")

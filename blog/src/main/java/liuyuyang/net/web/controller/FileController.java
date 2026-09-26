@@ -13,6 +13,7 @@ import liuyuyang.net.dto.file.FileDirCreateFormDTO;
 import liuyuyang.net.dto.file.FileDirDeleteFormDTO;
 import liuyuyang.net.dto.file.FileDirRenameFormDTO;
 import liuyuyang.net.dto.file.FileFilterDTO;
+import liuyuyang.net.vo.file.FileCleanupScanVO;
 import liuyuyang.net.vo.file.FileCompressItemVO;
 import liuyuyang.net.vo.file.FileCompressVO;
 import liuyuyang.net.vo.file.FileDirCreateVO;
@@ -22,6 +23,7 @@ import liuyuyang.net.vo.file.FileInfoVO;
 import liuyuyang.net.vo.file.FileListItemVO;
 import liuyuyang.net.vo.file.FileTreeVO;
 import liuyuyang.net.vo.file.FileUploadVO;
+import liuyuyang.net.web.service.FileCleanupService;
 import liuyuyang.net.web.service.FileService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -46,6 +48,9 @@ import java.util.Map;
 public class FileController {
     @Resource
     private FileService fileService;
+
+    @Resource
+    private FileCleanupService fileCleanupService;
 
     @PostMapping
     @Operation(summary = "文件上传")
@@ -108,6 +113,14 @@ public class FileController {
     @Operation(summary = "删除目录")
     public Result<FileDirDeleteVO> delFileDirData(@RequestBody @Valid FileDirDeleteFormDTO dto) {
         return Result.success(fileService.delFileDirData(dto));
+    }
+
+    @GetMapping("/cleanup/scan")
+    @Operation(summary = "扫描未被引用的文件")
+    public Result<FileCleanupScanVO> scanUnreferencedFiles(
+            @Parameter(description = "保护期天数：最近 N 天内上传的文件不参与清理，0 表示不保护")
+            @RequestParam(required = false, defaultValue = "7") Integer days) {
+        return Result.success(fileCleanupService.scan(days));
     }
 
     @PostMapping("/compress")

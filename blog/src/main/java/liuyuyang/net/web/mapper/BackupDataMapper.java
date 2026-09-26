@@ -14,11 +14,15 @@ import java.util.Map;
 @Mapper
 public interface BackupDataMapper {
 
-    @Select("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() ORDER BY table_name")
+    @Select("SELECT table_name FROM information_schema.tables "
+            + "WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE' ORDER BY table_name")
     List<String> listTableNames();
 
     @Select("SELECT DATABASE()")
     String currentDatabase();
+
+    @Select("SHOW CREATE TABLE `${tableName}`")
+    Map<String, Object> showCreateTable(@Param("tableName") String tableName);
 
     @Select("SELECT COUNT(*) FROM `${tableName}`")
     long countTable(@Param("tableName") String tableName);
