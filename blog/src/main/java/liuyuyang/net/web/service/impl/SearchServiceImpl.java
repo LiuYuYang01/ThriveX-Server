@@ -2,10 +2,13 @@ package liuyuyang.net.web.service.impl;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import liuyuyang.net.model.SearchLog;
 import liuyuyang.net.vo.search.SearchItemVO;
 import liuyuyang.net.vo.search.SearchVO;
+import liuyuyang.net.web.mapper.SearchLogMapper;
 import liuyuyang.net.web.mapper.SearchMapper;
 import liuyuyang.net.web.service.SearchService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
@@ -13,10 +16,13 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
+@Slf4j
 @Service
 public class SearchServiceImpl implements SearchService {
     private static final int DEFAULT_LIMIT = 5;
     private static final int MAX_LIMIT = 10;
+    // 搜索日志里关键词的最大保存长度
+    private static final int KEYWORD_MAX_LENGTH = 100;
     // 片段在命中位置前保留的字符数
     private static final int SNIPPET_BEFORE = 20;
     // 片段在命中位置后保留的字符数
@@ -31,6 +37,9 @@ public class SearchServiceImpl implements SearchService {
     @Resource
     private SearchMapper searchMapper;
 
+    @Resource
+    private SearchLogMapper searchLogMapper;
+
     @Override
     public SearchVO search(String keyword, Integer limit) {
         String kw = keyword == null ? "" : keyword.trim();
@@ -38,7 +47,20 @@ public class SearchServiceImpl implements SearchService {
         if (kw.isEmpty()) {
             return emptyResult();
         }
+        saveSearchLog(kw);
         return cache.get(kw + ":" + size, k -> doSearch(kw, size));
+    }
+
+    // 搜索词落库供热词统计使用，放在缓存之前保证每次搜索都被计数；失败不影响搜索主流程
+    private void saveSearchLog(String keyword) {
+        try {
+            SearchLog searchLog = new SearchLog();
+            searchLog.setKeyword(keyword.length() > KEYWORD_MAX_LENGTH ? keyword.substring(0, KEYWORD_MAX_LENGTH) : keyword);
+            searchLog.setCreateTime(System.currentTimeMillis());
+            searchLogMapper.insert(searchLog);
+        } catch (Exception e) {
+            log.error("记录搜索日志失败: keyword={}", keyword, e);
+        }
     }
 
     private SearchVO doSearch(String kw, int size) {

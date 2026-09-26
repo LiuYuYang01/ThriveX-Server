@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import liuyuyang.net.enums.article.ArticleStatusEnum;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.CommonUtils;
+import liuyuyang.net.core.utils.IpUtils;
 import liuyuyang.net.dto.article.ArticleFormDTO;
 import liuyuyang.net.model.*;
 import liuyuyang.net.dto.PageDTO;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotNull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -53,6 +55,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private ArticleCateService articleCateService;
     @Resource
     private ArticleConfigMapper articleConfigMapper;
+    @Resource
+    private ArticleViewLogMapper articleViewLogMapper;
     @Resource
     private TagMapper tagMapper;
     @Resource
@@ -571,6 +575,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             throw new CustomException("获取失败：该文章不存在");
         data.setView(data.getView() + 1);
         articleMapper.updateById(data);
+
+        // 浏览明细落库供数据分析使用，失败不影响浏览量递增
+        try {
+            ArticleViewLog viewLog = new ArticleViewLog();
+            viewLog.setArticleId(id);
+            HttpServletRequest request = CommonUtils.getRequest();
+            viewLog.setIp(request == null ? null : IpUtils.getRealIp(request));
+            viewLog.setCreateTime(System.currentTimeMillis());
+            articleViewLogMapper.insert(viewLog);
+        } catch (Exception e) {
+            log.error("记录文章浏览日志失败: articleId={}", id, e);
+        }
     }
 
     @Override

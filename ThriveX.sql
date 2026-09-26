@@ -132,6 +132,24 @@ INSERT INTO `article_tag` VALUES (1,1,3),(22,14,3),(23,14,97),(26,5,3),(28,2,3),
 UNLOCK TABLES;
 
 --
+-- Table structure for table `article_view_log`
+--
+
+DROP TABLE IF EXISTS `article_view_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `article_view_log` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `article_id` int NOT NULL COMMENT '文章ID',
+  `ip` varchar(50) DEFAULT NULL COMMENT '访客IP',
+  `create_time` bigint DEFAULT NULL COMMENT '浏览时间（毫秒时间戳）',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_article_time` (`article_id`,`create_time`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `assistant`
 --
 
@@ -492,6 +510,23 @@ LOCK TABLES `record_comment` WRITE;
 INSERT INTO `record_comment` VALUES (1,'神秘人','','测试回复','','',1,0,1,1782177871518),(4,'海绵宝宝','','测试','','',1,1,1,1782178416942),(5,'章鱼哥','','测试中','','',1,4,1,1782178436652),(6,'蟹老板','','测试','','',1,0,1,1782178848952),(7,'痞老板','','测试','','',1,0,1,1782178935780),(8,'痞老板','','是的','','',3,0,1,1783154078038);
 /*!40000 ALTER TABLE `record_comment` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `search_log`
+--
+
+DROP TABLE IF EXISTS `search_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `search_log` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `keyword` varchar(100) NOT NULL COMMENT '搜索关键词',
+  `create_time` bigint DEFAULT NULL COMMENT '搜索时间（毫秒时间戳）',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_keyword` (`keyword`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `swiper`

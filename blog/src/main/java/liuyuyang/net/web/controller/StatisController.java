@@ -30,7 +30,7 @@ public class StatisController {
     @GetMapping
     @Operation(summary = "获取网站统计数据")
     public Result<JsonNode> getStatisData(
-            @Parameter(description = "统计类型：basic(基础数据), overview(概览趋势), new-visitor(新访客趋势), basic-overview(基础概览趋势)", required = true) @RequestParam String type,
+            @Parameter(description = "统计类型：basic(基础数据), overview(概览趋势), new-visitor(新访客趋势), basic-overview(基础概览趋势), region(地域分布), source(来源分布), client(设备分布)", required = true) @RequestParam String type,
             @Parameter(description = "开始日期，格式: 20240101，可选，默认为当天") @RequestParam(required = false) String startDate,
             @Parameter(description = "结束日期，格式: 20240131，可选，默认为当天") @RequestParam(required = false) String endDate
     ) {
@@ -52,14 +52,24 @@ public class StatisController {
                     successMsg = "获取新访客趋势报表成功";
                     break;
                 case "basic-overview":
-                    System.out.println("basic-overview");
-                    System.out.println("startDate: " + startDate);
-                    System.out.println("endDate: " + endDate);
                     data = baiduService.getBasicOverviewTrend(startDate, endDate);
                     successMsg = "获取基础概览时间趋势报表成功";
                     break;
+                case "region":
+                    data = baiduService.getRegionReport(startDate, endDate);
+                    successMsg = "获取地域分布报表成功";
+                    break;
+                case "source":
+                    data = baiduService.getSourceReport(startDate, endDate);
+                    successMsg = "获取来源分布报表成功";
+                    break;
+                case "client":
+                    data = baiduService.getClientReport(startDate, endDate);
+                    successMsg = "获取设备分布报表成功";
+                    break;
                 default:
-                    return Result.error("不支持的统计类型: " + type + "。支持的类型: basic, overview, new-visitor, basic-overview");
+                    return Result.error("不支持的统计类型: " + type
+                            + "。支持的类型: basic, overview, new-visitor, basic-overview, region, source, client");
             }
 
             if (data == null) {
