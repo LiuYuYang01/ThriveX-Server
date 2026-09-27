@@ -8,8 +8,9 @@ import java.nio.file.Path;
  * 备份文件存储抽象：按"私有文件 + key 存取"语义设计，实现禁止返回公开访问 URL，
  * 与 {@code core.storage} 面向公开图片的存储抽象是两套契约，不可混用。
  * <p>
- * 当前实现：{@link LocalBackupStorage}（本盘）。后续接入第三方对象存储（七牛私有空间、
- * S3 兼容等）时新增实现类即可，{@code backup_record.storage} 记录实现返回的 {@link #type()}，
+ * 当前实现：{@link LocalBackupStorage}（本盘）与 {@link QiniuBackupStorage}（七牛私有空间），
+ * 由 {@link BackupStorageRouter} 按 {@code backup_storage.type} 选择；
+ * {@code backup_record.storage} 记录实现返回的 {@link #type()}，
  * 下载/删除按记录中的 storage 分发，前端无需改动。
  */
 public interface BackupStorage {

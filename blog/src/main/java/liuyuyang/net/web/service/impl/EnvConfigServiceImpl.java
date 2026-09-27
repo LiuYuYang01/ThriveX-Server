@@ -39,6 +39,7 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
         DEFAULT_CONFIGS.put("gaode_coordinate", new String[]{"{\"key\": \"xxx\"}", "高德地图坐标配置"});
         DEFAULT_CONFIGS.put("qiniu_storage", new String[]{"{\"domain\": \"\", \"zlevel\": 1, \"root_dir\": \"static\", \"end_point\": \"\", \"access_key\": \"\", \"secret_key\": \"\", \"bucket_name\": \"\"}", "七牛云存储"});
         DEFAULT_CONFIGS.put("storage", new String[]{"{\"type\": \"local\", \"domain\": \"\"}", "文件存储方式：type 为 local/qiniu，domain 为本地存储的访问域名"});
+        DEFAULT_CONFIGS.put("backup_storage", new String[]{"{\"type\": \"local\", \"bucket_name\": \"\", \"domain\": \"\", \"enabled\": false, \"cron\": \"0 0 3 * * ?\", \"retain_count\": 10}", "数据库备份存储：type 为 local/qiniu，qiniu 需私有桶并复用「七牛云存储」的密钥；enabled/cron 控制定时备份，retain_count 为定时备份保留份数（0 不清理）"});
         DEFAULT_CONFIGS.put("baidu_statis_key", new String[]{"{\"key\": \"\"}", "A 百度统计：在前端获取该配置来激活统计功能"});
         DEFAULT_CONFIGS.put("hcaptcha_key", new String[]{"{\"key\": \"\", \"secret\": \"\", \"enabled\": false}", "人机验证配置：enabled 为功能开关，key 为站点密钥（公钥），secret 为服务端校验密钥（私钥），开启后登录/评论等接口强制人机验证"});
         DEFAULT_CONFIGS.put("is_system_init", new String[]{"{\"value\": false}", "系统是否初始化"});

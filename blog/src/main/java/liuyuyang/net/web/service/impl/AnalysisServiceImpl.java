@@ -4,6 +4,7 @@ import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.model.Article;
 import liuyuyang.net.vo.analysis.HotArticleVO;
 import liuyuyang.net.vo.analysis.HotKeywordVO;
+import liuyuyang.net.vo.analysis.SiteSummaryVO;
 import liuyuyang.net.vo.analysis.ViewTrendItemVO;
 import liuyuyang.net.web.mapper.ArticleMapper;
 import liuyuyang.net.web.mapper.ArticleViewLogMapper;
@@ -64,6 +65,11 @@ public class AnalysisServiceImpl implements AnalysisService {    private static 
             result.add(new ViewTrendItemVO(date, countByDate.getOrDefault(date, 0)));
         }
         return result;
+    }
+
+    @Override
+    public SiteSummaryVO getSiteSummary() {
+        return articleMapper.selectSiteSummary();
     }
 
     private int normalizeDays(Integer days) {

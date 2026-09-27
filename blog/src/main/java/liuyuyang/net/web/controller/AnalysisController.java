@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.vo.analysis.HotArticleVO;
 import liuyuyang.net.vo.analysis.HotKeywordVO;
+import liuyuyang.net.vo.analysis.SiteSummaryVO;
 import liuyuyang.net.vo.analysis.ViewTrendItemVO;
 import liuyuyang.net.web.service.AnalysisService;
 import lombok.extern.slf4j.Slf4j;
@@ -47,5 +48,11 @@ public class AnalysisController {
             @Parameter(description = "文章ID", required = true) @RequestParam Integer articleId,
             @Parameter(description = "统计天数，默认30") @RequestParam(defaultValue = "30") Integer days) {
         return Result.success(analysisService.getArticleViewTrend(articleId, days));
+    }
+
+    @GetMapping("/site-summary")
+    @Operation(summary = "站点内容概览（可见文章累计篇数/字数/浏览/获赞）")
+    public Result<SiteSummaryVO> getSiteSummary() {
+        return Result.success(analysisService.getSiteSummary());
     }
 }

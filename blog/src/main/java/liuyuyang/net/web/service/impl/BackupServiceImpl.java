@@ -3,6 +3,7 @@ package liuyuyang.net.web.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import liuyuyang.net.core.backup.BackupStorage;
+import liuyuyang.net.core.backup.BackupStorageRouter;
 import liuyuyang.net.core.backup.SqlDataExporter;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.Paging;
@@ -26,6 +27,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -46,25 +48,26 @@ public class BackupServiceImpl implements BackupService {
     private static final int ERROR_MAX_LENGTH = 1000;
 
     private final BackupRecordMapper backupRecordMapper;
-    private final BackupStorage backupStorage;
+    private final BackupStorageRouter backupStorageRouter;
     private final SqlDataExporter sqlDataExporter;
 
     public BackupServiceImpl(BackupRecordMapper backupRecordMapper,
-                             BackupStorage backupStorage,
+                             BackupStorageRouter backupStorageRouter,
                              SqlDataExporter sqlDataExporter) {
         this.backupRecordMapper = backupRecordMapper;
-        this.backupStorage = backupStorage;
+        this.backupStorageRouter = backupStorageRouter;
         this.sqlDataExporter = sqlDataExporter;
     }
 
     @Override
     public BackupRecord export() {
         String fileName = buildFileName();
+        BackupStorage storage = backupStorageRouter.current();
         BackupRecord record = new BackupRecord();
         record.setType(TYPE_MANUAL);
         record.setFormat(FORMAT_SQL);
         record.setStatus(STATUS_RUNNING);
-        record.setStorage(backupStorage.type());
+        record.setStorage(storage.type());
         record.setFileName(fileName);
         // 占位：本地实现落位后 key 即文件名；远程存储实现落位后更新为实际 key
         record.setStorageKey(fileName);
@@ -74,10 +77,10 @@ public class BackupServiceImpl implements BackupService {
         long start = System.currentTimeMillis();
         Path tempFile = null;
         try {
-            tempFile = backupStorage.newTempFile(fileName);
+            tempFile = storage.newTempFile(fileName);
             SqlDataExporter.ExportResult result = sqlDataExporter.export(tempFile);
             long size = Files.size(tempFile);
-            String key = backupStorage.store(tempFile, fileName);
+            String key = storage.store(tempFile, fileName);
             tempFile = null; // 已被移走，失败时不再尝试清理
 
             record.setStatus(STATUS_SUCCESS);
@@ -127,7 +130,7 @@ public class BackupServiceImpl implements BackupService {
             throw new CustomException("该备份未成功生成，无法下载");
         }
         try {
-            InputStream in = backupStorage.load(record.getStorageKey());
+            InputStream in = backupStorageRouter.of(record.getStorage()).load(record.getStorageKey());
             ResponseEntity.BodyBuilder builder = ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + record.getFileName() + "\"")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM);
@@ -143,8 +146,20 @@ public class BackupServiceImpl implements BackupService {
     @Override
     public void delBackupData(Integer id) {
         BackupRecord record = requireRecord(id);
-        backupStorage.delete(record.getStorageKey());
+        backupStorageRouter.of(record.getStorage()).delete(record.getStorageKey());
         backupRecordMapper.deleteById(id);
+    }
+
+    @Override
+    public void applyRetention(int retainCount) {
+        if (retainCount <= 0) {
+            return;
+        }
+        List<BackupRecord> records = backupRecordMapper.selectList(
+                new LambdaQueryWrapper<BackupRecord>().orderByDesc(BackupRecord::getId));
+        for (int i = retainCount; i < records.size(); i++) {
+            delBackupData(records.get(i).getId());
+        }
     }
 
     private BackupRecord requireRecord(Integer id) {

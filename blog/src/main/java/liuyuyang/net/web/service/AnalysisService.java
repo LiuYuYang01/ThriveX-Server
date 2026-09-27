@@ -2,6 +2,7 @@ package liuyuyang.net.web.service;
 
 import liuyuyang.net.vo.analysis.HotArticleVO;
 import liuyuyang.net.vo.analysis.HotKeywordVO;
+import liuyuyang.net.vo.analysis.SiteSummaryVO;
 import liuyuyang.net.vo.analysis.ViewTrendItemVO;
 
 import java.util.List;
@@ -30,4 +31,9 @@ public interface AnalysisService {
      * @param days      统计周期（天）
      */
     List<ViewTrendItemVO> getArticleViewTrend(Integer articleId, Integer days);
+
+    /**
+     * 站点内容概览：可见文章的累计篇数/字数/浏览/获赞
+     */
+    SiteSummaryVO getSiteSummary();
 }

@@ -16,4 +16,7 @@ public interface BackupService {
     ResponseEntity<Resource> downloadBackupData(Integer id);
 
     void delBackupData(Integer id);
+
+    /** 定时备份保留份数：仅保留最近 retainCount 份（含手动备份），0 或负数不清理 */
+    void applyRetention(int retainCount);
 }
