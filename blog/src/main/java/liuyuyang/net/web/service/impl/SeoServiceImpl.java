@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * SEO 体检服务：文章元信息检查、sitemap 生成检查、正文死链检测
+ * SEO 优化服务：文章元信息检查、sitemap 生成检查、正文死链检测
  *
  * 体检范围（元信息 + 死链）= 非草稿且未删除的文章，与后台文章管理列表一致；
  * sitemap 对比范围在此基础上排除全站隐藏文章（与博客端 sitemap 生成规则一致）。

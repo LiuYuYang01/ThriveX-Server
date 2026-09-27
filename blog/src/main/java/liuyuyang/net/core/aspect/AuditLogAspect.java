@@ -141,6 +141,7 @@ public class AuditLogAspect {
         put("email", "邮件管理");
         put("operation_log", "操作日志管理");
         put("rss", "鱼塘管理");
+        put("seo", "SEO优化");
     }};
 
     /**

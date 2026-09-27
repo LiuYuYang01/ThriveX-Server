@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
 
-@Tag(name = "SEO 体检")
+@Tag(name = "SEO 优化")
 @RestController
 @RequestMapping("/seo")
 public class SeoController {

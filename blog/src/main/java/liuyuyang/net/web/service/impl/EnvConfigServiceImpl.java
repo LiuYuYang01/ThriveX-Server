@@ -27,13 +27,13 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
 
     // 接口响应中敏感字段的掩码值，写入时据此还原为库中原值
     public static final String SECRET_MASK = "******";
-    private static final Set<String> SECRET_FIELDS = Set.of("password", "secret_key", "access_key", "access_token", "secret");
+    private static final Set<String> SECRET_FIELDS = Set.of("password", "secret_key", "access_key", "access_token", "refresh_token", "client_secret", "secret");
 
     // 默认环境配置：name -> [valueJson, notes]，与 ThriveX.sql 保持一致
     private static final Map<String, String[]> DEFAULT_CONFIGS = new LinkedHashMap<>();
 
     static {
-        DEFAULT_CONFIGS.put("baidu_statis", new String[]{"{\"site_id\": 17256142, \"access_token\": \"\"}", "B 百度统计：在控制端首页显示网站数据"});
+        DEFAULT_CONFIGS.put("baidu_statis", new String[]{"{\"site_id\": 17256142, \"access_token\": \"\", \"refresh_token\": \"\", \"client_id\": \"\", \"client_secret\": \"\"}", "B 百度统计：在控制端首页显示网站数据，配置 refresh_token 后 token 自动续期"});
         DEFAULT_CONFIGS.put("email", new String[]{"{\"host\": \"smtp.qq.com\", \"port\": 465, \"password\": \"123\", \"username\": \"xxx@qq.com\"}", "邮件发送配置"});
         DEFAULT_CONFIGS.put("gaode_map_key", new String[]{"{\"key_code\": \"\", \"security_code\": \"\"}", "高德地图配置"});
         DEFAULT_CONFIGS.put("gaode_coordinate", new String[]{"{\"key\": \"xxx\"}", "高德地图坐标配置"});

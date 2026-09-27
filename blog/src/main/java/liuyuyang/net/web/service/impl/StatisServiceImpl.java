@@ -13,6 +13,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import jakarta.annotation.Resource;
+import org.springframework.scheduling.annotation.Scheduled;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -28,6 +29,7 @@ public class StatisServiceImpl implements StatisService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final String BASE_API_URL = "https://openapi.baidu.com/rest/2.0/tongji/report/getData";
+    private static final String OAUTH_TOKEN_URL = "https://openapi.baidu.com/oauth/2.0/token";
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private Map<String, Object> getBaiduConfig() {
@@ -37,6 +39,33 @@ public class StatisServiceImpl implements StatisService {
 
     private JsonNode callBaiduStatisticsApi(String metrics, String method, String additionalParams,
                                             String startDate, String endDate, String apiName) {
+        JsonNode jsonNode = requestBaiduApi(metrics, method, additionalParams, startDate, endDate, apiName);
+
+        // token 失效（110 无效 / 111 过期）时自动刷新并重试一次
+        if (jsonNode != null && isTokenInvalid(jsonNode)) {
+            log.warn("{}返回 access_token 已失效，自动刷新后重试", apiName);
+            refreshAccessToken();
+            jsonNode = requestBaiduApi(metrics, method, additionalParams, startDate, endDate, apiName);
+        }
+
+        if (jsonNode != null) {
+            // 检查是否有错误（部分报表成功响应也带 error_code:0，视为成功）
+            if (jsonNode.has("error_code") && jsonNode.get("error_code").asInt() != 0) {
+                int errorCode = jsonNode.get("error_code").asInt();
+                String errorMsg = jsonNode.has("error_msg") ? jsonNode.get("error_msg").asText() : "响应: " + jsonNode;
+                log.error("{}API调用失败: code={}, {}", apiName, errorCode, errorMsg);
+                throw new CustomException("获取数据失败(code=" + errorCode + "): " + errorMsg);
+            }
+
+            log.info("{}API调用成功", apiName);
+            return jsonNode;
+        }
+
+        return null;
+    }
+
+    private JsonNode requestBaiduApi(String metrics, String method, String additionalParams,
+                                     String startDate, String endDate, String apiName) {
         String accessToken = (String) getBaiduConfig().get("access_token");
 
         if (!StringUtils.hasText(accessToken)) {
@@ -45,8 +74,6 @@ public class StatisServiceImpl implements StatisService {
 
         // 处理日期参数
         String[] dates = processDateParams(startDate, endDate);
-        String processedStartDate = dates[0];
-        String processedEndDate = dates[1];
 
         try {
             // 构建URL
@@ -54,8 +81,8 @@ public class StatisServiceImpl implements StatisService {
             urlBuilder.append(BASE_API_URL)
                     .append("?access_token=").append(accessToken)
                     .append("&site_id=").append(getBaiduConfig().get("site_id"))
-                    .append("&start_date=").append(processedStartDate)
-                    .append("&end_date=").append(processedEndDate)
+                    .append("&start_date=").append(dates[0])
+                    .append("&end_date=").append(dates[1])
                     .append("&metrics=").append(metrics)
                     .append("&method=").append(method);
 
@@ -74,17 +101,7 @@ public class StatisServiceImpl implements StatisService {
                     .block();
 
             if (response != null) {
-                JsonNode jsonNode = objectMapper.readTree(response);
-
-                // 检查是否有错误
-                if (jsonNode.has("error_code")) {
-                    String errorMsg = jsonNode.get("error_msg").asText();
-                    log.error("{}API调用失败: {}", apiName, errorMsg);
-                    throw new CustomException("获取数据失败: " + errorMsg);
-                }
-
-                log.info("{}API调用成功", apiName);
-                return jsonNode;
+                return objectMapper.readTree(response);
             }
         } catch (CustomException e) {
             throw e;
@@ -95,6 +112,81 @@ public class StatisServiceImpl implements StatisService {
         }
 
         return null;
+    }
+
+    // 110: access_token 无效；111: access_token 已过期；用 path 兜底，成功响应可能不带 error_code
+    private boolean isTokenInvalid(JsonNode node) {
+        int code = node.path("error_code").asInt(0);
+        return code == 110 || code == 111;
+    }
+
+    /**
+     * 用 refresh_token 换取新的 access_token 并写回配置
+     * 百度 OAuth 的 refresh_token 单次有效，刷新后必须同步保存返回的最新值
+     */
+    public synchronized void refreshAccessToken() {
+        Map<String, Object> config = getBaiduConfig();
+        String refreshToken = (String) config.get("refresh_token");
+        String clientId = (String) config.get("client_id");
+        String clientSecret = (String) config.get("client_secret");
+
+        if (!StringUtils.hasText(refreshToken) || !StringUtils.hasText(clientId) || !StringUtils.hasText(clientSecret)) {
+            throw new CustomException("缺少 refresh_token/client_id/client_secret 配置，请在第三方设置中补全以启用自动刷新");
+        }
+
+        String response;
+        try {
+            response = webClient.get()
+                    .uri(OAUTH_TOKEN_URL
+                            + "?grant_type=refresh_token"
+                            + "&refresh_token=" + refreshToken
+                            + "&client_id=" + clientId
+                            + "&client_secret=" + clientSecret)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+        } catch (Exception e) {
+            // 异常信息可能含带 client_secret 的完整 URL，不能直接透传
+            log.error("刷新百度统计 access_token 失败", e);
+            throw new CustomException("刷新百度统计 token 失败，请稍后再试");
+        }
+
+        try {
+            JsonNode result = objectMapper.readTree(response);
+            String newAccessToken = result.has("access_token") ? result.get("access_token").asText() : null;
+            String newRefreshToken = result.has("refresh_token") ? result.get("refresh_token").asText() : null;
+
+            if (!StringUtils.hasText(newAccessToken)) {
+                String desc = result.has("error_description") ? result.get("error_description").asText() : "未知错误";
+                log.error("刷新百度统计 token 失败：{}", desc);
+                throw new CustomException("刷新 token 失败，授权可能已被撤销，请重新授权百度统计");
+            }
+
+            EnvConfig baiduConfig = envConfigService.getByName("baidu_statis");
+            envConfigService.updateJsonFieldValue(baiduConfig.getId(), "access_token", newAccessToken);
+            if (StringUtils.hasText(newRefreshToken)) {
+                envConfigService.updateJsonFieldValue(baiduConfig.getId(), "refresh_token", newRefreshToken);
+            }
+            log.info("百度统计 access_token 已自动刷新");
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("解析百度统计刷新响应失败", e);
+            throw new CustomException("刷新百度统计 token 失败，请稍后再试");
+        }
+    }
+
+    /**
+     * 定时保活：access_token 有效期约 30 天，每周一凌晨刷新一次
+     */
+    @Scheduled(cron = "0 0 4 ? * MON")
+    public void refreshBaiduToken() {
+        try {
+            refreshAccessToken();
+        } catch (CustomException e) {
+            // 未配置 refresh_token 或授权已失效时降级为告警，不影响站点运行
+            log.warn("定时刷新百度统计 token 跳过：{}", e.getMessage());
+        }
     }
 
     /**
