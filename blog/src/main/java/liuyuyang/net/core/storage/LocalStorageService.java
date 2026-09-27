@@ -48,7 +48,7 @@ import java.util.stream.Stream;
 @Service
 public class LocalStorageService implements StorageService {
     // 本地存储配置名称
-    private static final String CONFIG_NAME = "storage";
+    private static final String CONFIG_NAME = "local_storage";
     // 与 WebConfig 的静态资源映射路径保持一致
     private static final String URL_PREFIX = "/static/upload/";
     // 与七牛实现一致的目录占位文件名
@@ -420,7 +420,7 @@ public class LocalStorageService implements StorageService {
     private String normalizeDomain(String domain) {
         String value = domain == null ? "" : domain.trim();
         if (value.isEmpty()) {
-            throw new CustomException("storage 配置缺少 domain");
+            throw new CustomException("local_storage 配置缺少 domain");
         }
         if (!value.startsWith("http://") && !value.startsWith("https://")) {
             value = "https://" + value;
@@ -435,12 +435,12 @@ public class LocalStorageService implements StorageService {
     private String getConfigDomain() {
         EnvConfig envConfig = envConfigService.getByName(CONFIG_NAME);
         if (envConfig == null || envConfig.getValue() == null) {
-            throw new CustomException("未找到 storage 配置");
+            throw new CustomException("未找到 local_storage 配置");
         }
         Map<String, Object> value = envConfig.getValue();
         String domain = readString(value, "domain");
         if (domain == null || domain.trim().isEmpty()) {
-            throw new CustomException("storage 配置缺少字段: domain");
+            throw new CustomException("local_storage 配置缺少字段: domain");
         }
         return domain.trim();
     }

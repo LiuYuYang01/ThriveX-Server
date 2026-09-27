@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class StorageServiceRouter {
-    public static final String CONFIG_NAME = "storage";
+    public static final String CONFIG_NAME = "local_storage";
     public static final String TYPE_LOCAL = "local";
     public static final String TYPE_QINIU = "qiniu";
 
