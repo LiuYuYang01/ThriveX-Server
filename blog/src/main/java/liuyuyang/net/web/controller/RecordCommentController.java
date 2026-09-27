@@ -10,6 +10,7 @@ import liuyuyang.net.dto.record.RecordCommentFilterDTO;
 import liuyuyang.net.dto.record.RecordCommentFormDTO;
 import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.record.RecordCommentVO;
+import liuyuyang.net.web.service.CaptchaService;
 import liuyuyang.net.web.service.RecordCommentService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -28,12 +29,15 @@ import java.util.Map;
 public class RecordCommentController {
     @Resource
     private RecordCommentService recordCommentService;
+    @Resource
+    private CaptchaService captchaService;
 
     @NoTokenRequired
     @RateLimit
     @PostMapping
     @Operation(summary = "新增说说评论")
     public Result<String> addRecordCommentData(@RequestBody @Validated(ValidationGroups.Create.class) RecordCommentFormDTO recordCommentFormDTO) throws Exception {
+        captchaService.check(recordCommentFormDTO.getCaptchaToken());
         recordCommentFormDTO.setId(null);
         recordCommentService.addRecordCommentData(recordCommentFormDTO);
         return Result.success();

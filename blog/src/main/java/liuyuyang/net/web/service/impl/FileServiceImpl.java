@@ -3,8 +3,9 @@ package liuyuyang.net.web.service.impl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qiniu.common.QiniuException;
 import com.qiniu.processing.OperationStatus;
-import liuyuyang.net.core.config.QiniuStorageConfig;
 import liuyuyang.net.core.execption.CustomException;
+import liuyuyang.net.core.storage.QiniuStorageService;
+import liuyuyang.net.core.storage.StorageServiceRouter;
 import liuyuyang.net.core.service.CompressTaskStore;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.core.utils.ImagePfopUtils;
@@ -45,7 +46,11 @@ import java.util.Set;
 public class FileServiceImpl implements FileService {
 
     @Resource
-    private QiniuStorageConfig qiniuStorageConfig;
+    private StorageServiceRouter storageServiceRouter;
+
+    // pfop 瘦身为七牛特有能力，不走通用存储接口
+    @Resource
+    private QiniuStorageService qiniuStorageService;
 
     @Resource
     private CommonUtils commonUtils;
@@ -62,7 +67,7 @@ public class FileServiceImpl implements FileService {
         List<String> urls = new ArrayList<>();
         for (MultipartFile file : files) {
             validateFile(file);
-            urls.add(qiniuStorageConfig.upload(dir, file));
+            urls.add(storageServiceRouter.service().upload(dir, file));
         }
 
         FileUploadVO vo = new FileUploadVO();
@@ -107,18 +112,18 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public void delFileData(String filePath) throws QiniuException {
-        qiniuStorageConfig.deleteByUrl(filePath);
+    public void delFileData(String filePath) {
+        storageServiceRouter.service().deleteByUrl(filePath);
     }
 
     @Override
-    public void batchDelFileData(FileBatchDeleteFormDTO dto) throws QiniuException {
+    public void batchDelFileData(FileBatchDeleteFormDTO dto) {
         List<String> pathList = dto.getPaths();
         if (pathList == null || pathList.isEmpty()) {
             return;
         }
         for (String url : pathList) {
-            boolean delete = qiniuStorageConfig.deleteByUrl(url);
+            boolean delete = storageServiceRouter.service().deleteByUrl(url);
             if (!delete) {
                 throw new CustomException("删除文件失败");
             }
@@ -126,17 +131,17 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public FileInfoVO getFileData(String filePath) throws QiniuException {
-        return qiniuStorageConfig.getFileInfo(filePath);
+    public FileInfoVO getFileData(String filePath) {
+        return storageServiceRouter.service().getFileInfo(filePath);
     }
 
     @Override
-    public Page<FileListItemVO> getFileList(FileFilterDTO fileFilterDTO) throws QiniuException {
+    public Page<FileListItemVO> getFileList(FileFilterDTO fileFilterDTO) {
         if (fileFilterDTO.getDir() == null || fileFilterDTO.getDir().trim().isEmpty()) {
             throw new CustomException("请指定一个目录");
         }
 
-        List<FileListItemVO> all = qiniuStorageConfig.listFileItems(fileFilterDTO.getDir());
+        List<FileListItemVO> all = storageServiceRouter.service().listFileItems(fileFilterDTO.getDir());
 
         if (fileFilterDTO.getPageNum() == null || fileFilterDTO.getPageSize() == null) {
             Page<FileListItemVO> result = new Page<>(1, all.size());
@@ -152,8 +157,8 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public FileTreeVO getFileTreeData() throws QiniuException {
-        return qiniuStorageConfig.listFileTree();
+    public FileTreeVO getFileTreeData() {
+        return storageServiceRouter.service().listFileTree();
     }
 
     @Override
@@ -162,26 +167,26 @@ public class FileServiceImpl implements FileService {
         if (dir == null || dir.trim().isEmpty()) {
             throw new CustomException("请指定一个目录");
         }
-        return qiniuStorageConfig.createDirectory(dir);
+        return storageServiceRouter.service().createDirectory(dir);
     }
 
     @Override
-    public FileDirRenameVO renameFileDirData(FileDirRenameFormDTO dto) throws QiniuException {
+    public FileDirRenameVO renameFileDirData(FileDirRenameFormDTO dto) {
         String fromDir = dto.getFromDir();
         String toDir = dto.getToDir();
         if (fromDir == null || fromDir.trim().isEmpty() || toDir == null || toDir.trim().isEmpty()) {
             throw new CustomException("请指定原目录和新目录");
         }
-        return qiniuStorageConfig.renameDirectory(fromDir, toDir);
+        return storageServiceRouter.service().renameDirectory(fromDir, toDir);
     }
 
     @Override
-    public FileDirDeleteVO delFileDirData(FileDirDeleteFormDTO dto) throws QiniuException {
+    public FileDirDeleteVO delFileDirData(FileDirDeleteFormDTO dto) {
         String dir = dto.getDir();
         if (dir == null || dir.trim().isEmpty()) {
             throw new CustomException("请指定一个目录");
         }
-        return qiniuStorageConfig.deleteDirectory(dir);
+        return storageServiceRouter.service().deleteDirectory(dir);
     }
 
     @Override
@@ -189,6 +194,25 @@ public class FileServiceImpl implements FileService {
         List<String> pathList = dto.getPaths();
         if (pathList == null || pathList.isEmpty()) {
             throw new CustomException("文件路径列表不能为空");
+        }
+
+        // 本地存储暂无云端处理管线，瘦身整体降级为跳过
+        if (storageServiceRouter.isLocal()) {
+            List<FileCompressItemVO> items = new ArrayList<>();
+            for (String filePath : pathList) {
+                FileCompressItemVO item = new FileCompressItemVO();
+                item.setPath(filePath);
+                item.setStatus("skipped");
+                item.setMessage("本地存储暂不支持图片瘦身");
+                items.add(item);
+            }
+            FileCompressVO vo = new FileCompressVO();
+            vo.setItems(items);
+            vo.setSkippedCount(items.size());
+            vo.setFailedCount(0);
+            vo.setSuccessCount(0);
+            vo.setTotalSavedBytes(0L);
+            return vo;
         }
 
         String mode = dto.getMode();
@@ -232,14 +256,14 @@ public class FileServiceImpl implements FileService {
         }
 
         try {
-            OperationStatus status = qiniuStorageConfig.queryPfopStatus(taskId);
+            OperationStatus status = qiniuStorageService.queryPfopStatus(taskId);
             int code = status.code;
             if (code == 1 || code == 2) {
                 return compressTaskStore.toProcessingItem(context, taskId);
             }
             if (code == 3) {
                 compressTaskStore.remove(taskId);
-                qiniuStorageConfig.deleteKeyQuietly(context.getTmpKey());
+                qiniuStorageService.deleteKeyQuietly(context.getTmpKey());
                 return buildFailedItem(context, taskId, "七牛 pfop 处理失败：" + status.desc);
             }
 
@@ -262,7 +286,7 @@ public class FileServiceImpl implements FileService {
         FileCompressItemVO item = new FileCompressItemVO();
         item.setPath(filePath);
         try {
-            FileInfoVO info = qiniuStorageConfig.getFileInfo(filePath);
+            FileInfoVO info = qiniuStorageService.getFileInfo(filePath);
             item.setName(info.getName());
             item.setBeforeSize(info.getSize());
 
@@ -278,7 +302,7 @@ public class FileServiceImpl implements FileService {
 
             String key = info.getPath();
             String tmpKey = ImagePfopUtils.buildTmpKey(key);
-            String persistentId = qiniuStorageConfig.submitCompressPfop(key, plan.getFops());
+            String persistentId = qiniuStorageService.submitCompressPfop(key, plan.getFops());
 
             CompressTaskStore.Context context = new CompressTaskStore.Context(
                     filePath, info.getName(), key, tmpKey, beforeSize);
@@ -297,7 +321,7 @@ public class FileServiceImpl implements FileService {
 
     private FileCompressItemVO finalizeTask(CompressTaskStore.Context context, String taskId) {
         try {
-            FileInfoVO updated = qiniuStorageConfig.finalizeCompressPfop(
+            FileInfoVO updated = qiniuStorageService.finalizeCompressPfop(
                     context.getKey(), context.getTmpKey(), context.getBeforeSize());
             compressTaskStore.remove(taskId);
 

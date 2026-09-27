@@ -1,4 +1,4 @@
-package liuyuyang.net.core.config;
+package liuyuyang.net.core.storage;
 
 import com.qiniu.common.QiniuException;
 import com.qiniu.http.Response;
@@ -41,13 +41,16 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * 七牛对象存储封装：上传/删除、按目录平铺列表、整桶目录树、逻辑目录的创建/重命名/删除。
+ * 七牛对象存储实现：上传/删除、按目录平铺列表、整桶目录树、逻辑目录的创建/重命名/删除。
  * <p>
  * 对象存储无真实目录，目录由 key 前缀体现；本类通过 {@code .keep} 与控制台「文件夹」两种占位策略
  * 与列表/树接口的过滤规则配合，使前端既能展示树形结构，又不会把占位对象当成用户文件。
+ * <p>
+ * 通用文件操作（{@link StorageService}）中的七牛受检异常统一包装为 {@link CustomException}，
+ * 调用方无需感知七牛 SDK；pfop 瘦身为七牛特有能力，不在接口内，由 {@code FileServiceImpl} 直连本类。
  */
 @Service
-public class QiniuStorageConfig {
+public class QiniuStorageService implements StorageService {
     // 七牛配置名称
     private static final String CONFIG_NAME = "qiniu_storage";
     /**
@@ -71,7 +74,7 @@ public class QiniuStorageConfig {
     /**
      * 是否为七牛控制台「新建文件夹」产生的目录占位对象。
      * <p>
-     * 该类对象 key 以 {@code /} 结尾，体积多为 0；{@link #listFiles} 中过滤，
+     * 该类对象 key 以 {@code /} 结尾，体积多为 0；{@link #listFileItems} 中过滤，
      * {@link #listFileTree} 中仅用于挂目录链，不进入 files。
      */
     private boolean isDirectoryMarkerKey(String key) {
@@ -86,8 +89,14 @@ public class QiniuStorageConfig {
         return putTime100ns / 10_000L;
     }
 
-    public QiniuStorageConfig(EnvConfigService envConfigService) {
+    public QiniuStorageService(EnvConfigService envConfigService) {
         this.envConfigService = envConfigService;
+    }
+
+    // 将通用接口实现中的七牛受检异常统一转为业务异常，调用方无需感知七牛 SDK
+    private static CustomException wrapQiniuException(QiniuException e) {
+        String reason = e.error() != null && !e.error().isBlank() ? e.error() : e.getMessage();
+        return new CustomException("七牛云存储操作失败：" + reason);
     }
 
     /**
@@ -96,6 +105,7 @@ public class QiniuStorageConfig {
      * key 规则：配置中的基础目录（{@code qiniu_storage.dir}，如 {@code static}）+ 业务相对目录
      * + UUID + 原文件扩展名；前端传入的 {@code dir} 仅表示该基础目录下的子路径。
      */
+    @Override
     public String upload(String dir, MultipartFile file) throws IOException {
         QiniuConfig config = getQiniuConfig();
         String key = buildObjectKey(combineStorageDir(config.getRootDir(), dir), file.getOriginalFilename());
@@ -181,13 +191,18 @@ public class QiniuStorageConfig {
     }
 
     // 根据完整访问 URL 解析对象 key 并删除。
-    public boolean deleteByUrl(String url) throws QiniuException {
-        QiniuConfig config = getQiniuConfig();
-        String key = extractKeyFromUrl(url, config.getDomain());
-        BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
-                new Configuration(Region.autoRegion()));
-        bucketManager.delete(config.getBucketName(), key);
-        return true;
+    @Override
+    public boolean deleteByUrl(String url) {
+        try {
+            QiniuConfig config = getQiniuConfig();
+            String key = extractKeyFromUrl(url, config.getDomain());
+            BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
+                    new Configuration(Region.autoRegion()));
+            bucketManager.delete(config.getBucketName(), key);
+            return true;
+        } catch (QiniuException e) {
+            throw wrapQiniuException(e);
+        }
     }
 
     /**
@@ -195,22 +210,27 @@ public class QiniuStorageConfig {
      * <p>
      * 返回的 {@code putTime} 为<strong>毫秒</strong>时间戳（已自七牛 100ns 换算）。
      */
-    public FileInfoVO getFileInfo(String filePath) throws QiniuException {
-        QiniuConfig config = getQiniuConfig();
-        String key = extractKeyFromUrl(filePath, config.getDomain());
-        BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
-                new Configuration(Region.autoRegion()));
-        FileInfo fileInfo = bucketManager.stat(config.getBucketName(), key);
+    @Override
+    public FileInfoVO getFileInfo(String filePath) {
+        try {
+            QiniuConfig config = getQiniuConfig();
+            String key = extractKeyFromUrl(filePath, config.getDomain());
+            BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
+                    new Configuration(Region.autoRegion()));
+            FileInfo fileInfo = bucketManager.stat(config.getBucketName(), key);
 
-        FileInfoVO data = new FileInfoVO();
-        data.setName(key.contains("/") ? key.substring(key.lastIndexOf('/') + 1) : key);
-        data.setPath(key);
-        data.setSize(fileInfo.fsize);
-        data.setHash(fileInfo.hash);
-        data.setMimeType(fileInfo.mimeType);
-        data.setPutTime(qiniuPutTimeToEpochMillis(fileInfo.putTime));
-        data.setUrl(buildPublicUrl(config, key));
-        return data;
+            FileInfoVO data = new FileInfoVO();
+            data.setName(key.contains("/") ? key.substring(key.lastIndexOf('/') + 1) : key);
+            data.setPath(key);
+            data.setSize(fileInfo.fsize);
+            data.setHash(fileInfo.hash);
+            data.setMimeType(fileInfo.mimeType);
+            data.setPutTime(qiniuPutTimeToEpochMillis(fileInfo.putTime));
+            data.setUrl(buildPublicUrl(config, key));
+            return data;
+        } catch (QiniuException e) {
+            throw wrapQiniuException(e);
+        }
     }
 
     /**
@@ -224,57 +244,62 @@ public class QiniuStorageConfig {
      * <p>
      * 每条结果中的 {@code date} 为上传时间的<strong>毫秒</strong>时间戳。
      */
-    public List<FileListItemVO> listFileItems(String dir) throws QiniuException {
-        QiniuConfig config = getQiniuConfig();
-        BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
-                new Configuration(Region.autoRegion()));
-        List<FileInfo> allFiles = new ArrayList<>();
-        // delimiter="/"：只返回当前目录下的对象，子目录走 commonPrefixes，不会摊平进文件列表
-        String prefix = normalizeDirPrefix(combineStorageDir(config.getRootDir(), dir));
-        String marker = null;
+    @Override
+    public List<FileListItemVO> listFileItems(String dir) {
+        try {
+            QiniuConfig config = getQiniuConfig();
+            BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
+                    new Configuration(Region.autoRegion()));
+            List<FileInfo> allFiles = new ArrayList<>();
+            // delimiter="/"：只返回当前目录下的对象，子目录走 commonPrefixes，不会摊平进文件列表
+            String prefix = normalizeDirPrefix(combineStorageDir(config.getRootDir(), dir));
+            String marker = null;
 
-        do {
-            FileListing listing = bucketManager.listFiles(config.getBucketName(), prefix, marker, 1000, "/");
-            if (listing.items != null) {
-                for (FileInfo item : listing.items) {
-                    if (isPlaceholderFileKey(item.key) || isDirectoryMarkerKey(item.key)) {
-                        continue;
+            do {
+                FileListing listing = bucketManager.listFiles(config.getBucketName(), prefix, marker, 1000, "/");
+                if (listing.items != null) {
+                    for (FileInfo item : listing.items) {
+                        if (isPlaceholderFileKey(item.key) || isDirectoryMarkerKey(item.key)) {
+                            continue;
+                        }
+                        // 双重保险：去掉前缀后仍含 / 说明是更深层级，跳过
+                        if (!isDirectChildKey(prefix, item.key)) {
+                            continue;
+                        }
+                        allFiles.add(item);
                     }
-                    // 双重保险：去掉前缀后仍含 / 说明是更深层级，跳过
-                    if (!isDirectChildKey(prefix, item.key)) {
-                        continue;
-                    }
-                    allFiles.add(item);
                 }
-            }
-            marker = listing.marker;
-        } while (marker != null && !marker.isEmpty());
+                marker = listing.marker;
+            } while (marker != null && !marker.isEmpty());
 
-        // 新上传优先展示（putTime 降序）
-        allFiles.sort((a, b) -> Long.compare(b.putTime, a.putTime));
+            // 新上传优先展示（putTime 降序）
+            allFiles.sort((a, b) -> Long.compare(b.putTime, a.putTime));
 
-        List<FileListItemVO> result = new ArrayList<>();
-        for (FileInfo item : allFiles) {
-            FileListItemVO data = new FileListItemVO();
-            String key = item.key;
-            String name = key.contains("/") ? key.substring(key.lastIndexOf('/') + 1) : key;
-            // 平铺列表里 type 表示扩展名（小写），与目录树里 file 节点的 ext 字段含义一致
-            String ext = "";
-            int extIndex = name.lastIndexOf('.');
-            if (extIndex >= 0 && extIndex < name.length() - 1) {
-                ext = name.substring(extIndex + 1).toLowerCase();
+            List<FileListItemVO> result = new ArrayList<>();
+            for (FileInfo item : allFiles) {
+                FileListItemVO data = new FileListItemVO();
+                String key = item.key;
+                String name = key.contains("/") ? key.substring(key.lastIndexOf('/') + 1) : key;
+                // 平铺列表里 type 表示扩展名（小写），与目录树里 file 节点的 ext 字段含义一致
+                String ext = "";
+                int extIndex = name.lastIndexOf('.');
+                if (extIndex >= 0 && extIndex < name.length() - 1) {
+                    ext = name.substring(extIndex + 1).toLowerCase();
+                }
+                data.setBasePath(normalizeDomain(config.getDomain()) + "/");
+                data.setDir(dir);
+                data.setPath(key);
+                data.setName(name);
+                data.setSize(item.fsize);
+                data.setType(ext);
+                data.setDate(qiniuPutTimeToEpochMillis(item.putTime));
+                data.setUrl(buildPublicUrl(config, key));
+                result.add(data);
             }
-            data.setBasePath(normalizeDomain(config.getDomain()) + "/");
-            data.setDir(dir);
-            data.setPath(key);
-            data.setName(name);
-            data.setSize(item.fsize);
-            data.setType(ext);
-            data.setDate(qiniuPutTimeToEpochMillis(item.putTime));
-            data.setUrl(buildPublicUrl(config, key));
-            result.add(data);
+            return result;
+        } catch (QiniuException e) {
+            throw wrapQiniuException(e);
         }
-        return result;
     }
 
     /** 判断 object key 是否为指定目录前缀下的直接子文件（相对路径不含 /） */
@@ -301,97 +326,102 @@ public class QiniuStorageConfig {
      * <p>
      * 树中 file 节点的 {@code date} 为上传时间的毫秒时间戳。
      */
-    public FileTreeVO listFileTree() throws QiniuException {
-        QiniuConfig config = getQiniuConfig();
-        BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
-                new Configuration(Region.autoRegion()));
-        String prefix = normalizeDirPrefix("");
-        String marker = null;
-        List<FileInfo> allFiles = new ArrayList<>();
+    @Override
+    public FileTreeVO listFileTree() {
+        try {
+            QiniuConfig config = getQiniuConfig();
+            BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
+                    new Configuration(Region.autoRegion()));
+            String prefix = normalizeDirPrefix("");
+            String marker = null;
+            List<FileInfo> allFiles = new ArrayList<>();
 
-        do {
-            FileListing listing = bucketManager.listFiles(config.getBucketName(), prefix, marker, 1000, null);
-            if (listing.items != null) {
-                allFiles.addAll(Arrays.asList(listing.items));
-            }
-            marker = listing.marker;
-        } while (marker != null && !marker.isEmpty());
-
-        List<FileTreeNodeVO> roots = new ArrayList<>();
-        Map<String, FileTreeNodeVO> rootIndex = new LinkedHashMap<>();
-        String basePath = normalizeDomain(config.getDomain()) + "/";
-
-        for (FileInfo fileInfo : allFiles) {
-            String key = fileInfo.key;
-            if (key == null || key.trim().isEmpty()) {
-                continue;
-            }
-            // 控制台「新建文件夹」：对象 key 形如 a/b/，仅用于在树中挂出目录链，不能当作文件节点
-            if (isDirectoryMarkerKey(key)) {
-                String trimmed = key.substring(0, key.length() - 1);
-                List<String> dirSegments = new ArrayList<>();
-                for (String s : trimmed.split("/")) {
-                    if (!s.isEmpty()) {
-                        dirSegments.add(s);
-                    }
+            do {
+                FileListing listing = bucketManager.listFiles(config.getBucketName(), prefix, marker, 1000, null);
+                if (listing.items != null) {
+                    allFiles.addAll(Arrays.asList(listing.items));
                 }
-                if (dirSegments.isEmpty()) {
+                marker = listing.marker;
+            } while (marker != null && !marker.isEmpty());
+
+            List<FileTreeNodeVO> roots = new ArrayList<>();
+            Map<String, FileTreeNodeVO> rootIndex = new LinkedHashMap<>();
+            String basePath = normalizeDomain(config.getDomain()) + "/";
+
+            for (FileInfo fileInfo : allFiles) {
+                String key = fileInfo.key;
+                if (key == null || key.trim().isEmpty()) {
                     continue;
                 }
-                FileTreeNodeVO markerCurrent = rootIndex.computeIfAbsent(dirSegments.get(0), name -> {
+                // 控制台「新建文件夹」：对象 key 形如 a/b/，仅用于在树中挂出目录链，不能当作文件节点
+                if (isDirectoryMarkerKey(key)) {
+                    String trimmed = key.substring(0, key.length() - 1);
+                    List<String> dirSegments = new ArrayList<>();
+                    for (String s : trimmed.split("/")) {
+                        if (!s.isEmpty()) {
+                            dirSegments.add(s);
+                        }
+                    }
+                    if (dirSegments.isEmpty()) {
+                        continue;
+                    }
+                    FileTreeNodeVO markerCurrent = rootIndex.computeIfAbsent(dirSegments.get(0), name -> {
+                        FileTreeNodeVO node = createDirNode(name, name + "/");
+                        roots.add(node);
+                        return node;
+                    });
+                    for (int i = 1; i < dirSegments.size(); i++) {
+                        markerCurrent = getOrCreateDirChild(markerCurrent, dirSegments.get(i));
+                    }
+                    continue;
+                }
+                // 普通对象：按 "/" 拆段；第一段为桶内一级目录名，最后一段为文件名，中间为子目录
+                String[] segments = key.split("/");
+                if (segments.length == 0) {
+                    continue;
+                }
+
+                FileTreeNodeVO current = rootIndex.computeIfAbsent(segments[0], name -> {
                     FileTreeNodeVO node = createDirNode(name, name + "/");
                     roots.add(node);
                     return node;
                 });
-                for (int i = 1; i < dirSegments.size(); i++) {
-                    markerCurrent = getOrCreateDirChild(markerCurrent, dirSegments.get(i));
-                }
-                continue;
-            }
-            // 普通对象：按 "/" 拆段；第一段为桶内一级目录名，最后一段为文件名，中间为子目录
-            String[] segments = key.split("/");
-            if (segments.length == 0) {
-                continue;
-            }
-
-            FileTreeNodeVO current = rootIndex.computeIfAbsent(segments[0], name -> {
-                FileTreeNodeVO node = createDirNode(name, name + "/");
-                roots.add(node);
-                return node;
-            });
-            boolean isPlaceholder = isPlaceholderFileKey(key);
-            // 真实文件：自根目录起逐级累加 fileCount / totalSize；.keep 不参与统计
-            if (!isPlaceholder) {
-                increaseDirectoryStats(current, fileInfo.fsize);
-            }
-
-            for (int i = 1; i < segments.length - 1; i++) {
-                String segment = segments[i];
-                FileTreeNodeVO childDir = getOrCreateDirChild(current, segment);
+                boolean isPlaceholder = isPlaceholderFileKey(key);
+                // 真实文件：自根目录起逐级累加 fileCount / totalSize；.keep 不参与统计
                 if (!isPlaceholder) {
-                    increaseDirectoryStats(childDir, fileInfo.fsize);
+                    increaseDirectoryStats(current, fileInfo.fsize);
                 }
-                current = childDir;
+
+                for (int i = 1; i < segments.length - 1; i++) {
+                    String segment = segments[i];
+                    FileTreeNodeVO childDir = getOrCreateDirChild(current, segment);
+                    if (!isPlaceholder) {
+                        increaseDirectoryStats(childDir, fileInfo.fsize);
+                    }
+                    current = childDir;
+                }
+
+                // dir/.keep：只保证目录节点存在，不进入 files 列表
+                if (isPlaceholder) {
+                    continue;
+                }
+
+                // 叶子段对应一个七牛对象，挂到当前目录的 files 下
+                FileTreeFileVO fileNode = createFileNode(fileInfo, key, config);
+                current.getFiles().add(fileNode);
             }
 
-            // dir/.keep：只保证目录节点存在，不进入 files 列表
-            if (isPlaceholder) {
-                continue;
-            }
+            sortTreeNodes(roots);
 
-            // 叶子段对应一个七牛对象，挂到当前目录的 files 下
-            FileTreeFileVO fileNode = createFileNode(fileInfo, key, config);
-            current.getFiles().add(fileNode);
+            FileTreeVO data = new FileTreeVO();
+            data.setBasePath(basePath);
+            // total 为列举到的原始对象条数（含 .keep 与控制台目录占位），与树中 files 条数不一定相等
+            data.setTotal(allFiles.size());
+            data.setResult(roots);
+            return data;
+        } catch (QiniuException e) {
+            throw wrapQiniuException(e);
         }
-
-        sortTreeNodes(roots);
-
-        FileTreeVO data = new FileTreeVO();
-        data.setBasePath(basePath);
-        // total 为列举到的原始对象条数（含 .keep 与控制台目录占位），与树中 files 条数不一定相等
-        data.setTotal(allFiles.size());
-        data.setResult(roots);
-        return data;
     }
 
     /**
@@ -401,6 +431,7 @@ public class QiniuStorageConfig {
      * - 上传空字节对象：.keep；
      * - 返回 node 给前端，便于“创建成功后本地直接插入目录树”，无需立即全量刷新。
      */
+    @Override
     public FileDirCreateVO createDirectory(String dir) throws IOException {
         QiniuConfig config = getQiniuConfig();
         String normalizedDir = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), dir));
@@ -420,31 +451,36 @@ public class QiniuStorageConfig {
     }
 
     // 重命名目录：按前缀列举后批量 move 对象。
-    public FileDirRenameVO renameDirectory(String fromDir, String toDir) throws QiniuException {
-        QiniuConfig config = getQiniuConfig();
-        String fromPrefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), fromDir));
-        String toPrefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), toDir));
-        if (Objects.equals(fromPrefix, toPrefix)) {
-            throw new CustomException("新旧目录不能相同");
+    @Override
+    public FileDirRenameVO renameDirectory(String fromDir, String toDir) {
+        try {
+            QiniuConfig config = getQiniuConfig();
+            String fromPrefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), fromDir));
+            String toPrefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), toDir));
+            if (Objects.equals(fromPrefix, toPrefix)) {
+                throw new CustomException("新旧目录不能相同");
+            }
+
+            BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
+                    new Configuration(Region.autoRegion()));
+
+            // 同一 bucket 内 move：保持 key 除前缀外的后缀不变，实现整棵「子树」改名
+            List<String> keys = listKeysByPrefix(bucketManager, config.getBucketName(), fromPrefix);
+            int moved = 0;
+            for (String oldKey : keys) {
+                String newKey = toPrefix + oldKey.substring(fromPrefix.length());
+                bucketManager.move(config.getBucketName(), oldKey, config.getBucketName(), newKey, true);
+                moved++;
+            }
+
+            FileDirRenameVO result = new FileDirRenameVO();
+            result.setFromDir(fromPrefix);
+            result.setToDir(toPrefix);
+            result.setMoved(moved);
+            return result;
+        } catch (QiniuException e) {
+            throw wrapQiniuException(e);
         }
-
-        BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
-                new Configuration(Region.autoRegion()));
-
-        // 同一 bucket 内 move：保持 key 除前缀外的后缀不变，实现整棵「子树」改名
-        List<String> keys = listKeysByPrefix(bucketManager, config.getBucketName(), fromPrefix);
-        int moved = 0;
-        for (String oldKey : keys) {
-            String newKey = toPrefix + oldKey.substring(fromPrefix.length());
-            bucketManager.move(config.getBucketName(), oldKey, config.getBucketName(), newKey, true);
-            moved++;
-        }
-
-        FileDirRenameVO result = new FileDirRenameVO();
-        result.setFromDir(fromPrefix);
-        result.setToDir(toPrefix);
-        result.setMoved(moved);
-        return result;
     }
 
     /**
@@ -453,25 +489,30 @@ public class QiniuStorageConfig {
      * 若前缀下存在<strong>真实文件</strong>（非 {@code .keep}、非控制台以 {@code /} 结尾的目录占位），则拒绝删除，
      * 需先清空或移走业务文件。
      */
-    public FileDirDeleteVO deleteDirectory(String dir) throws QiniuException {
-        QiniuConfig config = getQiniuConfig();
-        String prefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), dir));
-        BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
-                new Configuration(Region.autoRegion()));
+    @Override
+    public FileDirDeleteVO deleteDirectory(String dir) {
+        try {
+            QiniuConfig config = getQiniuConfig();
+            String prefix = normalizeDirectoryPath(combineStorageDir(config.getRootDir(), dir));
+            BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
+                    new Configuration(Region.autoRegion()));
 
-        List<String> keys = listKeysByPrefix(bucketManager, config.getBucketName(), prefix);
-        ensureDirectoryEmptyOfRealFiles(keys);
+            List<String> keys = listKeysByPrefix(bucketManager, config.getBucketName(), prefix);
+            ensureDirectoryEmptyOfRealFiles(keys);
 
-        int deleted = 0;
-        for (String key : keys) {
-            bucketManager.delete(config.getBucketName(), key);
-            deleted++;
+            int deleted = 0;
+            for (String key : keys) {
+                bucketManager.delete(config.getBucketName(), key);
+                deleted++;
+            }
+
+            FileDirDeleteVO result = new FileDirDeleteVO();
+            result.setDir(prefix);
+            result.setDeleted(deleted);
+            return result;
+        } catch (QiniuException e) {
+            throw wrapQiniuException(e);
         }
-
-        FileDirDeleteVO result = new FileDirDeleteVO();
-        result.setDir(prefix);
-        result.setDeleted(deleted);
-        return result;
     }
 
     // 创建目录节点（用于树结构）

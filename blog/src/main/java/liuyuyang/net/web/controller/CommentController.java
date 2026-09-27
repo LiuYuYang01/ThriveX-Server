@@ -11,6 +11,7 @@ import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.comment.CommentVO;
+import liuyuyang.net.web.service.CaptchaService;
 import liuyuyang.net.web.service.CommentService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -29,12 +30,15 @@ import java.util.Map;
 public class CommentController {
     @Resource
     private CommentService commentService;
+    @Resource
+    private CaptchaService captchaService;
 
     @NoTokenRequired
     @RateLimit
     @PostMapping
     @Operation(summary = "新增评论")
     public Result<String> addCommentData(@RequestBody @Validated(ValidationGroups.Create.class) CommentFormDTO commentFormDTO) throws Exception {
+        captchaService.check(commentFormDTO.getCaptchaToken());
         commentFormDTO.setId(null);
         commentService.addCommentData(commentFormDTO);
         return Result.success();

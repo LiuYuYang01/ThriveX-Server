@@ -164,4 +164,40 @@ public class StatisServiceImpl implements StatisService {
                 "基础概览时间趋势报表"
         );
     }
+
+    @Override
+    public JsonNode getRegionReport(String startDate, String endDate) {
+        return callBaiduStatisticsApi(
+                "pv_count",
+                "visit/area/a",
+                null,
+                startDate,
+                endDate,
+                "地域分布报表"
+        );
+    }
+
+    @Override
+    public JsonNode getSourceReport(String startDate, String endDate) {
+        return callBaiduStatisticsApi(
+                "pv_count",
+                "visit/source/all/a",
+                null,
+                startDate,
+                endDate,
+                "来源分布报表"
+        );
+    }
+
+    @Override
+    public JsonNode getClientReport(String startDate, String endDate) {
+        return callBaiduStatisticsApi(
+                "pv_count",
+                "visit/client/a",
+                null,
+                startDate,
+                endDate,
+                "设备分布报表"
+        );
+    }
 }

@@ -7,6 +7,7 @@ import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.model.LinkType;
 import liuyuyang.net.core.utils.Result;
+import liuyuyang.net.web.service.CaptchaService;
 import liuyuyang.net.web.service.LinkService;
 import liuyuyang.net.core.utils.Paging;
 import liuyuyang.net.dto.link.LinkFilterDTO;
@@ -32,12 +33,15 @@ import java.util.Map;
 public class LinkController {
     @Resource
     private LinkService linkService;
+    @Resource
+    private CaptchaService captchaService;
 
     @RateLimit
     @PostMapping
     @NoTokenRequired
     @Operation(summary = "新增网站")
     public Result<String> addLinkData(@RequestBody @Validated(ValidationGroups.Create.class) LinkFormDTO linkFormDTO, @RequestHeader(value = "Authorization", required = false) String token) throws Exception {
+        captchaService.check(linkFormDTO.getCaptchaToken());
         linkFormDTO.setId(null);
         linkService.addLinkData(linkFormDTO, token);
         return Result.success();

@@ -49,6 +49,9 @@ public class ArticleVO {
     @Schema(description = "分享数", example = "0")
     private Integer shareCount;
 
+    @Schema(description = "是否置顶", example = "false")
+    private Boolean isTop;
+
     @Schema(description = "分类列表")
     private List<CateVO> cateList = new ArrayList<>();
 

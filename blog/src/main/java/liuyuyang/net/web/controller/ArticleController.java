@@ -73,6 +73,13 @@ public class ArticleController {
         return Result.success();
     }
 
+    @PatchMapping("/top/{id}/{is_top}")
+    @Operation(summary = "置顶/取消置顶文章")
+    public Result<String> topArticleData(@PathVariable Integer id, @PathVariable Boolean is_top) {
+        articleService.topArticleData(id, is_top);
+        return Result.success();
+    }
+
     @NoTokenRequired
     @RateLimit
     @GetMapping("/{id}")

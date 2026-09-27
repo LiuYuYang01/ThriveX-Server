@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import liuyuyang.net.enums.article.ArticleStatusEnum;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.CommonUtils;
+import liuyuyang.net.core.utils.IpUtils;
 import liuyuyang.net.dto.article.ArticleFormDTO;
 import liuyuyang.net.model.*;
 import liuyuyang.net.dto.PageDTO;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotNull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -54,6 +56,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Resource
     private ArticleConfigMapper articleConfigMapper;
     @Resource
+    private ArticleViewLogMapper articleViewLogMapper;
+    @Resource
     private TagMapper tagMapper;
     @Resource
     private CateMapper cateMapper;
@@ -67,7 +71,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @NotNull
     private static LambdaQueryWrapper<Article> getArticleQueryWrapper(ArticleFilterDTO articleFilterDTO) {
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.orderByDesc(Article::getCreateTime);
+        queryWrapper.orderByDesc(Article::getIsTop).orderByDesc(Article::getCreateTime);
 
         // 根据关键字通过标题过滤出对应文章数据
         if (articleFilterDTO.getTitle() != null && !articleFilterDTO.getTitle().isEmpty()) {
@@ -222,6 +226,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 修改文章
         articleMapper.updateById(article);
+    }
+
+    @Override
+    public void topArticleData(Integer id, Boolean isTop) {
+        Article article = articleMapper.selectById(id);
+        if (article == null)
+            throw new CustomException("该文章不存在");
+
+        Article update = new Article();
+        update.setId(id);
+        update.setIsTop(isTop);
+        articleMapper.updateById(update);
     }
 
     @Override
@@ -408,6 +424,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         // 构建文章查询条件
         LambdaQueryWrapper<Article> queryWrapperArticle = new LambdaQueryWrapper<Article>()
                 .in(Article::getId, articleIds)
+                .orderByDesc(Article::getIsTop)
                 .orderByDesc(Article::getCreateTime);
 
         List<Article> articles = articleMapper.selectList(queryWrapperArticle);
@@ -443,7 +460,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 构建文章查询条件
         LambdaQueryWrapper<Article> queryWrapperArticle = new LambdaQueryWrapper<>();
-        queryWrapperArticle.in(Article::getId, articleIds).orderByDesc(Article::getCreateTime);
+        queryWrapperArticle.in(Article::getId, articleIds)
+                .orderByDesc(Article::getIsTop)
+                .orderByDesc(Article::getCreateTime);
 
         List<Article> articles = articleMapper.selectList(queryWrapperArticle);
         List<ArticleVO> vos = processArticleList(articles);
@@ -556,6 +575,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             throw new CustomException("获取失败：该文章不存在");
         data.setView(data.getView() + 1);
         articleMapper.updateById(data);
+
+        // 浏览明细落库供数据分析使用，失败不影响浏览量递增
+        try {
+            ArticleViewLog viewLog = new ArticleViewLog();
+            viewLog.setArticleId(id);
+            HttpServletRequest request = CommonUtils.getRequest();
+            viewLog.setIp(request == null ? null : IpUtils.getRealIp(request));
+            viewLog.setCreateTime(System.currentTimeMillis());
+            articleViewLogMapper.insert(viewLog);
+        } catch (Exception e) {
+            log.error("记录文章浏览日志失败: articleId={}", id, e);
+        }
     }
 
     @Override

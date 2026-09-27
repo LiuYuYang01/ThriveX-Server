@@ -4,6 +4,7 @@ import liuyuyang.net.core.interceptor.JwtTokenAdminInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.CacheControl;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -11,6 +12,7 @@ import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -62,6 +64,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/static/upload/**")
-                .addResourceLocations("file:" + uploadDir);
+                .addResourceLocations("file:" + uploadDir)
+                // 文件名由 UUID 生成不会重复，静态资源可长缓存（本地存储模式的对外访问入口）
+                .setCacheControl(CacheControl.maxAge(Duration.ofDays(30)).cachePublic());
     }
 }

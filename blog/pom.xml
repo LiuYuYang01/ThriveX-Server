@@ -83,6 +83,12 @@
             <artifactId>caffeine</artifactId>
         </dependency>
 
+        <!-- Spring Cache 抽象（提供 CacheManager / @Cacheable 支持） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
         <!-- Rss解析工具 -->
         <dependency>
             <groupId>com.rometools</groupId>
