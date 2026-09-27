@@ -261,7 +261,8 @@ public class StatisServiceImpl implements StatisService {
     public JsonNode getRegionReport(String startDate, String endDate) {
         return callBaiduStatisticsApi(
                 "pv_count",
-                "visit/area/a",
+                // 旧方法名 visit/area/a 已被百度下线，404 请求地址不存在
+                "visit/district/a",
                 null,
                 startDate,
                 endDate,
