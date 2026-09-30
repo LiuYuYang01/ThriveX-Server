@@ -7,6 +7,7 @@ import liuyuyang.net.dto.record.RecordCommentFormDTO;
 import liuyuyang.net.vo.record.RecordCommentVO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface RecordCommentService {
     void addRecordCommentData(RecordCommentFormDTO recordCommentFormDTO) throws Exception;
@@ -26,4 +27,6 @@ public interface RecordCommentService {
     void auditRecordCommentData(Integer id);
 
     void delByRecordId(Integer recordId);
+
+    Map<Integer, Integer> countApprovedByRecordIds(List<Integer> recordIds);
 }

@@ -209,6 +209,26 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
         recordCommentMapper.delete(queryWrapper);
     }
 
+    @Override
+    public Map<Integer, Integer> countApprovedByRecordIds(List<Integer> recordIds) {
+        if (recordIds == null || recordIds.isEmpty()) {
+            return Map.of();
+        }
+
+        // 列名统一别名成驼峰，避免 map-underscore-to-camel-case 开关影响 selectMaps 的 key
+        QueryWrapper<RecordComment> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("record_id AS recordId", "COUNT(*) AS cnt")
+                .in("record_id", recordIds)
+                .eq("status", 1)
+                .groupBy("record_id");
+
+        Map<Integer, Integer> result = new HashMap<>();
+        for (Map<String, Object> row : recordCommentMapper.selectMaps(queryWrapper)) {
+            result.put(((Number) row.get("recordId")).intValue(), ((Number) row.get("cnt")).intValue());
+        }
+        return result;
+    }
+
     private List<RecordComment> queryFlatComments(RecordCommentFilterDTO recordCommentFilterDTO) {
         QueryWrapper<RecordComment> queryWrapper = commonUtils.queryWrapperDateFilter(recordCommentFilterDTO);
 

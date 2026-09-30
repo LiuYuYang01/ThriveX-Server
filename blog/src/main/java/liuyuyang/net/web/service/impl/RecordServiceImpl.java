@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -85,6 +87,11 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
     public Page<RecordVO> getRecordList(RecordFilterDTO recordFilterDTO) {
         List<Record> raw = queryRecordList(recordFilterDTO);
         List<RecordVO> list = raw.stream().map(RecordServiceImpl::toRecordVO).collect(Collectors.toList());
+
+        List<Integer> ids = list.stream().map(Record::getId).filter(Objects::nonNull).collect(Collectors.toList());
+        Map<Integer, Integer> commentCounts = recordCommentService.countApprovedByRecordIds(ids);
+        list.forEach(vo -> vo.setCommentCount(commentCounts.getOrDefault(vo.getId(), 0)));
+
         return commonUtils.paginate(recordFilterDTO, list);
     }
 

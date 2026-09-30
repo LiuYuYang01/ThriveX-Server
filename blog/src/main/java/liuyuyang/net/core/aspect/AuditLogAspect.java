@@ -121,7 +121,7 @@ public class AuditLogAspect {
 
     // 模块名按 URL 前缀匹配，长前缀优先（如 record/comment 先于 record）
     private static final java.util.Map<String, String> MODULE_MAPPINGS = new java.util.LinkedHashMap<>() {{
-        put("record/comment", "说说评论管理");
+        put("record/comment", "闪念评论管理");
         put("record", "闪念管理");
         put("article", "文章管理");
         put("cate", "分类管理");
