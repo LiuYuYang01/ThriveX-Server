@@ -13,6 +13,9 @@ import java.util.List;
 public interface CommentService extends IService<Comment> {
     void addCommentData(CommentFormDTO commentFormDTO) throws Exception;
 
+    /** 管理端回复：需登录鉴权，落库即为审核通过状态 */
+    void replyCommentData(CommentFormDTO commentFormDTO) throws Exception;
+
     void delCommentData(Integer id);
 
     void batchDelCommentData(List<Integer> ids);

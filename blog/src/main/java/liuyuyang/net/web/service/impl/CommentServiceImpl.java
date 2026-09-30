@@ -49,10 +49,20 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 
     @Override
     public void addCommentData(CommentFormDTO commentFormDTO) throws Exception {
+        // 前台匿名提交一律置为待审核，请求体中的 status 不生效
+        saveCommentData(commentFormDTO, 0);
+    }
+
+    @Override
+    public void replyCommentData(CommentFormDTO commentFormDTO) throws Exception {
+        // 管理端回复无需审核，落库即通过
+        saveCommentData(commentFormDTO, 1);
+    }
+
+    private void saveCommentData(CommentFormDTO commentFormDTO, int status) throws Exception {
         Comment comment = new Comment();
         BeanUtils.copyProperties(commentFormDTO, comment);
-        // 匿名提交一律置为待审核，请求体中的 status 不生效
-        comment.setStatus(0);
+        comment.setStatus(status);
         commentMapper.insert(comment);
 
         // 文章标题

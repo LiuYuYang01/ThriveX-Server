@@ -51,6 +51,17 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
 
     @Override
     public void addRecordCommentData(RecordCommentFormDTO recordCommentFormDTO) throws Exception {
+        // 前台匿名提交一律置为待审核，请求体中的 status 不生效
+        saveRecordCommentData(recordCommentFormDTO, 0);
+    }
+
+    @Override
+    public void replyRecordCommentData(RecordCommentFormDTO recordCommentFormDTO) throws Exception {
+        // 管理端回复无需审核，落库即通过
+        saveRecordCommentData(recordCommentFormDTO, 1);
+    }
+
+    private void saveRecordCommentData(RecordCommentFormDTO recordCommentFormDTO, int status) throws Exception {
         Record record = recordMapper.selectById(recordCommentFormDTO.getRecordId());
         if (record == null) {
             throw new CustomException("该说说不存在");
@@ -68,8 +79,7 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
 
         RecordComment comment = new RecordComment();
         BeanUtils.copyProperties(recordCommentFormDTO, comment);
-        // 匿名提交一律置为待审核，请求体中的 status 不生效
-        comment.setStatus(0);
+        comment.setStatus(status);
         recordCommentMapper.insert(comment);
 
         sendCommentEmail(comment);

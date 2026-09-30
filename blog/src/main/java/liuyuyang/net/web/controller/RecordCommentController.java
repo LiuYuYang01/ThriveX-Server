@@ -43,6 +43,14 @@ public class RecordCommentController {
         return Result.success();
     }
 
+    @PostMapping("/reply")
+    @Operation(summary = "回复说说评论（管理端，无需审核）")
+    public Result<String> replyRecordCommentData(@RequestBody @Validated(ValidationGroups.Create.class) RecordCommentFormDTO recordCommentFormDTO) throws Exception {
+        recordCommentFormDTO.setId(null);
+        recordCommentService.replyRecordCommentData(recordCommentFormDTO);
+        return Result.success();
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "删除说说评论")
     public Result<String> delRecordCommentData(@PathVariable Integer id) {

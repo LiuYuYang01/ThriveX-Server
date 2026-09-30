@@ -44,6 +44,14 @@ public class CommentController {
         return Result.success();
     }
 
+    @PostMapping("/reply")
+    @Operation(summary = "回复评论（管理端，无需审核）")
+    public Result<String> replyCommentData(@RequestBody @Validated(ValidationGroups.Create.class) CommentFormDTO commentFormDTO) throws Exception {
+        commentFormDTO.setId(null);
+        commentService.replyCommentData(commentFormDTO);
+        return Result.success();
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "删除评论")
     public Result<String> delCommentData(@PathVariable Integer id) {

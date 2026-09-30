@@ -12,6 +12,9 @@ import java.util.Map;
 public interface RecordCommentService {
     void addRecordCommentData(RecordCommentFormDTO recordCommentFormDTO) throws Exception;
 
+    /** 管理端回复：需登录鉴权，落库即为审核通过状态 */
+    void replyRecordCommentData(RecordCommentFormDTO recordCommentFormDTO) throws Exception;
+
     void delRecordCommentData(Integer id);
 
     void batchDelRecordCommentData(List<Integer> ids);
