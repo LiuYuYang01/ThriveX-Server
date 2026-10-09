@@ -54,7 +54,7 @@ public class UserController {
     @AuditLog(module = "用户管理", type = "登录", description = "管理员登录")
     @RateLimit(tokens = 5, duration = 60, message = "登录尝试过于频繁，请 60 秒后再试")
     public Result<Map<String, Object>> login(@RequestBody @Valid UserLoginDTO user) {
-        captchaService.check(user.getCaptchaToken());
+        captchaService.checkForLogin(user.getCaptchaToken());
         Map<String, Object> result = userService.login(user);
         return Result.success("登录成功", result);
     }

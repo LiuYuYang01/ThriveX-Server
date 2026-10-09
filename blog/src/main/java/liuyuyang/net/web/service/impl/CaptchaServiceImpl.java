@@ -3,6 +3,7 @@ package liuyuyang.net.web.service.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import liuyuyang.net.core.execption.CustomException;
+import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.core.utils.IpUtils;
 import liuyuyang.net.model.EnvConfig;
 import liuyuyang.net.web.service.CaptchaService;
@@ -40,6 +41,18 @@ public class CaptchaServiceImpl implements CaptchaService {
 
     @Override
     public void check(String captchaToken) {
+        // 管理端为最高权限，除登录外的操作一律免人机验证
+        if (CommonUtils.isAdmin()) return;
+
+        doCheck(captchaToken);
+    }
+
+    @Override
+    public void checkForLogin(String captchaToken) {
+        doCheck(captchaToken);
+    }
+
+    private void doCheck(String captchaToken) {
         EnvConfig config = envConfigService.getByName("hcaptcha_key");
         // 开关关闭（或老数据未启用）视为未启用人机验证，直接放行
         if (!isEnabled(config)) return;
