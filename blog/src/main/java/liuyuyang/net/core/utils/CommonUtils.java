@@ -99,7 +99,17 @@ public class CommonUtils {
     }
 
     public <T> QueryWrapper<T> queryWrapperDateFilter(FilterDTO filterDTO) {
+        return queryWrapperDateFilter(filterDTO, new String[0]);
+    }
+
+    /**
+     * 带排序的日期过滤，extraOrderDesc 里的列按倒序排在 create_time 之前（如「置顶优先」）
+     */
+    public <T> QueryWrapper<T> queryWrapperDateFilter(FilterDTO filterDTO, String... extraOrderDesc) {
         QueryWrapper<T> queryWrapper = new QueryWrapper<>();
+        for (String column : extraOrderDesc) {
+            queryWrapper.orderByDesc(column);
+        }
         queryWrapper.orderByDesc("create_time");
 
         // 根据开始与结束时间过滤

@@ -76,7 +76,8 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
     }
 
     private List<Record> queryRecordList(RecordFilterDTO recordFilterDTO) {
-        QueryWrapper<Record> queryWrapper = commonUtils.queryWrapperDateFilter(recordFilterDTO);
+        // 置顶的排前面，其余按时间倒序
+        QueryWrapper<Record> queryWrapper = commonUtils.queryWrapperDateFilter(recordFilterDTO, "top");
         if (recordFilterDTO.getContent() != null && !recordFilterDTO.getContent().trim().isEmpty()) {
             queryWrapper.like("content", "%" + recordFilterDTO.getContent().trim() + "%");
         }
@@ -108,5 +109,18 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
 
         Record updated = recordMapper.selectById(id);
         return updated.getLikeCount() != null ? updated.getLikeCount() : count;
+    }
+
+    @Override
+    public void setRecordTop(Integer id, Boolean top) {
+        Record data = recordMapper.selectById(id);
+        if (data == null) {
+            throw new CustomException("该说说不存在");
+        }
+
+        Record record = new Record();
+        record.setId(id);
+        record.setTop(Boolean.TRUE.equals(top));
+        recordMapper.updateById(record);
     }
 }

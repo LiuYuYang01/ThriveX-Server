@@ -460,6 +460,7 @@ CREATE TABLE `record` (
   `like_count` int NOT NULL DEFAULT '0' COMMENT '点赞数',
   `mood` varchar(16) DEFAULT NULL COMMENT '心情',
   `location` varchar(255) DEFAULT NULL COMMENT '位置',
+  `top` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否置顶',
   `create_time` bigint NOT NULL COMMENT '时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `record_pk_2` (`id`),
@@ -473,7 +474,7 @@ CREATE TABLE `record` (
 
 LOCK TABLES `record` WRITE;
 /*!40000 ALTER TABLE `record` DISABLE KEYS */;
-INSERT INTO `record` VALUES (3,'心中无女人，代码自然神','[]',NULL,27,'🥰','浙江省宁波市北仑区',1783153776358),(4,'今天的雨好大','[]',NULL,5,'😢','浙江省宁波市北仑区',1783157296910);
+INSERT INTO `record` VALUES (3,'心中无女人，代码自然神','[]',NULL,27,'🥰','浙江省宁波市北仑区',0,1783153776358),(4,'今天的雨好大','[]',NULL,5,'😢','浙江省宁波市北仑区',0,1783157296910);
 /*!40000 ALTER TABLE `record` ENABLE KEYS */;
 UNLOCK TABLES;
 

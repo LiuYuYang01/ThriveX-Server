@@ -31,4 +31,6 @@ public class Record extends BaseModel {
     @Schema(description = "位置", example = "厦门市 · 环岛路")
     @Size(max = 255, message = "位置不能超过255个字符", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private String location;
+    @Schema(description = "是否置顶", example = "false")
+    private Boolean top;
 }

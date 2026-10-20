@@ -11,6 +11,7 @@ import liuyuyang.net.dto.PageDTO;
 import liuyuyang.net.dto.record.RecordFilterDTO;
 import liuyuyang.net.dto.record.RecordFormDTO;
 import liuyuyang.net.dto.record.RecordLikeDTO;
+import liuyuyang.net.dto.record.RecordTopDTO;
 import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.record.RecordCommentVO;
 import liuyuyang.net.vo.record.RecordVO;
@@ -52,6 +53,13 @@ public class RecordController {
     @Operation(summary = "编辑说说")
     public Result<String> editRecordData(@RequestBody @Validated(ValidationGroups.Update.class) RecordFormDTO recordFormDTO) {
         recordService.editRecordData(recordFormDTO);
+        return Result.success();
+    }
+
+    @PatchMapping("/{id}/top")
+    @Operation(summary = "设置说说置顶状态")
+    public Result<String> setRecordTop(@PathVariable Integer id, @RequestBody @Validated RecordTopDTO recordTopDTO) {
+        recordService.setRecordTop(id, recordTopDTO.getTop());
         return Result.success();
     }
 
