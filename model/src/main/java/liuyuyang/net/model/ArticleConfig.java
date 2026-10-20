@@ -1,8 +1,10 @@
 package liuyuyang.net.model;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import liuyuyang.net.enums.article.ArticleStatusEnum;
 import liuyuyang.net.validation.ValidationGroups;
@@ -24,7 +26,20 @@ public class ArticleConfig {
 
     @Schema(description = "文章密码", example = "默认为空表示不加密")
     @Size(max = 50, message = "文章密码不能超过50个字符", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
+
+    @Schema(description = "是否已设置访问密码（只读标记，接口不会下发密码明文）")
+    @TableField(exist = false)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Boolean hasPassword;
+
+    /**
+     * 密码明文只写不读：请求可以携带，响应只暴露是否已设置
+     */
+    public Boolean getHasPassword() {
+        return password != null && !password.trim().isEmpty();
+    }
 
     @Schema(description = "是否为文章草稿", example = "false")
     private Boolean isDraft;

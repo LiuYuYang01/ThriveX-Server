@@ -127,7 +127,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         ArticleConfig articleConfig = new ArticleConfig();
         articleConfig.setArticleId(article.getId());
         articleConfig.setStatus(config.getStatus() != null ? config.getStatus() : ArticleStatusEnum.DEFAULT);
-        articleConfig.setPassword(config.getPassword());
+        // 统一存空串而非 null，避免依赖 password = '' 的查询（如随机推荐）漏掉数据
+        articleConfig.setPassword(config.getPassword() == null ? "" : config.getPassword());
         articleConfig.setIsDraft(config.getIsDraft());
         articleConfig.setIsEncrypt(config.getIsEncrypt());
         articleConfig.setIsDel(false);
@@ -188,6 +189,15 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (articleFormDTO.getCateIds() == null || articleFormDTO.getCateIds().isEmpty())
             throw new CustomException("编辑失败：请绑定分类");
 
+        // 密码明文不会下发给前端，因此编辑时密码留空表示沿用原密码，避免保存一次就被清空
+        String originalPassword = "";
+        LambdaQueryWrapper<ArticleConfig> oldConfigQuery = new LambdaQueryWrapper<>();
+        oldConfigQuery.eq(ArticleConfig::getArticleId, articleFormDTO.getId());
+        ArticleConfig oldConfig = articleConfigMapper.selectOne(oldConfigQuery);
+        if (oldConfig != null && oldConfig.getPassword() != null) {
+            originalPassword = oldConfig.getPassword();
+        }
+
         // 删除文章关联的数据
         delArticleCorrelationData(articleFormDTO.getId());
         // 重新绑定分类
@@ -215,7 +225,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         ArticleConfig articleConfig = new ArticleConfig();
         articleConfig.setArticleId(articleFormDTO.getId());
         articleConfig.setStatus(config.getStatus() != null ? config.getStatus() : ArticleStatusEnum.DEFAULT);
-        articleConfig.setPassword(config.getPassword());
+        String newPassword = config.getPassword();
+        articleConfig.setPassword(newPassword == null || newPassword.trim().isEmpty() ? originalPassword : newPassword);
         articleConfig.setIsDraft(Boolean.TRUE.equals(config.getIsDraft()));
         articleConfig.setIsEncrypt(Boolean.TRUE.equals(config.getIsEncrypt()));
         articleConfig.setIsDel(false);
@@ -275,8 +286,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 data.setDescription("该文章需要密码才能查看");
                 data.setContent("该文章需要密码才能查看");
 
-                // 验证密码是否正确
-                if (config.getPassword().equals(password)) {
+                // 验证密码是否正确（历史数据密码可能为 null，避免 NPE）
+                String articlePassword = config.getPassword();
+                if (articlePassword != null && articlePassword.equals(password)) {
                     data.setDescription(description);
                     data.setContent(content);
                 } else {
