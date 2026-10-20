@@ -25,12 +25,14 @@ import liuyuyang.net.vo.file.FileTreeVO;
 import liuyuyang.net.web.service.EnvConfigService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -49,6 +51,7 @@ import java.util.UUID;
  * 通用文件操作（{@link StorageService}）中的七牛受检异常统一包装为 {@link CustomException}，
  * 调用方无需感知七牛 SDK；pfop 瘦身为七牛特有能力，不在接口内，由 {@code FileServiceImpl} 直连本类。
  */
+@Slf4j
 @Service
 public class QiniuStorageService implements StorageService {
     // 七牛配置名称
@@ -190,17 +193,22 @@ public class QiniuStorageService implements StorageService {
                 new Configuration(Region.autoRegion()));
     }
 
-    // 根据完整访问 URL 解析对象 key 并删除。
+    // 根据完整访问 URL 或对象 key 删除对象。
     @Override
     public boolean deleteByUrl(String url) {
         try {
             QiniuConfig config = getQiniuConfig();
-            String key = extractKeyFromUrl(url, config.getDomain());
+            String key = extractKeyFromUrl(url);
             BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
                     new Configuration(Region.autoRegion()));
             bucketManager.delete(config.getBucketName(), key);
             return true;
         } catch (QiniuException e) {
+            // 612：对象不存在，说明文件已被删除，删除目标已达成，按成功处理
+            if (isNotFoundError(e)) {
+                log.warn("七牛对象不存在，按删除成功处理: {}", e.error());
+                return true;
+            }
             throw wrapQiniuException(e);
         }
     }
@@ -214,7 +222,7 @@ public class QiniuStorageService implements StorageService {
     public FileInfoVO getFileInfo(String filePath) {
         try {
             QiniuConfig config = getQiniuConfig();
-            String key = extractKeyFromUrl(filePath, config.getDomain());
+            String key = extractKeyFromUrl(filePath);
             BucketManager bucketManager = new BucketManager(Auth.create(config.getAccessKey(), config.getSecretKey()),
                     new Configuration(Region.autoRegion()));
             FileInfo fileInfo = bucketManager.stat(config.getBucketName(), key);
@@ -692,24 +700,16 @@ public class QiniuStorageService implements StorageService {
      * 支持以下输入：
      * 1) 完整 URL；
      * 2) / 开头路径；
-     * 3) 纯 key。
+     * 3) 纯 key（含空格、中文等特殊字符时原样保留，不再做 URL 解析）。
      */
-    private String extractKeyFromUrl(String filePath, String domain) {
+    private String extractKeyFromUrl(String filePath) {
         String path = filePath == null ? "" : filePath.trim();
         if (path.isEmpty()) {
             throw new CustomException("文件路径不能为空");
         }
-        String normalizedDomain = normalizeDomain(domain);
         if (path.startsWith("http://") || path.startsWith("https://")) {
             try {
-                URI uri = new URI(path);
-                String host = uri.getHost();
-                String domainHost = new URI(normalizedDomain).getHost();
-                // 与当前配置的 bucket 域名一致时，只取 path 作为 key；否则仍取 path（兼容外链）
-                if (host != null && domainHost != null && host.equalsIgnoreCase(domainHost)) {
-                    String p = uri.getPath();
-                    return p.startsWith("/") ? p.substring(1) : p;
-                }
+                URI uri = new URI(encodeUriUnsafeChars(path));
                 String p = uri.getPath();
                 return p.startsWith("/") ? p.substring(1) : p;
             } catch (URISyntaxException e) {
@@ -720,6 +720,34 @@ public class QiniuStorageService implements StorageService {
             return path.substring(1);
         }
         return path;
+    }
+
+    /**
+     * 编码 URI 不允许的字符（空格、非 ASCII），已存在的 %XX 保持不变，避免二次编码。
+     * <p>
+     * 文件名含空格或中文时，直接 {@code new URI(url)} 会抛 URISyntaxException，
+     * 编码后 {@code URI#getPath()} 会再解码回原始字符，key 不会变形。
+     */
+    private static String encodeUriUnsafeChars(String value) {
+        StringBuilder sb = new StringBuilder(value.length());
+        for (byte b : value.getBytes(StandardCharsets.UTF_8)) {
+            int c = b & 0xFF;
+            if (c <= 0x20 || c >= 0x7F) {
+                sb.append('%').append(String.format("%02X", c));
+            } else {
+                sb.append((char) c);
+            }
+        }
+        return sb.toString();
+    }
+
+    // 七牛 612：no such file or directory（对象不存在）
+    private static boolean isNotFoundError(QiniuException e) {
+        if (e.code() == 612) {
+            return true;
+        }
+        String error = e.error();
+        return error != null && error.toLowerCase().contains("no such file");
     }
 
     private String buildRawPublicUrl(QiniuConfig config, String key) {

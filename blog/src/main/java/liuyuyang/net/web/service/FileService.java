@@ -8,6 +8,7 @@ import liuyuyang.net.dto.file.FileDirCreateFormDTO;
 import liuyuyang.net.dto.file.FileDirDeleteFormDTO;
 import liuyuyang.net.dto.file.FileDirRenameFormDTO;
 import liuyuyang.net.dto.file.FileFilterDTO;
+import liuyuyang.net.vo.file.FileBatchDeleteResultVO;
 import liuyuyang.net.vo.file.FileCompressItemVO;
 import liuyuyang.net.vo.file.FileCompressVO;
 import liuyuyang.net.vo.file.FileDirCreateVO;
@@ -27,7 +28,7 @@ public interface FileService {
 
     void delFileData(String filePath);
 
-    void batchDelFileData(FileBatchDeleteFormDTO dto);
+    FileBatchDeleteResultVO batchDelFileData(FileBatchDeleteFormDTO dto);
 
     FileInfoVO getFileData(String filePath);
 

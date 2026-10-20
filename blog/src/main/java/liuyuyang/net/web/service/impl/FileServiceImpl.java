@@ -19,6 +19,7 @@ import liuyuyang.net.dto.file.FileDirRenameFormDTO;
 import liuyuyang.net.dto.file.FileFilterDTO;
 import liuyuyang.net.enums.file.FileImageExtensionEnum;
 import liuyuyang.net.enums.file.FileVideoExtensionEnum;
+import liuyuyang.net.vo.file.FileBatchDeleteResultVO;
 import liuyuyang.net.vo.file.FileCompressItemVO;
 import liuyuyang.net.vo.file.FileCompressVO;
 import liuyuyang.net.vo.file.FileDirCreateVO;
@@ -29,6 +30,7 @@ import liuyuyang.net.vo.file.FileListItemVO;
 import liuyuyang.net.vo.file.FileTreeVO;
 import liuyuyang.net.vo.file.FileUploadVO;
 import liuyuyang.net.web.service.FileService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,9 +43,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 @Service
 @Transactional
 public class FileServiceImpl implements FileService {
+    // 批量删除时最多回传多少个失败路径，避免响应体过大
+    private static final int MAX_FAILED_PATHS = 20;
 
     @Resource
     private StorageServiceRouter storageServiceRouter;
@@ -117,17 +122,33 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public void batchDelFileData(FileBatchDeleteFormDTO dto) {
+    public FileBatchDeleteResultVO batchDelFileData(FileBatchDeleteFormDTO dto) {
         List<String> pathList = dto.getPaths();
+        FileBatchDeleteResultVO result = new FileBatchDeleteResultVO();
         if (pathList == null || pathList.isEmpty()) {
-            return;
+            return result;
         }
-        for (String url : pathList) {
-            boolean delete = storageServiceRouter.service().deleteByUrl(url);
-            if (!delete) {
-                throw new CustomException("删除文件失败");
+        int successCount = 0;
+        int failedCount = 0;
+        List<String> failedPaths = new ArrayList<>();
+        for (String path : pathList) {
+            try {
+                storageServiceRouter.service().deleteByUrl(path);
+                successCount++;
+            } catch (Exception e) {
+                // 单个文件失败（如存储侧偶发错误）不中断整批删除，失败项单独收集后返回
+                failedCount++;
+                if (failedPaths.size() < MAX_FAILED_PATHS) {
+                    failedPaths.add(path);
+                }
+                log.warn("删除文件失败: {}", path, e);
             }
         }
+        result.setTotal(pathList.size());
+        result.setSuccessCount(successCount);
+        result.setFailedCount(failedCount);
+        result.setFailedPaths(failedPaths);
+        return result;
     }
 
     @Override

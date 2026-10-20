@@ -1,6 +1,7 @@
 package liuyuyang.net.web.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
@@ -173,15 +174,15 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Override
     public void delBatchArticleData(List<Integer> ids) {
-        delArticleCorrelationData(ids);
-
         // 批量删除文章
         if (ids == null || ids.isEmpty())
             return;
 
-        LambdaQueryWrapper<Article> queryWrapperArticle = new LambdaQueryWrapper<>();
-        queryWrapperArticle.in(Article::getId, ids);
-        articleMapper.delete(queryWrapperArticle);
+        // 与单条普通删除一致：只标记 is_del，保留分类、标签等关联数据，以便从回收站还原
+        LambdaUpdateWrapper<ArticleConfig> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.in(ArticleConfig::getArticleId, ids);
+        updateWrapper.set(ArticleConfig::getIsDel, true);
+        articleConfigMapper.update(null, updateWrapper);
     }
 
     @Override

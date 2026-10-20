@@ -83,7 +83,8 @@ public class LocalStorageService implements StorageService {
         try {
             Files.delete(target);
         } catch (NoSuchFileException e) {
-            throw new CustomException("文件不存在或已删除");
+            // 文件已不存在，删除目标已达成，按成功处理
+            return true;
         } catch (DirectoryNotEmptyException e) {
             throw new CustomException("路径为目录，无法按文件删除");
         } catch (IOException e) {

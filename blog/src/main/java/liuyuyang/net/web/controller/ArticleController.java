@@ -60,7 +60,7 @@ public class ArticleController {
     }
 
     @DeleteMapping("/batch")
-    @Operation(summary = "批量删除文章")
+    @Operation(summary = "批量删除文章", description = "移入回收站，可从回收站还原")
     public Result<String> batchDelArticleData(@RequestBody @NotEmpty(message = "ID列表不能为空") List<Integer> ids) {
         articleService.delBatchArticleData(ids);
         return Result.success();

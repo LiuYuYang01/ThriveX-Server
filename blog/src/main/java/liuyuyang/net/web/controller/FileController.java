@@ -13,6 +13,7 @@ import liuyuyang.net.dto.file.FileDirCreateFormDTO;
 import liuyuyang.net.dto.file.FileDirDeleteFormDTO;
 import liuyuyang.net.dto.file.FileDirRenameFormDTO;
 import liuyuyang.net.dto.file.FileFilterDTO;
+import liuyuyang.net.vo.file.FileBatchDeleteResultVO;
 import liuyuyang.net.vo.file.FileCleanupScanVO;
 import liuyuyang.net.vo.file.FileCompressItemVO;
 import liuyuyang.net.vo.file.FileCompressVO;
@@ -71,9 +72,8 @@ public class FileController {
 
     @DeleteMapping("/batch")
     @Operation(summary = "批量删除文件")
-    public Result<String> batchDelFileData(@RequestBody @Valid FileBatchDeleteFormDTO dto) {
-        fileService.batchDelFileData(dto);
-        return Result.success();
+    public Result<FileBatchDeleteResultVO> batchDelFileData(@RequestBody @Valid FileBatchDeleteFormDTO dto) {
+        return Result.success(fileService.batchDelFileData(dto));
     }
 
     @GetMapping("/info")
