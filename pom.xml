@@ -39,6 +39,8 @@
         <oshi.version>6.12.0</oshi.version>
         <qiniu.version>7.13.0</qiniu.version>
         <bucket4j.version>8.10.1</bucket4j.version>
+        <!-- 密码编码（BCrypt）；Spring Boot 3.5.16 对应的 Spring Security 6.5.x -->
+        <spring-security-crypto.version>6.5.7</spring-security-crypto.version>
     </properties>
 
     <!--配置dependencyManagement锁定依赖的版本-->
@@ -149,6 +151,13 @@
                 <groupId>com.bucket4j</groupId>
                 <artifactId>bucket4j-core</artifactId>
                 <version>${bucket4j.version}</version>
+            </dependency>
+
+            <!-- 仅引入密码编码器（BCrypt），不引入完整 Spring Security 过滤器链 -->
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-crypto</artifactId>
+                <version>${spring-security-crypto.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

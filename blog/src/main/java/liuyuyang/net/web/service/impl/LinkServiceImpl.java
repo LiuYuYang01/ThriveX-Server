@@ -100,7 +100,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
         }
 
         // 判断权限
-        boolean isAdminPermissions = CommonUtils.isAdmin();
+        boolean isAdminPermissions = commonUtils.isAdmin();
         // 如果是超级管理员在添加时候不需要审核，直接显示
         if (isAdminPermissions) {
             link.setStatus(LinkStatusEnum.APPROVED);

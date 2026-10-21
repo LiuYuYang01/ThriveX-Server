@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.JwtUtils;
 import liuyuyang.net.core.utils.CommonUtils;
+import liuyuyang.net.core.utils.PasswordUtils;
 import liuyuyang.net.dto.user.EditUserPassDTO;
 import liuyuyang.net.dto.user.EditUserInfoDTO;
 import liuyuyang.net.dto.user.UserLoginDTO;
@@ -19,7 +20,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.DigestUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -57,48 +57,96 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             token = token.substring(7);
         }
 
-        LambdaQueryWrapper<UserToken> w = new LambdaQueryWrapper<>();
-        w.eq(UserToken::getToken, token);
-        List<UserToken> userTokens = userTokenMapper.selectList(w);
-        if (userTokens == null || userTokens.isEmpty()) {
-            throw new CustomException(401, "该账号已在另一台设备登录");
-        }
-
-        // 校验token是否有效
-        try {
-            JwtUtils.parseJWT(token);
-        } catch (Exception e) {
+        Integer uid = JwtUtils.parseUid(token);
+        if (uid == null) {
             throw new CustomException(401, "无效或过期的 Token");
         }
-
-        Integer id = userTokens.get(0).getUid();
-        return userMapper.selectById(id);
+        return userMapper.selectById(uid);
     }
 
     @Override
     public Map<String, Object> login(UserLoginDTO userDTO) {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getUsername, userDTO.getUsername());
-        queryWrapper.eq(User::getPassword, DigestUtils.md5DigestAsHex(userDTO.getPassword().getBytes()));
 
+        // 只按用户名查询，密码校验交给 PasswordUtils（避免 MD5/BCrypt 差异导致无法命中）
         User user = userMapper.selectOne(queryWrapper);
-        if (user == null)
+        if (user == null || !PasswordUtils.matches(userDTO.getPassword(), user.getPassword())) {
             throw new CustomException("用户名或密码错误");
+        }
 
-        Map<String, Object> result = new HashMap<>();
-        String token = JwtUtils.createJWT(result);
-        result.put("token", token);
+        // 渐进升级：存量 MD5 哈希登录成功后，用明文重新编码为 BCrypt 写回
+        if (PasswordUtils.needsRehash(user.getPassword())) {
+            user.setPassword(PasswordUtils.encode(userDTO.getPassword()));
+            userMapper.updateById(user);
+        }
 
-        // 先删除用户旧的token
+        // 签发 access token（短有效期，携带 uid）与 refresh token（长有效期）
+        String accessToken = JwtUtils.createAccessToken(user.getId());
+        String refreshToken = JwtUtils.createRefreshToken(user.getId());
+
+        // 先删除用户旧的 token，保证单设备登录（旧 token 作废）
         LambdaQueryWrapper<UserToken> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
         userLambdaQueryWrapper.eq(UserToken::getUid, user.getId());
         userTokenMapper.delete(userLambdaQueryWrapper);
-        // 再存储用户当前的token
+
+        // 存储当前 access token
         UserToken userToken = new UserToken();
         userToken.setUid(user.getId());
-        userToken.setToken(token);
+        userToken.setToken(accessToken);
         userTokenMapper.insert(userToken);
 
+        Map<String, Object> result = new HashMap<>();
+        result.put("token", accessToken);
+        result.put("refreshToken", refreshToken);
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> refresh(String refreshToken) {
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            throw new CustomException(401, "缺少刷新令牌");
+        }
+        if (refreshToken.startsWith("Bearer ")) {
+            refreshToken = refreshToken.substring(7);
+        }
+
+        // 校验 refresh token 的签名与有效期
+        Integer uid;
+        try {
+            uid = JwtUtils.parseUid(refreshToken);
+        } catch (Exception e) {
+            throw new CustomException(401, "刷新令牌无效或已过期");
+        }
+        if (uid == null) {
+            throw new CustomException(401, "刷新令牌无效");
+        }
+
+        // 确认用户仍存在
+        User user = userMapper.selectById(uid);
+        if (user == null) {
+            throw new CustomException(401, "用户不存在");
+        }
+
+        // 签发新的 access token（保留现有 refresh token，避免无限续期；如需轮换 refresh 可在此扩展）
+        String accessToken = JwtUtils.createAccessToken(uid);
+
+        // 更新 user_token 表中的 token（旧 access token 作废，保持单设备）
+        LambdaQueryWrapper<UserToken> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserToken::getUid, uid);
+        UserToken existing = userTokenMapper.selectOne(wrapper);
+        if (existing != null) {
+            existing.setToken(accessToken);
+            userTokenMapper.updateById(existing);
+        } else {
+            UserToken userToken = new UserToken();
+            userToken.setUid(uid);
+            userToken.setToken(accessToken);
+            userTokenMapper.insert(userToken);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("token", accessToken);
         return result;
     }
 
@@ -111,22 +159,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getUsername, data.getOldUsername());
 
+        User user = userMapper.selectOne(queryWrapper);
+        if (user == null) {
+            throw new CustomException("用户名或旧密码错误");
+        }
+
         String oldPassword = data.getOldPassword();
         if (oldPassword == null || oldPassword.isEmpty()) {
             // 初始化阶段允许直接设置新密码，初始化完成后必须校验旧密码
             if (isSystemInit()) throw new CustomException("请输入旧密码");
         } else {
-            queryWrapper.eq(User::getPassword, DigestUtils.md5DigestAsHex(oldPassword.getBytes()));
-        }
-
-        User user = userMapper.selectOne(queryWrapper);
-
-        if (user == null) {
-            throw new CustomException("用户名或旧密码错误");
+            // 用 PasswordUtils 校验旧密码（兼容存量 MD5）
+            if (!PasswordUtils.matches(oldPassword, user.getPassword())) {
+                throw new CustomException("用户名或旧密码错误");
+            }
         }
 
         user.setUsername(data.getNewUsername());
-        user.setPassword(DigestUtils.md5DigestAsHex(data.getNewPassword().getBytes()));
+        user.setPassword(PasswordUtils.encode(data.getNewPassword()));
         userMapper.updateById(user);
     }
 

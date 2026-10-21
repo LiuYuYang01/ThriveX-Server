@@ -134,7 +134,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
         if (cate == null) {
             throw new CustomException("该分类不存在");
         }
-        if (!CommonUtils.isAdmin() && Boolean.TRUE.equals(cate.getIsHide())) {
+        if (!commonUtils.isAdmin() && Boolean.TRUE.equals(cate.getIsHide())) {
             throw new CustomException("该分类不存在");
         }
 
@@ -163,7 +163,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
 
     @Override
     public Page<CateVO> getCateList(CateFilterDTO cateFilterDTO) {
-        boolean isAdmin = CommonUtils.isAdmin();
+        boolean isAdmin = commonUtils.isAdmin();
         LambdaQueryWrapper<Cate> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(Cate::getOrder);
         if (!isAdmin) {
@@ -204,7 +204,7 @@ public class CateServiceImpl extends ServiceImpl<CateMapper, Cate> implements Ca
     // 基于父级分类的 id 递归获取它的所有子分类
     @Override
     public List<CateVO> getCateTreeChildren(List<Cate> list, Integer level) {
-        boolean isAdmin = CommonUtils.isAdmin();
+        boolean isAdmin = commonUtils.isAdmin();
         return getCateTreeChildren(list, level, isAdmin);
     }
 

@@ -43,26 +43,66 @@ public class CommonUtils {
     }
 
     /**
-     * 判断是否是管理员
+     * 判断当前请求是否为已登录的管理员。
+     *
+     * <p>与 {@link liuyuyang.net.core.interceptor.JwtTokenAdminInterceptor} 保持一致的鉴权标准：
+     * 不仅校验 JWT 签名与有效期，还要求 token 仍存在于 user_token 表，且载荷中的 uid
+     * 与 user_token 记录的 uid 一致。避免「被挤下线/过期的旧 token 仍能拿到管理员视角」的越权问题。
      */
-    public static boolean isAdmin() {
+    public boolean isAdmin() {
         String token = getHeader("Authorization");
-        return parseAdminToken(token);
-    }
-
-    // 统一管理员鉴权逻辑（仅供 isAdmin 调用）
-    private static boolean parseAdminToken(String token) {
         if (token == null || token.isEmpty()) {
             return false;
         }
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        return verifyTokenAgainstStore(token);
+    }
 
+    /**
+     * 校验 token 是否有效且未被吊销：JWT 签名/有效期有效 + user_token 表中存在 + uid 一致。
+     */
+    private boolean verifyTokenAgainstStore(String token) {
         try {
-            if (token.startsWith("Bearer ")) token = token.substring(7);
+            // 先解析 JWT，拿到载荷中的 uid（签名或过期会在此抛异常）
             Claims claims = JwtUtils.parseJWT(token);
-            return claims != null;
+            Integer tokenUid = claims != null ? extractUid(claims) : null;
+
+            // 校验 user_token 表中是否存在该 token
+            LambdaQueryWrapper<UserToken> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(UserToken::getToken, token);
+            List<UserToken> userTokens = userTokenMapper.selectList(wrapper);
+
+            if (userTokens == null || userTokens.isEmpty()) {
+                return false;
+            }
+
+            // 校验 token 载荷 uid 与库记录 uid 一致（防止篡改 uid 或 token 与记录错配）
+            if (tokenUid == null) {
+                // 兼容历史 token 无 uid 载荷：以库记录为准
+                return true;
+            }
+            for (UserToken userToken : userTokens) {
+                if (userToken.getUid() != null && userToken.getUid().equals(tokenUid)) {
+                    return true;
+                }
+            }
+            return false;
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private static Integer extractUid(Claims claims) {
+        Object uid = claims.get("uid");
+        if (uid instanceof Integer) {
+            return (Integer) uid;
+        }
+        if (uid instanceof Number) {
+            return ((Number) uid).intValue();
+        }
+        return null;
     }
 
     /**
@@ -141,28 +181,14 @@ public class CommonUtils {
         return queryWrapper;
     }
 
-    // 校验当前JWT是否有效
+    // 校验当前JWT是否有效（与拦截器、isAdmin 共用同一套标准）
     public boolean checkToken(String token) {
-        try {
-            if (token != null) {
-                if (token.startsWith("Bearer ")) token = token.substring(7);
-
-                LambdaQueryWrapper<UserToken> userTokenLambdaQueryWrapper = new LambdaQueryWrapper<>();
-                userTokenLambdaQueryWrapper.eq(UserToken::getToken, token);
-                List<UserToken> userTokens = userTokenMapper.selectList(userTokenLambdaQueryWrapper);
-
-                // 如果跟之前的token相匹配则进一步判断token是否有效
-                if (userTokens != null && !userTokens.isEmpty()) {
-                    JwtUtils.parseJWT(token);
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        } catch (Exception e) {
+        if (token == null || token.isEmpty()) {
             return false;
         }
-
-        return false;
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        return verifyTokenAgainstStore(token);
     }
 }

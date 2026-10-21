@@ -59,6 +59,14 @@ public class UserController {
         return Result.success("登录成功", result);
     }
 
+    @NoTokenRequired
+    @PostMapping("/refresh")
+    @Operation(summary = "刷新访问令牌")
+    public Result<Map<String, Object>> refresh(@RequestParam String refreshToken) {
+        Map<String, Object> result = userService.refresh(refreshToken);
+        return Result.success(result);
+    }
+
     @PatchMapping("/pass")
     @Operation(summary = "修改管理员密码")
     public Result<String> editPass(@RequestBody @Valid EditUserPassDTO data) {

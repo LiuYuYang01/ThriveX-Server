@@ -268,7 +268,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         String description = data.getDescription();
         String content = data.getContent();
 
-        boolean isAdmin = CommonUtils.isAdmin();
+        boolean isAdmin = commonUtils.isAdmin();
 
         ArticleConfig config = data.getConfig();
 
@@ -385,7 +385,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         queryWrapper.in(Article::getId, articleIds);
         List<Article> list = articleMapper.selectList(queryWrapper);
 
-        boolean isAdmin = CommonUtils.isAdmin();
+        boolean isAdmin = commonUtils.isAdmin();
 
         // 绑定数据 + 统一的展示规则（过滤隐藏文章 + 处理加密文章）
         return list.stream()
@@ -445,7 +445,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         List<ArticleVO> vos = batchBindingArticleData(pageArticles);
 
         // 5. 应用展示规则（管理员可见所有，普通用户过滤隐藏/首页隐藏 + 加密打码）
-        boolean isAdmin = CommonUtils.isAdmin();
+        boolean isAdmin = commonUtils.isAdmin();
         List<ArticleVO> filtered = new ArrayList<>();
         for (ArticleVO vo : vos) {
             if (!shouldShowInList(vo, isAdmin)) {
@@ -585,7 +585,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Override
     public Page<ArticleVO> getCateArticleList(Integer id, PageDTO pageDTO) {
         Cate cate = cateMapper.selectById(id);
-        if (cate == null || (!CommonUtils.isAdmin() && Boolean.TRUE.equals(cate.getIsHide()))) {
+        // 不能获取不存在的以及隐藏的（管理员除外）
+        if (cate == null || (!commonUtils.isAdmin() && Boolean.TRUE.equals(cate.getIsHide()))) {
             throw new CustomException("该分类不存在");
         }
 

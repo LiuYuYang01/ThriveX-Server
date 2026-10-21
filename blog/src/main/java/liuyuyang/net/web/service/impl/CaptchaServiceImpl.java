@@ -33,6 +33,9 @@ public class CaptchaServiceImpl implements CaptchaService {
     @Resource
     private EnvConfigService envConfigService;
 
+    @Resource
+    private CommonUtils commonUtils;
+
     public CaptchaServiceImpl() {
         // 独立建带超时的 WebClient，不影响全局 Bean
         HttpClient httpClient = HttpClient.create().responseTimeout(VERIFY_TIMEOUT);
@@ -42,7 +45,7 @@ public class CaptchaServiceImpl implements CaptchaService {
     @Override
     public void check(String captchaToken) {
         // 管理端为最高权限，除登录外的操作一律免人机验证
-        if (CommonUtils.isAdmin()) return;
+        if (commonUtils.isAdmin()) return;
 
         doCheck(captchaToken);
     }

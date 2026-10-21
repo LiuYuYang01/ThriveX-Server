@@ -14,8 +14,10 @@ logging.level.org.springframework.mail: DEBUG
 logging.level.org.springframework.boot.autoconfigure.mail: DEBUG
 
 jwt:
-  # 设置jwt过期时间
-  ttl: 259200000
+  # 访问令牌有效期（毫秒），默认 30 分钟，不宜过长
+  ttl: 1800000
+  # 刷新令牌有效期（毫秒），默认 7 天，仅用于换取新访问令牌
+  refresh-ttl: 604800000
   # 设置前端传递过来的令牌名称
   token-name: Authorization
 
