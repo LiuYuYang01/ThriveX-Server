@@ -27,7 +27,9 @@ import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -153,8 +155,103 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 
     @Override
     public Page<CommentVO> getCommentList(CommentFilterDTO commentFilterDTO) {
-        List<CommentVO> vos = buildCommentVOList(commentFilterDTO);
-        return commonUtils.paginate(commentFilterDTO, vos);
+        // LIST 模式：平铺列表可直接数据库分页
+        if (commentFilterDTO.getPattern() == CommentPatternEnum.LIST) {
+            QueryWrapper<Comment> queryWrapper = buildCommentQueryWrapper(commentFilterDTO);
+            Page<Comment> page = CommonUtils.buildPage(commentFilterDTO);
+            List<Comment> flat;
+            Page<CommentVO> result;
+            if (page == null) {
+                flat = commentMapper.selectList(queryWrapper);
+                result = new Page<>(1, flat.size());
+                result.setTotal(flat.size());
+            } else {
+                Page<Comment> entityPage = commentMapper.selectPage(page, queryWrapper);
+                flat = entityPage.getRecords();
+                result = new Page<>(entityPage.getCurrent(), entityPage.getSize());
+                result.setTotal(entityPage.getTotal());
+            }
+            List<CommentVO> vos = flat.stream().map(c -> {
+                CommentVO vo = toCommentVO(c);
+                vo.setArticleTitle(articleTitleOf(c.getArticleId()));
+                return vo;
+            }).collect(Collectors.toList());
+            fillArticleTitles(vos); // 复用批量标题回填逻辑
+            result.setRecords(vos);
+            return result;
+        }
+
+        // TREE 模式：一级评论做数据库分页，子评论按当页顶层 id 批量查出后挂载
+        return getCommentTreePage(commentFilterDTO);
+    }
+
+    // TREE 模式：顶层评论 DB 分页 + 子评论批量挂载
+    private Page<CommentVO> getCommentTreePage(CommentFilterDTO commentFilterDTO) {
+        QueryWrapper<Comment> rootWrapper = buildCommentQueryWrapper(commentFilterDTO);
+        // 仅查一级评论
+        rootWrapper.and(w -> w.isNull("comment_id").or().eq("comment_id", 0));
+
+        Page<Comment> page = CommonUtils.buildPage(commentFilterDTO);
+        List<Comment> roots;
+        Page<CommentVO> result;
+        long total;
+        if (page == null) {
+            roots = commentMapper.selectList(rootWrapper);
+            total = roots.size();
+            result = new Page<>(1, (int) Math.max(1, total));
+        } else {
+            Page<Comment> entityPage = commentMapper.selectPage(page, rootWrapper);
+            roots = entityPage.getRecords();
+            total = entityPage.getTotal();
+            result = new Page<>(entityPage.getCurrent(), entityPage.getSize());
+        }
+        result.setTotal(total);
+
+        // 批量查当页顶层评论的所有子评论
+        List<CommentVO> vos = buildTreeWithChildren(roots);
+        fillArticleTitles(vos);
+        result.setRecords(vos);
+        return result;
+    }
+
+    // 给定顶层评论列表，批量查其子评论并构建树
+    private List<CommentVO> buildTreeWithChildren(List<Comment> roots) {
+        if (roots == null || roots.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Integer> rootIds = roots.stream().map(Comment::getId).collect(Collectors.toList());
+
+        QueryWrapper<Comment> childWrapper = new QueryWrapper<>();
+        childWrapper.in("comment_id", rootIds);
+        childWrapper.eq("status", 1);
+        childWrapper.orderByAsc("create_time");
+        List<Comment> children = commentMapper.selectList(childWrapper);
+
+        // 扁平列表按顶层评论分组，递归挂载（评论最多两层：一级 + 回复，这里复用现有树构建逻辑）
+        List<Comment> all = new ArrayList<>(roots);
+        all.addAll(children);
+
+        List<CommentVO> vos = buildCommentTreeVO(all, 0);
+        // 只保留当页的顶层评论
+        return vos;
+    }
+
+    private QueryWrapper<Comment> buildCommentQueryWrapper(CommentFilterDTO commentFilterDTO) {
+        QueryWrapper<Comment> queryWrapper = commonUtils.queryWrapperDateFilter(commentFilterDTO);
+        if (commonUtils.isAdmin()) {
+            // 管理员可按状态筛选，不传则查看全部
+            if (commentFilterDTO.getStatus() != null) {
+                queryWrapper.eq("status", commentFilterDTO.getStatus());
+            }
+        } else {
+            // 非管理员强制只看已审核，防止翻看待审核内容
+            queryWrapper.eq("status", 1);
+        }
+
+        if (commentFilterDTO.getContent() != null) {
+            queryWrapper.like("content", "%" + commentFilterDTO.getContent() + "%");
+        }
+        return queryWrapper;
     }
 
     @Override
@@ -163,14 +260,30 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         queryWrapper.eq("article_id", articleId);
         queryWrapper.eq("status", 1);
         queryWrapper.orderByDesc("create_time");
+        // 仅查一级评论
+        queryWrapper.and(w -> w.isNull("comment_id").or().eq("comment_id", 0));
 
-        List<Comment> list = commentMapper.selectList(queryWrapper);
+        Page<Comment> page = CommonUtils.buildPage(pageDTO);
+        List<Comment> roots;
+        Page<CommentVO> result;
+        long total;
+        if (page == null) {
+            roots = commentMapper.selectList(queryWrapper);
+            total = roots.size();
+            result = new Page<>(1, (int) Math.max(1, total));
+        } else {
+            Page<Comment> entityPage = commentMapper.selectPage(page, queryWrapper);
+            roots = entityPage.getRecords();
+            total = entityPage.getTotal();
+            result = new Page<>(entityPage.getCurrent(), entityPage.getSize());
+        }
+        result.setTotal(total);
 
-        // 构建评论树
-        List<CommentVO> vos = buildCommentTreeVO(list, 0);
+        // 批量挂载子评论
+        List<CommentVO> vos = buildTreeWithChildren(roots);
         fillArticleTitles(vos);
-
-        return commonUtils.paginate(pageDTO, vos);
+        result.setRecords(vos);
+        return result;
     }
 
     @Override
@@ -204,28 +317,35 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         return commentMapper.selectList(queryWrapper);
     }
 
-    private List<CommentVO> buildCommentVOList(CommentFilterDTO commentFilterDTO) {
-        List<Comment> flat = queryFlatComments(commentFilterDTO);
-
-        // 如果是 list 模式则平铺列表，否则 tree 模式构建多级评论（默认）
-        if (commentFilterDTO.getPattern() == CommentPatternEnum.LIST) {
-            return flat.stream().map(c -> {
-                CommentVO vo = toCommentVO(c);
-                vo.setArticleTitle(articleTitleOf(c.getArticleId()));
-                return vo;
-            }).collect(Collectors.toList());
+    private void fillArticleTitles(List<CommentVO> nodes) {
+        // 先收集树中所有评论的文章 id，再一次性批量查标题，消除 articleTitleOf 的 N+1 查询
+        List<Integer> articleIds = new ArrayList<>();
+        collectArticleIds(nodes, articleIds);
+        if (articleIds.isEmpty()) {
+            return;
         }
-
-        List<CommentVO> tree = buildCommentTreeVO(flat, 0);
-        fillArticleTitles(tree);
-        return tree;
+        Map<Integer, String> titleMap = new HashMap<>();
+        articleMapper.selectByIds(articleIds.stream().distinct().collect(Collectors.toList()))
+                .forEach(a -> titleMap.put(a.getId(), a.getTitle()));
+        fillArticleTitlesFromMap(nodes, titleMap);
     }
 
-    private void fillArticleTitles(List<CommentVO> nodes) {
+    private void collectArticleIds(List<CommentVO> nodes, List<Integer> articleIds) {
         for (CommentVO vo : nodes) {
-            vo.setArticleTitle(articleTitleOf(vo.getArticleId()));
+            if (vo.getArticleId() != null) {
+                articleIds.add(vo.getArticleId());
+            }
             if (vo.getChildren() != null && !vo.getChildren().isEmpty()) {
-                fillArticleTitles(vo.getChildren());
+                collectArticleIds(vo.getChildren(), articleIds);
+            }
+        }
+    }
+
+    private void fillArticleTitlesFromMap(List<CommentVO> nodes, Map<Integer, String> titleMap) {
+        for (CommentVO vo : nodes) {
+            vo.setArticleTitle(titleMap.get(vo.getArticleId()));
+            if (vo.getChildren() != null && !vo.getChildren().isEmpty()) {
+                fillArticleTitlesFromMap(vo.getChildren(), titleMap);
             }
         }
     }

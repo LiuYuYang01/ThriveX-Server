@@ -75,25 +75,41 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
         return toRecordVO(data);
     }
 
-    private List<Record> queryRecordList(RecordFilterDTO recordFilterDTO) {
+    private QueryWrapper<Record> buildRecordQueryWrapper(RecordFilterDTO recordFilterDTO) {
         // 置顶的排前面，其余按时间倒序
         QueryWrapper<Record> queryWrapper = commonUtils.queryWrapperDateFilter(recordFilterDTO, "top");
         if (recordFilterDTO.getContent() != null && !recordFilterDTO.getContent().trim().isEmpty()) {
             queryWrapper.like("content", "%" + recordFilterDTO.getContent().trim() + "%");
         }
-        return recordMapper.selectList(queryWrapper);
+        return queryWrapper;
     }
 
     @Override
     public Page<RecordVO> getRecordList(RecordFilterDTO recordFilterDTO) {
-        List<Record> raw = queryRecordList(recordFilterDTO);
+        QueryWrapper<Record> queryWrapper = buildRecordQueryWrapper(recordFilterDTO);
+
+        Page<Record> page = CommonUtils.buildPage(recordFilterDTO);
+        List<Record> raw;
+        Page<RecordVO> result;
+        if (page == null) {
+            raw = recordMapper.selectList(queryWrapper);
+            result = new Page<>(1, raw.size());
+            result.setTotal(raw.size());
+        } else {
+            Page<Record> entityPage = recordMapper.selectPage(page, queryWrapper);
+            raw = entityPage.getRecords();
+            result = new Page<>(entityPage.getCurrent(), entityPage.getSize());
+            result.setTotal(entityPage.getTotal());
+        }
+
         List<RecordVO> list = raw.stream().map(RecordServiceImpl::toRecordVO).collect(Collectors.toList());
 
         List<Integer> ids = list.stream().map(Record::getId).filter(Objects::nonNull).collect(Collectors.toList());
         Map<Integer, Integer> commentCounts = recordCommentService.countApprovedByRecordIds(ids);
         list.forEach(vo -> vo.setCommentCount(commentCounts.getOrDefault(vo.getId(), 0)));
 
-        return commonUtils.paginate(recordFilterDTO, list);
+        result.setRecords(list);
+        return result;
     }
 
     @Override

@@ -55,7 +55,7 @@ public class AssistantServiceImpl extends ServiceImpl<AssistantMapper, Assistant
             return;
         }
 
-        List<Assistant> list = assistantMapper.selectBatchIds(ids);
+        List<Assistant> list = assistantMapper.selectByIds(ids);
         if (list.size() != ids.size()) {
             throw new CustomException("有 " + (ids.size() - list.size()) + " 个助手不存在");
         }
@@ -108,13 +108,28 @@ public class AssistantServiceImpl extends ServiceImpl<AssistantMapper, Assistant
         queryWrapper.orderByDesc("is_default");
         queryWrapper.orderByDesc("id");
 
-        List<AssistantVO> list = assistantMapper.selectList(queryWrapper).stream().map(item -> {
+        Page<Assistant> page = CommonUtils.buildPage(assistantFilterDTO);
+        List<Assistant> raw;
+        Page<AssistantVO> result;
+        if (page == null) {
+            raw = assistantMapper.selectList(queryWrapper);
+            result = new Page<>(1, raw.size());
+            result.setTotal(raw.size());
+        } else {
+            Page<Assistant> entityPage = assistantMapper.selectPage(page, queryWrapper);
+            raw = entityPage.getRecords();
+            result = new Page<>(entityPage.getCurrent(), entityPage.getSize());
+            result.setTotal(entityPage.getTotal());
+        }
+
+        List<AssistantVO> list = raw.stream().map(item -> {
             AssistantVO assistantVO = new AssistantVO();
             BeanUtils.copyProperties(item, assistantVO);
             return assistantVO;
         }).collect(Collectors.toList());
 
-        return commonUtils.paginate(assistantFilterDTO, list);
+        result.setRecords(list);
+        return result;
     }
 
     @Override

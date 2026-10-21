@@ -170,19 +170,87 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
 
     @Override
     public Page<RecordCommentVO> getRecordCommentList(RecordCommentFilterDTO recordCommentFilterDTO) {
-        List<RecordComment> flat = queryFlatComments(recordCommentFilterDTO);
+        QueryWrapper<RecordComment> queryWrapper = buildFlatQueryWrapper(recordCommentFilterDTO);
+
+        Page<RecordComment> page = CommonUtils.buildPage(recordCommentFilterDTO);
+        List<RecordComment> flat;
+        Page<RecordCommentVO> result;
+        if (page == null) {
+            flat = recordCommentMapper.selectList(queryWrapper);
+            result = new Page<>(1, flat.size());
+            result.setTotal(flat.size());
+        } else {
+            Page<RecordComment> entityPage = recordCommentMapper.selectPage(page, queryWrapper);
+            flat = entityPage.getRecords();
+            result = new Page<>(entityPage.getCurrent(), entityPage.getSize());
+            result.setTotal(entityPage.getTotal());
+        }
+
+        List<RecordCommentVO> vos = toVOListWithContext(flat);
+        result.setRecords(vos);
+        return result;
+    }
+
+    // 批量回填当页评论的说说内容与父评论昵称，消除 recordContentOf / selectById 的 N+1 查询
+    private List<RecordCommentVO> toVOListWithContext(List<RecordComment> flat) {
+        if (flat == null || flat.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 批量查说说内容
+        List<Integer> recordIds = flat.stream()
+                .map(RecordComment::getRecordId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Integer, Record> recordMap = new HashMap<>();
+        if (!recordIds.isEmpty()) {
+            recordMapper.selectByIds(recordIds).forEach(r -> recordMap.put(r.getId(), r));
+        }
+
+        // 批量查父评论昵称
+        List<Integer> parentIds = flat.stream()
+                .map(RecordComment::getCommentId)
+                .filter(id -> id != null && id != 0)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Integer, RecordComment> parentMap = new HashMap<>();
+        if (!parentIds.isEmpty()) {
+            recordCommentMapper.selectByIds(parentIds).forEach(p -> parentMap.put(p.getId(), p));
+        }
+
         List<RecordCommentVO> vos = flat.stream().map(comment -> {
             RecordCommentVO vo = toRecordCommentVO(comment);
-            vo.setRecordContent(recordContentOf(comment.getRecordId()));
+            Record record = recordMap.get(comment.getRecordId());
+            if (record != null) {
+                vo.setRecordContent(truncateContent(record.getContent()));
+            }
             if (comment.getCommentId() != null && comment.getCommentId() != 0) {
-                RecordComment parent = recordCommentMapper.selectById(comment.getCommentId());
+                RecordComment parent = parentMap.get(comment.getCommentId());
                 if (parent != null) {
                     vo.setReplyName(parent.getName());
                 }
             }
             return vo;
         }).collect(Collectors.toList());
-        return commonUtils.paginate(recordCommentFilterDTO, vos);
+        return vos;
+    }
+
+    private String truncateContent(String content) {
+        if (content == null) {
+            return null;
+        }
+        String trimmed = content.trim();
+        return trimmed.length() > 50 ? trimmed.substring(0, 50) + "..." : trimmed;
+    }
+
+    // 单条场景按说说 id 查内容并截断（列表批量场景见 toVOListWithContext 的 truncateContent 批量回填）
+    private String recordContentOf(Integer recordId) {
+        Record record = recordMapper.selectById(recordId);
+        if (record == null || record.getContent() == null) {
+            return null;
+        }
+        return truncateContent(record.getContent());
     }
 
     @Override
@@ -197,6 +265,8 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
         queryWrapper.eq("status", 1);
         queryWrapper.orderByAsc("create_time");
 
+        // 说说评论量通常不大，且需要构建完整二级树（子评论须与父评论同页展示），
+        // 因此这里仍查全量用于组树，但仅对「一级评论」做分页，避免子评论跨页丢失。
         List<RecordComment> list = recordCommentMapper.selectList(queryWrapper);
         List<RecordCommentVO> vos = buildTwoLevelCommentTree(list);
         return commonUtils.paginate(pageDTO, vos);
@@ -239,7 +309,7 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
         return result;
     }
 
-    private List<RecordComment> queryFlatComments(RecordCommentFilterDTO recordCommentFilterDTO) {
+    private QueryWrapper<RecordComment> buildFlatQueryWrapper(RecordCommentFilterDTO recordCommentFilterDTO) {
         QueryWrapper<RecordComment> queryWrapper = commonUtils.queryWrapperDateFilter(recordCommentFilterDTO);
 
         if (recordCommentFilterDTO.getStatus() != null) {
@@ -255,16 +325,7 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
         }
 
         queryWrapper.orderByDesc("create_time");
-        return recordCommentMapper.selectList(queryWrapper);
-    }
-
-    private String recordContentOf(Integer recordId) {
-        Record record = recordMapper.selectById(recordId);
-        if (record == null || record.getContent() == null) {
-            return null;
-        }
-        String content = record.getContent().trim();
-        return content.length() > 50 ? content.substring(0, 50) + "..." : content;
+        return queryWrapper;
     }
 
     private RecordCommentVO toRecordCommentVO(RecordComment comment) {

@@ -28,6 +28,7 @@ import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -135,14 +136,13 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
         return toWallVO(data);
     }
 
-    private List<Wall> queryWallList(WallFilterDTO wallFilterDTO) {
+    private QueryWrapper<Wall> buildWallQueryWrapper(WallFilterDTO wallFilterDTO) {
         QueryWrapper<Wall> queryWrapper = commonUtils.queryWrapperDateFilter(wallFilterDTO);
         // 非管理员强制只看已审核，防止翻看待审核内容
         WallAuditStatusEnum status = commonUtils.isAdmin() && wallFilterDTO.getStatus() != null
                 ? wallFilterDTO.getStatus()
                 : WallAuditStatusEnum.APPROVED;
         queryWrapper.eq("status", status.getValue());
-
 
         if (wallFilterDTO.getCateId() != null) {
             queryWrapper.eq("cate_id", wallFilterDTO.getCateId());
@@ -156,21 +156,49 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
             queryWrapper.like("content", "%" + wallFilterDTO.getContent().trim() + "%");
         }
 
-        List<Wall> list = wallMapper.selectList(queryWrapper);
+        return queryWrapper;
+    }
 
-        // 绑定数据
-        for (Wall wall : list) {
-            wall.setCate(wallCateMapper.selectById(wall.getCateId()));
+    // 批量回填当页留言的分类，替代逐条 selectById 的 N+1 查询
+    private void fillWallCate(List<Wall> walls) {
+        if (walls == null || walls.isEmpty()) {
+            return;
         }
-
-        return list;
+        List<Integer> cateIds = walls.stream()
+                .map(Wall::getCateId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (cateIds.isEmpty()) {
+            return;
+        }
+        Map<Integer, WallCate> cateMap = wallCateMapper.selectByIds(cateIds).stream()
+                .collect(Collectors.toMap(WallCate::getId, c -> c));
+        walls.forEach(w -> w.setCate(cateMap.get(w.getCateId())));
     }
 
     @Override
     public Page<WallVO> getWallList(WallFilterDTO wallFilterDTO) {
-        List<Wall> raw = queryWallList(wallFilterDTO);
+        QueryWrapper<Wall> queryWrapper = buildWallQueryWrapper(wallFilterDTO);
+
+        Page<Wall> page = CommonUtils.buildPage(wallFilterDTO);
+        List<Wall> raw;
+        Page<WallVO> result;
+        if (page == null) {
+            raw = wallMapper.selectList(queryWrapper);
+            result = new Page<>(1, raw.size());
+            result.setTotal(raw.size());
+        } else {
+            Page<Wall> entityPage = wallMapper.selectPage(page, queryWrapper);
+            raw = entityPage.getRecords();
+            result = new Page<>(entityPage.getCurrent(), entityPage.getSize());
+            result.setTotal(entityPage.getTotal());
+        }
+
+        fillWallCate(raw);
         List<WallVO> list = raw.stream().map(WallServiceImpl::toWallVO).collect(Collectors.toList());
-        return commonUtils.paginate(wallFilterDTO, list);
+        result.setRecords(list);
+        return result;
     }
 
     @Override
@@ -181,15 +209,25 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
         }
 
         QueryWrapper<Wall> queryWrapper = getWallQueryWrapper(cateId, wallCate);
-        List<Wall> list = wallMapper.selectList(queryWrapper);
 
-        // 绑定数据
-        for (Wall wall : list) {
-            wall.setCate(wallCateMapper.selectById(wall.getCateId()));
+        Page<Wall> page = CommonUtils.buildPage(pageDTO);
+        List<Wall> raw;
+        Page<WallVO> result;
+        if (page == null) {
+            raw = wallMapper.selectList(queryWrapper);
+            result = new Page<>(1, raw.size());
+            result.setTotal(raw.size());
+        } else {
+            Page<Wall> entityPage = wallMapper.selectPage(page, queryWrapper);
+            raw = entityPage.getRecords();
+            result = new Page<>(entityPage.getCurrent(), entityPage.getSize());
+            result.setTotal(entityPage.getTotal());
         }
 
-        List<WallVO> vos = list.stream().map(WallServiceImpl::toWallVO).collect(Collectors.toList());
-        return commonUtils.paginate(pageDTO, vos);
+        fillWallCate(raw);
+        List<WallVO> vos = raw.stream().map(WallServiceImpl::toWallVO).collect(Collectors.toList());
+        result.setRecords(vos);
+        return result;
     }
 
     private static QueryWrapper<Wall> getWallQueryWrapper(Integer cateId, WallCate wallCate) {

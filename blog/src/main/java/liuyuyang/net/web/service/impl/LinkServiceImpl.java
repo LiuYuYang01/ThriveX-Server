@@ -31,6 +31,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -160,14 +162,29 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
             queryWrapper.eq("status", linkFilterDTO.getStatus()); // 只显示审核成功的网站
         }
 
-        // 查询所有网站
-        List<LinkVO> list = linkMapper.selectList(queryWrapper).stream().map(link -> {
+        Page<Link> page = CommonUtils.buildPage(linkFilterDTO);
+        List<Link> raw;
+        Page<LinkVO> result;
+        if (page == null) {
+            raw = linkMapper.selectList(queryWrapper);
+            result = new Page<>(1, raw.size());
+            result.setTotal(raw.size());
+        } else {
+            Page<Link> entityPage = linkMapper.selectPage(page, queryWrapper);
+            raw = entityPage.getRecords();
+            result = new Page<>(entityPage.getCurrent(), entityPage.getSize());
+            result.setTotal(entityPage.getTotal());
+        }
+
+        // 批量回填当页链接的类型，替代逐条 selectById 的 N+1 查询
+        List<LinkVO> list = raw.stream().map(link -> {
             LinkVO linkVO = new LinkVO();
             BeanUtils.copyProperties(link, linkVO);
-            linkVO.setType(linkTypeMapper.selectById(link.getTypeId()));
             return linkVO;
         }).collect(Collectors.toList());
+        fillLinkType(list);
 
+        // 排序：按类型 order → 网站 order → 创建时间倒序（数据量小，类型 order 跨表无法下推，内存排）
         list = list.stream()
                 .sorted(Comparator
                         .comparingInt((LinkVO o) -> o.getType() == null || o.getType().getOrder() == null
@@ -177,7 +194,26 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
                         .thenComparing(LinkVO::getCreateTime, Comparator.reverseOrder()))
                 .collect(Collectors.toList());
 
-        return commonUtils.paginate(linkFilterDTO, list);
+        result.setRecords(list);
+        return result;
+    }
+
+    // 批量回填类型
+    private void fillLinkType(List<LinkVO> list) {
+        if (list == null || list.isEmpty()) {
+            return;
+        }
+        List<Integer> typeIds = list.stream()
+                .map(LinkVO::getTypeId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (typeIds.isEmpty()) {
+            return;
+        }
+        Map<Integer, LinkType> typeMap = linkTypeMapper.selectByIds(typeIds).stream()
+                .collect(Collectors.toMap(LinkType::getId, t -> t));
+        list.forEach(vo -> vo.setType(typeMap.get(vo.getTypeId())));
     }
 
     @Override

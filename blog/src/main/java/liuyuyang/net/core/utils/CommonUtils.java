@@ -66,7 +66,10 @@ public class CommonUtils {
     }
 
     /**
-     * 统一分页处理：不传 page/size 则返回全部，否则进行分页
+     * 统一分页处理：不传 page/size 则返回全部，否则进行分页。
+     * <p>⚠️ 内存分页，会先把全量数据查进内存再 subList，数据量大时性能差。
+     * <b>仅限</b>树形/小数据量/已内存组装的场景使用（如分类树、说说评论树）。
+     * 单表列表请优先用 {@link #buildPage(PageDTO)} + mapper.selectPage 做数据库分页。
      * @return 分页结果
      */
     public static <T> Page<T> paginate(PageDTO pageDTO, List<T> list) {
@@ -80,6 +83,20 @@ public class CommonUtils {
 
         // 否则数据分页处理
         return getPageData(pageDTO, list);
+    }
+
+    /**
+     * 构造 MyBatis-Plus 分页对象，供 selectPage 做数据库分页。
+     * 与 paginate 语义一致：page/size 都没传时返回全量（此时调用方需走 selectList 分支）。
+     * @return Page 对象；page/size 缺失时返回 null 表示「不传分页」，由调用方决定全量查询
+     */
+    public static <T> Page<T> buildPage(PageDTO pageDTO) {
+        if (pageDTO == null || pageDTO.getPageNum() == null || pageDTO.getPageSize() == null) {
+            return null;
+        }
+        long pageNum = Math.max(1, pageDTO.getPageNum());
+        long pageSize = Math.max(1, pageDTO.getPageSize());
+        return new Page<>(pageNum, pageSize);
     }
 
     /** 对内存列表做分页，返回 MyBatis-Plus Page（避免 start 超出列表长度） */

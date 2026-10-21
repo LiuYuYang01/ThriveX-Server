@@ -1,6 +1,7 @@
 package liuyuyang.net.web.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -301,9 +302,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         // 获取当前文章的创建时间
         Long createTime = data.getCreateTime();
 
-        // 查询上一篇文章
+        // 查询上一篇文章（只查 id 和 title）
         LambdaQueryWrapper<Article> prevQueryWrapper = new LambdaQueryWrapper<>();
-        prevQueryWrapper.lt(Article::getCreateTime, createTime).orderByDesc(Article::getCreateTime).last("LIMIT 1");
+        prevQueryWrapper.select(Article::getId, Article::getTitle)
+                .lt(Article::getCreateTime, createTime).orderByDesc(Article::getCreateTime).last("LIMIT 1");
         Article prevArticle = articleMapper.selectOne(prevQueryWrapper);
 
         if (prevArticle != null) {
@@ -320,9 +322,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             }
         }
 
-        // 查询下一篇文章
+        // 查询下一篇文章（只查 id/title，避免拉取 content 大字段）
         LambdaQueryWrapper<Article> nextQueryWrapper = new LambdaQueryWrapper<>();
-        nextQueryWrapper.gt(Article::getCreateTime, createTime).orderByAsc(Article::getCreateTime).last("LIMIT 1");
+        nextQueryWrapper.select(Article::getId, Article::getTitle)
+                .gt(Article::getCreateTime, createTime).orderByAsc(Article::getCreateTime).last("LIMIT 1");
         Article nextArticle = articleMapper.selectOne(nextQueryWrapper);
 
         if (nextArticle != null) {
@@ -386,17 +389,188 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Override
     public Page<ArticleVO> getArticleList(ArticleFilterDTO articleFilterDTO) {
-        List<ArticleVO> list = processArticleData(articleFilterDTO);
-
-        boolean isAdmin = CommonUtils.isAdmin();
-        if (!isAdmin) {
-            // 统一使用展示规则控制首页可见性
-            list = list.stream()
-                    .filter(this::shouldShowOnHomeForNonAdmin)
-                    .collect(Collectors.toList());
+        // 1. 根据文章配置表筛选出符合草稿/删除状态的文章ID
+        LambdaQueryWrapper<ArticleConfig> configQueryWrapper = new LambdaQueryWrapper<>();
+        if (articleFilterDTO.getIsDraft() != null) {
+            configQueryWrapper.eq(ArticleConfig::getIsDraft, articleFilterDTO.getIsDraft());
+        }
+        if (articleFilterDTO.getIsDel() != null) {
+            configQueryWrapper.eq(ArticleConfig::getIsDel, articleFilterDTO.getIsDel());
+        }
+        List<Integer> articleIds = articleConfigMapper.selectList(configQueryWrapper)
+                .stream()
+                .map(ArticleConfig::getArticleId)
+                .distinct()
+                .collect(Collectors.toList());
+        if (articleIds.isEmpty()) {
+            return emptyArticlePage(articleFilterDTO);
         }
 
-        return commonUtils.paginate(articleFilterDTO, list);
+        // 2. 叠加标题/日期/分类/标签过滤条件，得到候选文章ID
+        LambdaQueryWrapper<Article> queryWrapper = queryWrapperArticle(articleFilterDTO);
+        queryWrapper.select(Article::getId);
+        queryWrapper.in(Article::getId, articleIds);
+        List<Integer> candidateIds = articleMapper.selectList(queryWrapper).stream()
+                .map(Article::getId)
+                .collect(Collectors.toList());
+        if (candidateIds.isEmpty()) {
+            return emptyArticlePage(articleFilterDTO);
+        }
+
+        // 3. 数据库分页查询文章（排除 content 大字段）
+        Page<Article> page = CommonUtils.buildPage(articleFilterDTO);
+        Page<ArticleVO> result;
+        List<Article> pageArticles;
+        if (page == null) {
+            List<Article> all = articleMapper.selectBatchWithoutContent(candidateIds);
+            result = new Page<>(1, Math.max(1, all.size()));
+            result.setTotal(all.size());
+            pageArticles = all;
+        } else {
+            Page<Article> entityPage = articleMapper.selectArticlePage(page, candidateIds);
+            pageArticles = entityPage.getRecords();
+            result = new Page<>(entityPage.getCurrent(), entityPage.getSize());
+            result.setTotal(entityPage.getTotal());
+        }
+
+        // 4. 按当页文章ID批量绑定分类/标签/配置/评论数
+        List<ArticleVO> vos = batchBindingArticleData(pageArticles);
+
+        // 5. 应用展示规则（管理员可见所有，普通用户过滤隐藏/首页隐藏 + 加密打码）
+        boolean isAdmin = CommonUtils.isAdmin();
+        List<ArticleVO> filtered = new ArrayList<>();
+        for (ArticleVO vo : vos) {
+            if (!shouldShowInList(vo, isAdmin)) {
+                continue;
+            }
+            if (!isAdmin && !shouldShowOnHomeForNonAdmin(vo)) {
+                continue;
+            }
+            filtered.add(maskIfEncrypted(vo));
+        }
+
+        result.setRecords(filtered);
+        return result;
+    }
+
+    // 构造空分页结果
+    private Page<ArticleVO> emptyArticlePage(PageDTO pageDTO) {
+        Page<ArticleVO> result;
+        Page<Article> page = CommonUtils.buildPage(pageDTO);
+        if (page == null) {
+            result = new Page<>(1, 0);
+        } else {
+            result = new Page<>(page.getCurrent(), page.getSize());
+        }
+        result.setTotal(0);
+        result.setRecords(new ArrayList<>());
+        return result;
+    }
+
+    /**
+     * 按文章实体列表批量绑定分类/标签/配置/评论数，替代逐条 bindingArticleData 的 N+1 查询。
+     * 列表页专用：不读取 content 大字段。
+     */
+    private List<ArticleVO> batchBindingArticleData(List<Article> articles) {
+        if (articles == null || articles.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Integer> ids = articles.stream().map(Article::getId).collect(Collectors.toList());
+
+        // 批量查配置
+        Map<Integer, ArticleConfig> configMap = articleConfigMapper.selectList(
+                        new LambdaQueryWrapper<ArticleConfig>().in(ArticleConfig::getArticleId, ids))
+                .stream()
+                .collect(Collectors.toMap(ArticleConfig::getArticleId, c -> c, (a, b) -> a));
+
+        // 批量查分类关联
+        Map<Integer, List<Integer>> cateIdMap = new HashMap<>();
+        List<ArticleCate> cateRelations = articleCateMapper.selectList(
+                new LambdaQueryWrapper<ArticleCate>().in(ArticleCate::getArticleId, ids));
+        Set<Integer> allCateIds = new HashSet<>();
+        for (ArticleCate ac : cateRelations) {
+            cateIdMap.computeIfAbsent(ac.getArticleId(), k -> new ArrayList<>()).add(ac.getCateId());
+            allCateIds.add(ac.getCateId());
+        }
+        Map<Integer, Cate> cateMap = new HashMap<>();
+        if (!allCateIds.isEmpty()) {
+            cateMapper.selectByIds(allCateIds).forEach(c -> cateMap.put(c.getId(), c));
+        }
+
+        // 批量查标签关联
+        Map<Integer, List<Integer>> tagIdMap = new HashMap<>();
+        List<ArticleTag> tagRelations = articleTagMapper.selectList(
+                new LambdaQueryWrapper<ArticleTag>().in(ArticleTag::getArticleId, ids));
+        Set<Integer> allTagIds = new HashSet<>();
+        for (ArticleTag at : tagRelations) {
+            tagIdMap.computeIfAbsent(at.getArticleId(), k -> new ArrayList<>()).add(at.getTagId());
+            allTagIds.add(at.getTagId());
+        }
+        Map<Integer, Tag> tagMap = new HashMap<>();
+        if (!allTagIds.isEmpty()) {
+            tagMapper.selectByIds(allTagIds).forEach(t -> tagMap.put(t.getId(), t));
+        }
+
+        // 批量查评论数
+        Map<Integer, Integer> commentCountMap = countCommentsByArticleIds(ids);
+
+        // 组装 VO
+        List<ArticleVO> vos = new ArrayList<>(articles.size());
+        for (Article article : articles) {
+            ArticleVO vo = new ArticleVO();
+            BeanUtils.copyProperties(article, vo);
+
+            // 配置
+            ArticleConfig config = configMap.get(article.getId());
+            vo.setConfig(config);
+
+            // 分类
+            List<Integer> cateIds = cateIdMap.get(article.getId());
+            if (cateIds != null) {
+                List<CateVO> cates = cateIds.stream()
+                        .map(cateMap::get)
+                        .filter(Objects::nonNull)
+                        .map(cate -> {
+                            CateVO cateVO = new CateVO();
+                            BeanUtils.copyProperties(cate, cateVO);
+                            return cateVO;
+                        })
+                        .collect(Collectors.toList());
+                vo.setCateList(cates);
+            }
+
+            // 标签
+            List<Integer> tagIds = tagIdMap.get(article.getId());
+            if (tagIds != null) {
+                List<Tag> tags = tagIds.stream()
+                        .map(tagMap::get)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+                vo.setTagList(tags);
+            }
+
+            // 评论数
+            vo.setComment(commentCountMap.getOrDefault(article.getId(), 0));
+
+            vos.add(vo);
+        }
+        return vos;
+    }
+
+    // 批量统计文章评论数（替代 bindingArticleData 里查全量评论只为取 size）
+    private Map<Integer, Integer> countCommentsByArticleIds(List<Integer> articleIds) {
+        if (articleIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        QueryWrapper<Comment> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("article_id AS articleId", "COUNT(*) AS cnt")
+                .in("article_id", articleIds)
+                .groupBy("article_id");
+        Map<Integer, Integer> result = new HashMap<>();
+        for (Map<String, Object> row : commentMapper.selectMaps(queryWrapper)) {
+            result.put(((Number) row.get("articleId")).intValue(), ((Number) row.get("cnt")).intValue());
+        }
+        return result;
     }
 
     // 获取指定分类中所有文章
@@ -416,7 +590,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 有数据就查询，没有就返回空数组
         if (articleIds.isEmpty()) {
-            return commonUtils.paginate(pageDTO, new ArrayList<>());
+            return emptyArticlePage(pageDTO);
         }
 
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -431,18 +605,34 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 如果过滤后没有文章,直接返回空页
         if (articleIds.isEmpty()) {
-            return commonUtils.paginate(pageDTO, new ArrayList<>());
+            return emptyArticlePage(pageDTO);
         }
 
-        // 构建文章查询条件
-        LambdaQueryWrapper<Article> queryWrapperArticle = new LambdaQueryWrapper<Article>()
-                .in(Article::getId, articleIds)
-                .orderByDesc(Article::getIsTop)
-                .orderByDesc(Article::getCreateTime);
+        // 数据库分页查询文章（排除 content 大字段）
+        Page<Article> page = CommonUtils.buildPage(pageDTO);
+        Page<ArticleVO> result;
+        List<Article> pageArticles;
+        if (page == null) {
+            List<Article> all = articleMapper.selectBatchWithoutContent(articleIds);
+            result = new Page<>(1, Math.max(1, all.size()));
+            result.setTotal(all.size());
+            pageArticles = all;
+        } else {
+            Page<Article> entityPage = articleMapper.selectArticlePage(page, articleIds);
+            pageArticles = entityPage.getRecords();
+            result = new Page<>(entityPage.getCurrent(), entityPage.getSize());
+            result.setTotal(entityPage.getTotal());
+        }
 
-        List<Article> articles = articleMapper.selectList(queryWrapperArticle);
-        List<ArticleVO> vos = processArticleList(articles);
-        return commonUtils.paginate(pageDTO, vos);
+        // 批量绑定 + 普通用户展示规则（分类页过滤隐藏 + 加密打码）
+        List<ArticleVO> vos = batchBindingArticleData(pageArticles);
+        List<ArticleVO> filtered = vos.stream()
+                .filter(vo -> shouldShowInList(vo, false))
+                .map(this::maskIfEncrypted)
+                .collect(Collectors.toList());
+
+        result.setRecords(filtered);
+        return result;
     }
 
     @Override
@@ -456,7 +646,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 有数据就查询，没有就返回空数组
         if (articleIds.isEmpty()) {
-            return commonUtils.paginate(pageDTO, new ArrayList<>());
+            return emptyArticlePage(pageDTO);
         }
 
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -468,35 +658,34 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         // 如果过滤后没有文章,直接返回空页
         if (articleIds.isEmpty()) {
-            return commonUtils.paginate(pageDTO, new ArrayList<>());
+            return emptyArticlePage(pageDTO);
         }
 
-        // 构建文章查询条件
-        LambdaQueryWrapper<Article> queryWrapperArticle = new LambdaQueryWrapper<>();
-        queryWrapperArticle.in(Article::getId, articleIds)
-                .orderByDesc(Article::getIsTop)
-                .orderByDesc(Article::getCreateTime);
+        // 数据库分页查询文章（排除 content 大字段）
+        Page<Article> page = CommonUtils.buildPage(pageDTO);
+        Page<ArticleVO> result;
+        List<Article> pageArticles;
+        if (page == null) {
+            List<Article> all = articleMapper.selectBatchWithoutContent(articleIds);
+            result = new Page<>(1, Math.max(1, all.size()));
+            result.setTotal(all.size());
+            pageArticles = all;
+        } else {
+            Page<Article> entityPage = articleMapper.selectArticlePage(page, articleIds);
+            pageArticles = entityPage.getRecords();
+            result = new Page<>(entityPage.getCurrent(), entityPage.getSize());
+            result.setTotal(entityPage.getTotal());
+        }
 
-        List<Article> articles = articleMapper.selectList(queryWrapperArticle);
-        List<ArticleVO> vos = processArticleList(articles);
-        return commonUtils.paginate(pageDTO, vos);
-    }
-
-    /**
-     * 绑定数据、处理加密文章、过滤隐藏文章
-     */
-    private List<ArticleVO> processArticleList(List<Article> articles) {
-        return articles.stream()
-                .map(article -> {
-                    ArticleVO boundArticle = bindingArticleData(article.getId());
-                    // 分类/标签页默认按普通用户规则展示
-                    if (!shouldShowInList(boundArticle, false)) {
-                        return null;
-                    }
-                    return maskIfEncrypted(boundArticle);
-                })
-                .filter(Objects::nonNull)
+        // 批量绑定 + 普通用户展示规则（标签页过滤隐藏 + 加密打码）
+        List<ArticleVO> vos = batchBindingArticleData(pageArticles);
+        List<ArticleVO> filtered = vos.stream()
+                .filter(vo -> shouldShowInList(vo, false))
+                .map(this::maskIfEncrypted)
                 .collect(Collectors.toList());
+
+        result.setRecords(filtered);
+        return result;
     }
 
     /**
@@ -567,27 +756,25 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         List<Integer> randomArticleIds = ids.subList(0, count);
 
         // 与原逻辑保持一致，大量数据时仅做绑定，不走 get 的密码/上下篇逻辑
-        return randomArticleIds.stream()
-                .map(this::bindingArticleData)
-                .collect(Collectors.toList());
+        return batchBindingArticleData(articleMapper.selectBatchWithoutContent(randomArticleIds));
     }
 
     @Override
     public List<ArticleVO> getHotArticleList(Integer count) {
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.orderByDesc(Article::getView).last("LIMIT " + count);
-        return articleMapper.selectList(queryWrapper).stream()
-                .map(a -> bindingArticleData(a.getId()))
-                .collect(Collectors.toList());
+        // 批量回填，避免逐条 bindingArticleData 的 N+1 查询
+        return batchBindingArticleData(articleMapper.selectList(queryWrapper));
     }
 
     @Override
     public void recordViewArticleData(Integer id) {
-        Article data = articleMapper.selectById(id);
-        if (data == null)
+        // 原子自增浏览量
+        UpdateWrapper<Article> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("id", id).setSql("view = view + 1");
+        int updated = articleMapper.update(null, updateWrapper);
+        if (updated == 0)
             throw new CustomException("获取失败：该文章不存在");
-        data.setView(data.getView() + 1);
-        articleMapper.updateById(data);
 
         // 浏览明细落库供数据分析使用，失败不影响浏览量递增
         try {

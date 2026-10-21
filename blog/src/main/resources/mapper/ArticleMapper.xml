@@ -14,4 +14,58 @@
           and coalesce(c.is_del, 0) = 0
           and coalesce(c.status, 1) != 3
     </select>
+
+    <!-- 分页查询文章（排除 content 大字段，列表页用）；ids 为空时不返回任何行 -->
+    <select id="selectArticlePage" resultType="liuyuyang.net.model.Article">
+        select a.id,
+               a.title,
+               a.description,
+               a.cover,
+               a.view,
+               a.comment,
+               a.like_count,
+               a.share_count,
+               a.is_top,
+               a.create_time
+        from article a
+        <where>
+            <if test="ids != null and ids.size() > 0">
+                a.id in
+                <foreach collection="ids" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="ids == null or ids.size() == 0">
+                1 = 0
+            </if>
+        </where>
+        order by a.is_top desc, a.create_time desc
+    </select>
+
+    <!-- 按 id 批量查询文章（排除 content 大字段） -->
+    <select id="selectBatchWithoutContent" resultType="liuyuyang.net.model.Article">
+        select a.id,
+               a.title,
+               a.description,
+               a.cover,
+               a.view,
+               a.comment,
+               a.like_count,
+               a.share_count,
+               a.is_top,
+               a.create_time
+        from article a
+        <where>
+            <if test="ids != null and ids.size() > 0">
+                a.id in
+                <foreach collection="ids" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="ids == null or ids.size() == 0">
+                1 = 0
+            </if>
+        </where>
+        order by a.is_top desc, a.create_time desc
+    </select>
 </mapper>

@@ -78,12 +78,27 @@ public class FootprintServiceImpl extends ServiceImpl<FootprintMapper, Footprint
             queryWrapper.like("address", "%" + footprintFilterDTO.getAddress() + "%");
         }
 
-        List<FootprintVO> list = footprintMapper.selectList(queryWrapper).stream().map(item -> {
+        Page<Footprint> page = CommonUtils.buildPage(footprintFilterDTO);
+        List<Footprint> raw;
+        Page<FootprintVO> result;
+        if (page == null) {
+            raw = footprintMapper.selectList(queryWrapper);
+            result = new Page<>(1, raw.size());
+            result.setTotal(raw.size());
+        } else {
+            Page<Footprint> entityPage = footprintMapper.selectPage(page, queryWrapper);
+            raw = entityPage.getRecords();
+            result = new Page<>(entityPage.getCurrent(), entityPage.getSize());
+            result.setTotal(entityPage.getTotal());
+        }
+
+        List<FootprintVO> list = raw.stream().map(item -> {
             FootprintVO footprintVO = new FootprintVO();
             BeanUtils.copyProperties(item, footprintVO);
             return footprintVO;
         }).collect(Collectors.toList());
 
-        return commonUtils.paginate(footprintFilterDTO, list);
+        result.setRecords(list);
+        return result;
     }
 }
