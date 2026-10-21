@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import liuyuyang.net.enums.article.ArticleStatusEnum;
+import liuyuyang.net.core.config.CacheConfig;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.core.utils.IpUtils;
@@ -23,6 +24,7 @@ import liuyuyang.net.web.service.ArticleTagService;
 import liuyuyang.net.web.service.CateService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -92,6 +94,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
+    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST}, allEntries = true)
     public void addArticleData(ArticleFormDTO articleFormDTO) {
         Article article = new Article();
         BeanUtils.copyProperties(articleFormDTO, article);
@@ -139,6 +142,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
+    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST}, allEntries = true)
     public void delArticleData(Integer id, Integer is_del) {
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getArticleId, id);
@@ -165,6 +169,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
+    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST}, allEntries = true)
     public void recoveryArticleData(Integer id) {
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getArticleId, id);
@@ -174,6 +179,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
+    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST}, allEntries = true)
     public void delBatchArticleData(List<Integer> ids) {
         // 批量删除文章
         if (ids == null || ids.isEmpty())
@@ -187,6 +193,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
+    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST}, allEntries = true)
     public void editArticleData(ArticleFormDTO articleFormDTO) {
         if (articleFormDTO.getCateIds() == null || articleFormDTO.getCateIds().isEmpty())
             throw new CustomException("编辑失败：请绑定分类");

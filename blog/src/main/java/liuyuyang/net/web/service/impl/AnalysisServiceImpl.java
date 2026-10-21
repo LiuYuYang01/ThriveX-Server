@@ -1,7 +1,7 @@
 package liuyuyang.net.web.service.impl;
 
+import liuyuyang.net.core.config.CacheConfig;
 import liuyuyang.net.core.execption.CustomException;
-import liuyuyang.net.model.Article;
 import liuyuyang.net.vo.analysis.HotArticleVO;
 import liuyuyang.net.vo.analysis.HotKeywordVO;
 import liuyuyang.net.vo.analysis.SiteSummaryVO;
@@ -10,6 +10,7 @@ import liuyuyang.net.web.mapper.ArticleMapper;
 import liuyuyang.net.web.mapper.ArticleViewLogMapper;
 import liuyuyang.net.web.mapper.SearchLogMapper;
 import liuyuyang.net.web.service.AnalysisService;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
@@ -68,7 +69,9 @@ public class AnalysisServiceImpl implements AnalysisService {    private static 
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.CACHE_SITE_SUMMARY)
     public SiteSummaryVO getSiteSummary() {
+        // 全表扫描，是最重的读接口，短 TTL 缓存
         return articleMapper.selectSiteSummary();
     }
 

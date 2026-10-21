@@ -3,6 +3,7 @@ package liuyuyang.net.web.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
+import liuyuyang.net.core.config.CacheConfig;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.PageDTO;
@@ -15,6 +16,8 @@ import liuyuyang.net.web.mapper.TagMapper;
 import liuyuyang.net.web.service.ArticleService;
 import liuyuyang.net.web.service.TagService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +35,7 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
     private ArticleService articleService;
 
     @Override
+    @CacheEvict(cacheNames = CacheConfig.CACHE_TAG_LIST, allEntries = true)
     public void addTagData(TagFormDTO tagFormDTO) {
         Tag tag = new Tag();
         BeanUtils.copyProperties(tagFormDTO, tag);
@@ -46,6 +50,7 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
     }
 
     @Override
+    @CacheEvict(cacheNames = CacheConfig.CACHE_TAG_LIST, allEntries = true)
     public void delTagData(Integer id) {
         int affected = tagMapper.deleteById(id);
         if (affected == 0) {
@@ -54,6 +59,7 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
     }
 
     @Override
+    @CacheEvict(cacheNames = CacheConfig.CACHE_TAG_LIST, allEntries = true)
     public void batchDelTagData(List<Integer> ids) {
         // 与 ArticleController#batchDelArticleData 一致：空列表在 Service 内短路
         if (ids == null || ids.isEmpty()) {
@@ -63,6 +69,7 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
     }
 
     @Override
+    @CacheEvict(cacheNames = CacheConfig.CACHE_TAG_LIST, allEntries = true)
     public void editTagData(TagFormDTO tagFormDTO) {
         Tag tag = new Tag();
         BeanUtils.copyProperties(tagFormDTO, tag);
@@ -85,6 +92,7 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.CACHE_TAG_LIST)
     public Page<TagVO> getTagList(TagFilterDTO tagFilterDTO) {
         List<Tag> data = tagMapper.staticArticleCount();
         List<TagVO> list = data.stream().map(this::toVO).collect(Collectors.toCollection(ArrayList::new));
