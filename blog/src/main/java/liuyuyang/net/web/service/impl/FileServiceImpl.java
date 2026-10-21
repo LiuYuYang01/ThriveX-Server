@@ -81,7 +81,14 @@ public class FileServiceImpl implements FileService {
     }
 
     /**
+     * 图片与视频的分档大小上限（字节）。
+     */
+    private static final long MAX_IMAGE_SIZE = 10L * 1024 * 1024;   // 图片 10MB
+    private static final long MAX_VIDEO_SIZE = 50L * 1024 * 1024;   // 视频 50MB
+
+    /**
      * 按扩展名分流：图片走扩展名 + MIME + 解码三层校验，视频只做扩展名 + MIME 校验（ImageIO 不适用于视频）。
+     * 大小限制按类型分档：图片 10MB、视频 50MB。
      */
     private void validateFile(MultipartFile file) throws IOException {
         if (file.isEmpty()) {
@@ -101,7 +108,16 @@ public class FileServiceImpl implements FileService {
                     + "mov、avi、mkv 等格式浏览器无法在线播放，请先转码为 mp4(H.264) 再上传");
         }
 
-        Set<String> allowedContentTypes = imageExt.contains(ext)
+        // 按类型分档校验文件大小（图片 10MB / 视频 50MB）
+        boolean isImage = imageExt.contains(ext);
+        long maxSize = isImage ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE;
+        if (file.getSize() > maxSize) {
+            throw new CustomException(isImage
+                    ? "图片大小不能超过 10MB"
+                    : "视频大小不能超过 50MB");
+        }
+
+        Set<String> allowedContentTypes = isImage
                 ? FileImageExtensionEnum.allowedMimeTypes()
                 : FileVideoExtensionEnum.allowedMimeTypes();
         String contentType = file.getContentType();
@@ -109,7 +125,7 @@ public class FileServiceImpl implements FileService {
             throw new CustomException("文件类型不合法，仅支持上传图片或 mp4 视频文件");
         }
 
-        if (imageExt.contains(ext)) {
+        if (isImage) {
             BufferedImage image = ImageIO.read(file.getInputStream());
             if (image == null) {
                 throw new CustomException("文件内容不是有效的图片");

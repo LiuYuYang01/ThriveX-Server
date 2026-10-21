@@ -26,7 +26,6 @@ import liuyuyang.net.vo.file.FileTreeVO;
 import liuyuyang.net.vo.file.FileUploadVO;
 import liuyuyang.net.web.service.FileCleanupService;
 import liuyuyang.net.web.service.FileService;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,7 +44,6 @@ import java.util.Map;
 @Tag(name = "文件管理")
 @RestController
 @RequestMapping("/file")
-@Transactional
 public class FileController {
     @Resource
     private FileService fileService;

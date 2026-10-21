@@ -12,7 +12,6 @@ import liuyuyang.net.dto.swiper.SwiperFormDTO;
 import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.swiper.SwiperVO;
 import liuyuyang.net.web.service.SwiperService;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +23,6 @@ import java.util.Map;
 @Tag(name = "轮播图管理")
 @RestController
 @RequestMapping("/swiper")
-@Transactional
 @Validated
 public class SwiperController {
     @Resource

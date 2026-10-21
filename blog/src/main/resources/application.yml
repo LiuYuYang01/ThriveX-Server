@@ -10,14 +10,10 @@ spring:
   servlet.multipart.max-file-size: 50MB
   servlet.multipart.max-request-size: 500MB
 
-logging.level.org.springframework.mail: DEBUG
-logging.level.org.springframework.boot.autoconfigure.mail: DEBUG
-
+# 邮件 SMTP 交互日志默认关闭，避免敏感信息进入生产日志；需要排查时可在 dev 环境单独开启
 jwt:
-  # 访问令牌有效期（毫秒），默认 30 分钟，不宜过长
-  ttl: 1800000
-  # 刷新令牌有效期（毫秒），默认 7 天，仅用于换取新访问令牌
-  refresh-ttl: 604800000
+  # 设置jwt过期时间
+  ttl: 259200000
   # 设置前端传递过来的令牌名称
   token-name: Authorization
 

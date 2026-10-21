@@ -2,6 +2,7 @@ package liuyuyang.net.core.config;
 
 import liuyuyang.net.model.EnvConfig;
 import liuyuyang.net.web.service.EnvConfigService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,7 @@ import jakarta.annotation.Resource;
 import java.util.Map;
 import java.util.Properties;
 
+@Slf4j
 @Configuration
 public class MailConfig {
     @Resource
@@ -94,12 +96,12 @@ public class MailConfig {
         
         // 根据端口配置SSL/STARTTLS
         if (port == 465) {
-            System.out.println("使用465端口，启用SSL连接");
+            log.debug("使用465端口，启用SSL连接");
             props.put("mail.smtp.ssl.enable", true);
             props.put("mail.smtp.ssl.required", true);
             props.put("mail.smtp.starttls.enable", false);
         } else if (port == 587) {
-            System.out.println("使用587端口，启用STARTTLS连接");
+            log.debug("使用587端口，启用STARTTLS连接");
             props.put("mail.smtp.ssl.enable", false);
             props.put("mail.smtp.starttls.enable", true);
             props.put("mail.smtp.starttls.required", true);
@@ -110,7 +112,6 @@ public class MailConfig {
         // 根据邮箱服务商配置特定属性
         switch (provider) {
             case "QQ":
-                System.out.println("配置QQ邮箱专用设置");
                 props.put("mail.smtp.ssl.protocols", "TLSv1.2");
                 props.put("mail.smtp.ssl.trust", "smtp.qq.com");
                 props.put("mail.smtp.ssl.checkserveridentity", false);
@@ -123,7 +124,6 @@ public class MailConfig {
                 break;
                 
             case "163":
-                System.out.println("配置163邮箱专用设置");
                 props.put("mail.smtp.ssl.protocols", "TLSv1.2");
                 props.put("mail.smtp.ssl.trust", "smtp.163.com");
                 props.put("mail.smtp.ssl.checkserveridentity", false);
@@ -136,7 +136,6 @@ public class MailConfig {
                 break;
                 
             case "YEAH":
-                System.out.println("配置yeah邮箱专用设置");
                 props.put("mail.smtp.ssl.protocols", "TLSv1.2");
                 props.put("mail.smtp.ssl.trust", "smtp.yeah.net");
                 props.put("mail.smtp.ssl.checkserveridentity", false);
@@ -166,7 +165,6 @@ public class MailConfig {
             
             // 验证邮箱服务商
             String provider = getEmailProvider(host, username);
-            System.out.println("检测到邮箱服务商: " + provider);
             
             // 创建邮件发送器
             JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
@@ -179,17 +177,12 @@ public class MailConfig {
             Properties props = mailSender.getJavaMailProperties();
             configureSmtpProperties(props, provider, port);
 
-            System.out.println("=== 邮件发送器配置完成 ===");
-            System.out.println("邮箱服务商: " + provider);
-            System.out.println("SMTP主机: " + host + ":" + port);
-            System.out.println("发件邮箱: " + username);
-            System.out.println("SSL启用: " + props.getProperty("mail.smtp.ssl.enable"));
-            System.out.println("STARTTLS启用: " + props.getProperty("mail.smtp.starttls.enable"));
-            System.out.println("========================");
+            // 不打印 SMTP host / 发件邮箱等敏感信息到日志
+            log.debug("邮件发送器配置完成，服务商: {}", provider);
             
             return mailSender;
         } catch (Exception e) {
-            System.err.println("创建邮件发送器失败: " + e.getMessage());
+            log.error("创建邮件发送器失败", e);
             throw new RuntimeException("邮件发送器初始化失败", e);
         }
     }

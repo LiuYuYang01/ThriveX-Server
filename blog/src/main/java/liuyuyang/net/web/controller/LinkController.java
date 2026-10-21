@@ -15,7 +15,6 @@ import liuyuyang.net.dto.link.LinkFormDTO;
 import liuyuyang.net.dto.link.LinkSortDTO;
 import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.link.LinkVO;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +27,6 @@ import java.util.Map;
 @Tag(name = "网站管理")
 @RestController
 @RequestMapping("/link")
-@Transactional
 @Validated
 public class LinkController {
     @Resource

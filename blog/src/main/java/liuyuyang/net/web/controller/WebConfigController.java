@@ -6,7 +6,6 @@ import liuyuyang.net.core.annotation.NoTokenRequired;
 import liuyuyang.net.core.annotation.RateLimit;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.web.service.WebConfigService;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +18,6 @@ import liuyuyang.net.model.WebConfig;
 @Tag(name = "网站配置管理")
 @RestController
 @RequestMapping("/web_config")
-@Transactional
 @Validated
 public class WebConfigController {
     @Resource

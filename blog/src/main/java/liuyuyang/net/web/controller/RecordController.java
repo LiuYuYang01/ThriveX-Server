@@ -17,7 +17,6 @@ import liuyuyang.net.vo.record.RecordCommentVO;
 import liuyuyang.net.vo.record.RecordVO;
 import liuyuyang.net.web.service.RecordCommentService;
 import liuyuyang.net.web.service.RecordService;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +26,6 @@ import java.util.Map;
 @Tag(name = "闪念管理")
 @RestController
 @RequestMapping("/record")
-@Transactional
 public class RecordController {
     @Resource
     private RecordService recordService;

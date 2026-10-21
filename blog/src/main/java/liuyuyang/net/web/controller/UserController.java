@@ -15,7 +15,6 @@ import liuyuyang.net.vo.user.UserVO;
 import liuyuyang.net.web.service.CaptchaService;
 import liuyuyang.net.web.service.UserService;
 import org.springframework.beans.BeanUtils;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
@@ -25,7 +24,6 @@ import java.util.Map;
 @Tag(name = "用户管理")
 @RestController
 @RequestMapping("/user")
-@Transactional
 public class UserController {
     @Resource
     private UserService userService;
@@ -57,14 +55,6 @@ public class UserController {
         captchaService.checkForLogin(user.getCaptchaToken());
         Map<String, Object> result = userService.login(user);
         return Result.success("登录成功", result);
-    }
-
-    @NoTokenRequired
-    @PostMapping("/refresh")
-    @Operation(summary = "刷新访问令牌")
-    public Result<Map<String, Object>> refresh(@RequestParam String refreshToken) {
-        Map<String, Object> result = userService.refresh(refreshToken);
-        return Result.success(result);
     }
 
     @PatchMapping("/pass")

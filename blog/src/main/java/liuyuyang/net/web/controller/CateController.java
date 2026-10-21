@@ -13,7 +13,6 @@ import liuyuyang.net.dto.cate.CateSortDTO;
 import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.cate.CateVO;
 import liuyuyang.net.web.service.CateService;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +25,6 @@ import java.util.Map;
 @Tag(name = "分类管理")
 @RestController
 @RequestMapping("/cate")
-@Transactional
 @Validated
 public class CateController {
     @Resource

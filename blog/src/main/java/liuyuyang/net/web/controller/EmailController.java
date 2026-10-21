@@ -6,7 +6,6 @@ import liuyuyang.net.dto.email.DismissEmailDTO;
 import liuyuyang.net.dto.email.WallEmailDTO;
 import liuyuyang.net.core.utils.Result;
 import liuyuyang.net.web.service.EmailService;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
@@ -14,7 +13,6 @@ import jakarta.annotation.Resource;
 @Tag(name = "邮件管理")
 @RestController
 @RequestMapping("/email")
-@Transactional
 public class EmailController {
     @Resource
     private EmailService emailService;

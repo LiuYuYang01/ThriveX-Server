@@ -15,8 +15,6 @@ public interface UserService extends IService<User> {
 
     Map<String, Object> login(UserLoginDTO user);
 
-    Map<String, Object> refresh(String refreshToken);
-
     void editUserPass(EditUserPassDTO data);
 
     void checkToken();

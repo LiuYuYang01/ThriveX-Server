@@ -12,7 +12,6 @@ import liuyuyang.net.dto.milestone.MilestoneFormDTO;
 import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.milestone.MilestoneVO;
 import liuyuyang.net.web.service.MilestoneService;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +23,6 @@ import java.util.Map;
 @Tag(name = "人生里程碑管理")
 @RestController
 @RequestMapping("/milestone")
-@Transactional
 @Validated
 public class MilestoneController {
     @Resource

@@ -12,7 +12,6 @@ import liuyuyang.net.dto.footprint.FootprintFormDTO;
 import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.footprint.FootprintVO;
 import liuyuyang.net.web.service.FootprintService;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +23,6 @@ import java.util.Map;
 @Tag(name = "足迹管理")
 @RestController
 @RequestMapping("/footprint")
-@Transactional
 @Validated
 public class FootprintController {
     @Resource

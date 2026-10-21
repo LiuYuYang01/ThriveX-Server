@@ -13,7 +13,6 @@ import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.comment.CommentVO;
 import liuyuyang.net.web.service.CaptchaService;
 import liuyuyang.net.web.service.CommentService;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +24,6 @@ import java.util.Map;
 @Tag(name = "评论管理")
 @RestController
 @RequestMapping("/comment")
-@Transactional
 @Validated
 public class CommentController {
     @Resource

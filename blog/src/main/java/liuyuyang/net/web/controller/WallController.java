@@ -15,7 +15,6 @@ import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.wall.WallVO;
 import liuyuyang.net.web.service.CaptchaService;
 import liuyuyang.net.web.service.WallService;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +26,6 @@ import java.util.Map;
 @Tag(name = "留言管理")
 @RestController
 @RequestMapping("/wall")
-@Transactional
 @Validated
 public class WallController {
     @Resource

@@ -10,7 +10,6 @@ import liuyuyang.net.dto.assistant.AssistantFormDTO;
 import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.assistant.AssistantVO;
 import liuyuyang.net.web.service.AssistantService;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +21,6 @@ import java.util.Map;
 @Tag(name = "助手管理")
 @RestController
 @RequestMapping("/assistant")
-@Transactional
 @Validated
 public class AssistantController {
     @Resource

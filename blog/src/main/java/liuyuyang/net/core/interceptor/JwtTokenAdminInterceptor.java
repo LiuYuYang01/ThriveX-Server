@@ -87,12 +87,15 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
             } else {
                 throw new CustomException(401, "该账号已在另一台设备登录");
             }
+        } catch (CustomException ex) {
+            // 业务异常（含「请先登录」「另一台设备登录」等）按原语义返回，不泄露内部细节
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            throw ex;
         } catch (Exception ex) {
-            System.out.println("校验失败：" + ex);
-            // 校验失败，响应401状态码
-            response.setStatus(401);
-            String message = ex.getMessage() != null ? ex.getMessage() : "无效或过期的token";
-            throw new CustomException(401, message);
+            // 校验失败只记录内部日志，对外统一返回友好文案，避免泄露 JWT 解析内部细节
+            log.warn("Token 校验失败", ex);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            throw new CustomException(401, "无效或过期的 Token");
         }
     }
 }

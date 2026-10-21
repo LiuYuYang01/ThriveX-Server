@@ -57,11 +57,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             token = token.substring(7);
         }
 
-        Integer uid = JwtUtils.parseUid(token);
-        if (uid == null) {
+        LambdaQueryWrapper<UserToken> w = new LambdaQueryWrapper<>();
+        w.eq(UserToken::getToken, token);
+        List<UserToken> userTokens = userTokenMapper.selectList(w);
+        if (userTokens == null || userTokens.isEmpty()) {
+            throw new CustomException(401, "该账号已在另一台设备登录");
+        }
+
+        // 校验token是否有效
+        try {
+            JwtUtils.parseJWT(token);
+        } catch (Exception e) {
             throw new CustomException(401, "无效或过期的 Token");
         }
-        return userMapper.selectById(uid);
+
+        Integer id = userTokens.get(0).getUid();
+        return userMapper.selectById(id);
     }
 
     @Override
@@ -81,72 +92,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             userMapper.updateById(user);
         }
 
-        // 签发 access token（短有效期，携带 uid）与 refresh token（长有效期）
-        String accessToken = JwtUtils.createAccessToken(user.getId());
-        String refreshToken = JwtUtils.createRefreshToken(user.getId());
+        Map<String, Object> result = new HashMap<>();
+        String token = JwtUtils.createJWT(result);
+        result.put("token", token);
 
-        // 先删除用户旧的 token，保证单设备登录（旧 token 作废）
+        // 先删除用户旧的token
         LambdaQueryWrapper<UserToken> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
         userLambdaQueryWrapper.eq(UserToken::getUid, user.getId());
         userTokenMapper.delete(userLambdaQueryWrapper);
-
-        // 存储当前 access token
+        // 再存储用户当前的token
         UserToken userToken = new UserToken();
         userToken.setUid(user.getId());
-        userToken.setToken(accessToken);
+        userToken.setToken(token);
         userTokenMapper.insert(userToken);
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("token", accessToken);
-        result.put("refreshToken", refreshToken);
-        return result;
-    }
-
-    @Override
-    public Map<String, Object> refresh(String refreshToken) {
-        if (refreshToken == null || refreshToken.trim().isEmpty()) {
-            throw new CustomException(401, "缺少刷新令牌");
-        }
-        if (refreshToken.startsWith("Bearer ")) {
-            refreshToken = refreshToken.substring(7);
-        }
-
-        // 校验 refresh token 的签名与有效期
-        Integer uid;
-        try {
-            uid = JwtUtils.parseUid(refreshToken);
-        } catch (Exception e) {
-            throw new CustomException(401, "刷新令牌无效或已过期");
-        }
-        if (uid == null) {
-            throw new CustomException(401, "刷新令牌无效");
-        }
-
-        // 确认用户仍存在
-        User user = userMapper.selectById(uid);
-        if (user == null) {
-            throw new CustomException(401, "用户不存在");
-        }
-
-        // 签发新的 access token（保留现有 refresh token，避免无限续期；如需轮换 refresh 可在此扩展）
-        String accessToken = JwtUtils.createAccessToken(uid);
-
-        // 更新 user_token 表中的 token（旧 access token 作废，保持单设备）
-        LambdaQueryWrapper<UserToken> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(UserToken::getUid, uid);
-        UserToken existing = userTokenMapper.selectOne(wrapper);
-        if (existing != null) {
-            existing.setToken(accessToken);
-            userTokenMapper.updateById(existing);
-        } else {
-            UserToken userToken = new UserToken();
-            userToken.setUid(uid);
-            userToken.setToken(accessToken);
-            userTokenMapper.insert(userToken);
-        }
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("token", accessToken);
         return result;
     }
 

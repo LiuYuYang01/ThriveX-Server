@@ -14,7 +14,6 @@ import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.article.ArticleVO;
 import liuyuyang.net.vo.tag.TagVO;
 import liuyuyang.net.web.service.TagService;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +25,6 @@ import java.util.Map;
 @Tag(name = "标签管理")
 @RestController
 @RequestMapping("/tag")
-@Transactional
 @Validated
 public class TagController {
     @Resource

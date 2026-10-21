@@ -17,7 +17,6 @@ import liuyuyang.net.validation.ValidationGroups;
 import liuyuyang.net.vo.article.ArticleVO;
 import liuyuyang.net.web.service.ArticleService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,7 +30,6 @@ import java.util.Map;
 @Tag(name = "文章管理")
 @RestController
 @RequestMapping("/article")
-@Transactional
 @Validated
 public class ArticleController {
     @Resource
