@@ -25,6 +25,7 @@ import liuyuyang.net.web.service.CateService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -94,7 +95,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST}, allEntries = true)
+    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST, CacheConfig.CACHE_HOT_ARTICLE}, allEntries = true)
     public void addArticleData(ArticleFormDTO articleFormDTO) {
         Article article = new Article();
         BeanUtils.copyProperties(articleFormDTO, article);
@@ -142,7 +143,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST}, allEntries = true)
+    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST, CacheConfig.CACHE_HOT_ARTICLE}, allEntries = true)
     public void delArticleData(Integer id, Integer is_del) {
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getArticleId, id);
@@ -169,7 +170,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST}, allEntries = true)
+    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST, CacheConfig.CACHE_HOT_ARTICLE}, allEntries = true)
     public void recoveryArticleData(Integer id) {
         LambdaQueryWrapper<ArticleConfig> articleConfigLambdaQueryWrapper = new LambdaQueryWrapper<>();
         articleConfigLambdaQueryWrapper.eq(ArticleConfig::getArticleId, id);
@@ -179,7 +180,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST}, allEntries = true)
+    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST, CacheConfig.CACHE_HOT_ARTICLE}, allEntries = true)
     public void delBatchArticleData(List<Integer> ids) {
         // 批量删除文章
         if (ids == null || ids.isEmpty())
@@ -193,7 +194,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST}, allEntries = true)
+    @CacheEvict(cacheNames = {CacheConfig.CACHE_SITE_SUMMARY, CacheConfig.CACHE_TAG_LIST, CacheConfig.CACHE_HOT_ARTICLE}, allEntries = true)
     public void editArticleData(ArticleFormDTO articleFormDTO) {
         if (articleFormDTO.getCateIds() == null || articleFormDTO.getCateIds().isEmpty())
             throw new CustomException("编辑失败：请绑定分类");
@@ -767,10 +768,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.CACHE_HOT_ARTICLE, key = "#count")
     public List<ArticleVO> getHotArticleList(Integer count) {
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.orderByDesc(Article::getView).last("LIMIT " + count);
         // 批量回填，避免逐条 bindingArticleData 的 N+1 查询
+        // 缓存说明：浏览量高频变动，靠 60s 短 TTL 更新热度排序；文章增删改时主动 evict
         return batchBindingArticleData(articleMapper.selectList(queryWrapper));
     }
 

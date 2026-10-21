@@ -1,9 +1,12 @@
 package liuyuyang.net.web.service.impl;
 
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
+import liuyuyang.net.core.config.CacheConfig;
 import liuyuyang.net.web.mapper.WebConfigMapper;
 import liuyuyang.net.model.WebConfig;
 import liuyuyang.net.web.service.WebConfigService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +28,7 @@ public class WebConfigServiceImpl extends ServiceImpl<WebConfigMapper, WebConfig
     }
 
     @Override
+    @CacheEvict(cacheNames = CacheConfig.CACHE_WEB_CONFIG, allEntries = true)
     public boolean updateJsonValue(Integer id, Map<String, Object> jsonValue) {
         WebConfig webConfig = this.getById(id);
         if (webConfig != null) {
@@ -35,11 +39,13 @@ public class WebConfigServiceImpl extends ServiceImpl<WebConfigMapper, WebConfig
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.CACHE_WEB_CONFIG, key = "#name")
     public WebConfig getByName(String name) {
         return this.lambdaQuery().eq(WebConfig::getName, name).one();
     }
 
     @Override
+    @CacheEvict(cacheNames = CacheConfig.CACHE_WEB_CONFIG, allEntries = true)
     public boolean updateJsonValueByName(String name, Map<String, Object> jsonValue) {
         WebConfig webConfig = getByName(name);
         if (webConfig == null) {

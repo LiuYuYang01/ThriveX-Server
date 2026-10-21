@@ -4,11 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
+import liuyuyang.net.core.config.CacheConfig;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.model.EnvConfig;
 import liuyuyang.net.web.mapper.EnvConfigMapper;
 import liuyuyang.net.web.service.EnvConfigService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,6 +92,7 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.CACHE_ENV_CONFIG, key = "#name")
     public EnvConfig getByName(String name) {
         try {
             LambdaQueryWrapper<EnvConfig> wrapper = new LambdaQueryWrapper<>();
@@ -105,6 +109,7 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
     }
 
     @Override
+    @CacheEvict(cacheNames = CacheConfig.CACHE_ENV_CONFIG, allEntries = true)
     public boolean updateJsonValue(Integer id, Map<String, Object> jsonValue) {
         EnvConfig envConfig = this.getById(id);
         if (envConfig == null) {
@@ -130,6 +135,7 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
     }
 
     @Override
+    @CacheEvict(cacheNames = CacheConfig.CACHE_ENV_CONFIG, allEntries = true)
     public boolean updateJsonFieldValue(Integer id, String fieldName, Object value) {
         EnvConfig envConfig = this.getById(id);
         if (envConfig == null) {
@@ -153,11 +159,16 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
         if (config == null || config.getValue() == null) {
             return config;
         }
+        // 返回副本而非原地修改
+        EnvConfig copy = new EnvConfig();
+        copy.setId(config.getId());
+        copy.setName(config.getName());
+        copy.setNotes(config.getNotes());
         Map<String, Object> masked = new LinkedHashMap<>(config.getValue());
         masked.replaceAll((key, value) ->
                 SECRET_FIELDS.contains(key) && value instanceof String s && !s.isBlank() ? SECRET_MASK : value);
-        config.setValue(masked);
-        return config;
+        copy.setValue(masked);
+        return copy;
     }
 
     @Override

@@ -27,6 +27,12 @@ public class CacheConfig {
     public static final String CACHE_SITE_SUMMARY = "siteSummary";
     /** 标签列表缓存名 */
     public static final String CACHE_TAG_LIST = "tagList";
+    /** 网站配置缓存名（按 name 缓存） */
+    public static final String CACHE_WEB_CONFIG = "webConfig";
+    /** 环境配置缓存名（按 name 缓存） */
+    public static final String CACHE_ENV_CONFIG = "envConfig";
+    /** 热门文章缓存名（按 count 缓存） */
+    public static final String CACHE_HOT_ARTICLE = "hotArticle";
 
     @Bean
     public CacheManager cacheManager() {
@@ -46,6 +52,24 @@ public class CacheConfig {
         cacheManager.registerCustomCache(CACHE_TAG_LIST, Caffeine.newBuilder()
                 .expireAfterWrite(Duration.ofSeconds(60))
                 .maximumSize(4)
+                .build());
+
+        // 网站配置：管理员低频改、前台高频读（首页/评论/留言/SEO 每次访问都查），5min TTL + 写方法精确失效
+        cacheManager.registerCustomCache(CACHE_WEB_CONFIG, Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofMinutes(5))
+                .maximumSize(32)
+                .build());
+
+        // 环境配置：同上，邮件/存储/统计/验证码逐次调用
+        cacheManager.registerCustomCache(CACHE_ENV_CONFIG, Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofMinutes(5))
+                .maximumSize(32)
+                .build());
+
+        // 热门文章：浏览量高频变动导致难以精确失效，用 60s 短 TTL；文章增删改时主动失效
+        cacheManager.registerCustomCache(CACHE_HOT_ARTICLE, Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofSeconds(60))
+                .maximumSize(8)
                 .build());
 
         return cacheManager;
