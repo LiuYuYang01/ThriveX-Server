@@ -97,7 +97,8 @@ public class FileServiceImpl implements FileService {
         Set<String> imageExt = FileImageExtensionEnum.allowedExtensions();
         Set<String> videoExt = FileVideoExtensionEnum.allowedExtensions();
         if (!imageExt.contains(ext) && !videoExt.contains(ext)) {
-            throw new CustomException("仅支持上传图片（jpg、jpeg、png、webp）或视频（mp4、webm、ogg、ogv、mov、m4v、avi、mkv、flv）");
+            throw new CustomException("仅支持上传图片（jpg、jpeg、png、webp）或视频（mp4）；"
+                    + "mov、avi、mkv 等格式浏览器无法在线播放，请先转码为 mp4(H.264) 再上传");
         }
 
         Set<String> allowedContentTypes = imageExt.contains(ext)
@@ -105,7 +106,7 @@ public class FileServiceImpl implements FileService {
                 : FileVideoExtensionEnum.allowedMimeTypes();
         String contentType = file.getContentType();
         if (contentType == null || !allowedContentTypes.contains(contentType.toLowerCase())) {
-            throw new CustomException("文件类型不合法，仅支持上传图片或视频类型文件");
+            throw new CustomException("文件类型不合法，仅支持上传图片或 mp4 视频文件");
         }
 
         if (imageExt.contains(ext)) {

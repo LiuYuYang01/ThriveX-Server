@@ -6,11 +6,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,8 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 直接反射调用 {@code FileServiceImpl#validateFile}，不启动 Spring 上下文，
  * 用真实的「扩展名 + 浏览器上报 Content-Type」组合验证白名单行为。
  * <p>
- * 校验规则（见 FileServiceImpl#validateFile）：扩展名必须命中图片或视频枚举，
- * MIME 只需命中「同类枚举的 MIME 并集」，两者不做交叉绑定。
+ * 校验规则（见 FileServiceImpl#validateFile）：视频只允许 mp4（对应 MIME video/mp4），
+ * 图片允许 jpg/jpeg/png/webp；MIME 必须与扩展名所属类别匹配，不做跨类别放行；
+ * 图片还要通过 ImageIO 解码校验。
  */
 class FileUploadValidateTest {
 
@@ -39,7 +45,11 @@ class FileUploadValidateTest {
 
     /** 返回 null 表示放行，否则返回拒绝原因。 */
     private String probe(String filename, String contentType) {
-        MockMultipartFile file = new MockMultipartFile("files", filename, contentType, new byte[]{0, 0, 0, 1});
+        return probe(filename, contentType, new byte[]{0, 0, 0, 1});
+    }
+
+    private String probe(String filename, String contentType, byte[] content) {
+        MockMultipartFile file = new MockMultipartFile("files", filename, contentType, content);
         try {
             VALIDATE.invoke(new FileServiceImpl(), file);
             return null;
@@ -49,6 +59,18 @@ class FileUploadValidateTest {
                 return custom.getMessage();
             }
             throw new IllegalStateException(cause);
+        }
+    }
+
+    /** 生成一张真实可解码的小图，供图片的 ImageIO 解码校验使用。 */
+    private byte[] imageBytes(String format) {
+        try {
+            BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ImageIO.write(image, format, out);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
     }
 
@@ -62,8 +84,12 @@ class FileUploadValidateTest {
     }
 
     private void assertRejected(String filename, String contentType) {
+        assertRejected(filename, contentType, new byte[]{0, 0, 0, 1});
+    }
+
+    private void assertRejected(String filename, String contentType, byte[] content) {
         assertThrows(CustomException.class, () -> {
-            String msg = probe(filename, contentType);
+            String msg = probe(filename, contentType, content);
             if (msg == null) {
                 return;
             }
@@ -72,50 +98,73 @@ class FileUploadValidateTest {
     }
 
     @Test
-    @DisplayName("九种视频扩展名 + 标准 MIME 全部放行")
-    void standardVideoTypesAreAccepted() {
+    @DisplayName("视频只允许 mp4，且扩展名大小写不敏感")
+    void onlyMp4VideoIsAccepted() {
         assertAccepted("a.mp4", "video/mp4");
-        assertAccepted("a.webm", "video/webm");
-        assertAccepted("a.ogg", "video/ogg");
-        assertAccepted("a.ogv", "video/ogg");
-        assertAccepted("a.mov", "video/quicktime");
-        assertAccepted("a.m4v", "video/x-m4v");
-        assertAccepted("a.avi", "video/x-msvideo");
-        assertAccepted("a.mkv", "video/x-matroska");
-        assertAccepted("a.flv", "video/x-flv");
-    }
-
-    @Test
-    @DisplayName("浏览器实际上报的变体 MIME：MIME 并集校验带来的兼容/风险")
-    void browserReportedMimeVariants() {
-        // Chrome 对 .m4v 常按 mp4 上报，靠「MIME 并集」得以放行
-        assertAccepted("a.m4v", "video/mp4");
-        // .ogv 在部分浏览器上报 video/ogg，同样受益于并集
-        assertAccepted("a.ogv", "video/ogg");
-        // Windows 注册表里的 .avi 类型不在白名单，会被误拒
-        assertRejected("a.avi", "video/avi");
-        // 上报不出 MIME（部分系统 .mkv/.flv）会被拒
-        assertRejected("a.mkv", null);
-        // 伪造 MIME 也能过：扩展名与 MIME 不交叉校验
-        assertAccepted("a.avi", "video/mp4");
-    }
-
-    @Test
-    @DisplayName("扩展名大小写、非白名单格式、图片仍受三层校验")
-    void extensionCaseAndNonWhitelisted() {
         assertAccepted("A.MP4", "video/mp4");
+        assertAccepted("movie.mp4", "video/mp4");
+    }
+
+    @Test
+    @DisplayName("其余视频格式一律拒绝，无论浏览器上报什么 MIME")
+    void otherVideoFormatsAreRejected() {
+        assertRejected("a.mov", "video/quicktime");
+        assertRejected("a.webm", "video/webm");
+        assertRejected("a.ogg", "video/ogg");
+        assertRejected("a.ogv", "video/ogg");
+        assertRejected("a.m4v", "video/x-m4v");
+        assertRejected("a.avi", "video/x-msvideo");
+        assertRejected("a.mkv", "video/x-matroska");
+        assertRejected("a.flv", "video/x-flv");
+        // 改成 .mp4 后缀依然会被 MIME 校验拦下（浏览器仍上报原格式 MIME）
+        assertRejected("a.mov", "video/mp4");
+        assertRejected("a.mkv", "video/mp4");
+    }
+
+    @Test
+    @DisplayName("MIME 必须与扩展名匹配：mp4 只认 video/mp4")
+    void mimeMustMatchExtension() {
+        assertRejected("a.mp4", "video/quicktime");
+        assertRejected("a.mp4", "application/octet-stream");
+        assertRejected("a.mp4", null);
+        assertRejected("a.mp4", "image/png");
+        assertRejected("a.jpg", "video/mp4");
         assertRejected("a.txt", "text/plain");
         assertRejected("noext", "video/mp4");
-        // 视频扩展名配图片 MIME：图片 MIME 不在视频并集内，拒绝
-        assertRejected("a.mp4", "image/png");
+    }
+
+    @Test
+    @DisplayName("图片白名单保持不变，jpg/png 通过内容解码校验")
+    void imagesStillWork() throws IOException {
+        assertDoesNotThrow(() -> {
+            String msg = probe("a.jpg", "image/jpeg", imageBytes("jpg"));
+            if (msg != null) {
+                throw new AssertionError("a.jpg 被拒：" + msg);
+            }
+        });
+        assertDoesNotThrow(() -> {
+            String msg = probe("a.png", "image/png", imageBytes("png"));
+            if (msg != null) {
+                throw new AssertionError("a.png 被拒：" + msg);
+            }
+        });
+        // 扩展名与 MIME 对得上，但内容不是图片，仍应被拦下
+        assertRejected("a.png", "image/png");
+    }
+
+    @Test
+    @DisplayName("webp 已进入白名单，但 JDK 的 ImageIO 没有 WebP 解码器，只能卡在内容校验上")
+    void webpPassesWhitelistButFailsContentCheck() {
+        String msg = probe("a.webp", "image/webp");
+        assertEquals("文件内容不是有效的图片", msg);
     }
 
     @Test
     @DisplayName("打印完整判定矩阵，便于人工核对")
     void printMatrix() {
-        String[] names = {"a.mp4", "a.webm", "a.ogv", "a.mov", "a.m4v", "a.avi", "a.mkv", "a.flv", "a.txt"};
-        String[] types = {"video/mp4", "video/quicktime", "video/x-m4v", "video/x-msvideo",
-                "video/avi", "video/x-matroska", "application/octet-stream", null};
+        String[] names = {"a.mp4", "a.mov", "a.webm", "a.avi", "a.mkv", "a.jpg", "a.png", "a.gif", "a.txt"};
+        String[] types = {"video/mp4", "video/quicktime", "video/webm", "image/jpeg", "image/png",
+                "image/gif", "application/octet-stream", null};
 
         Map<String, String> matrix = new LinkedHashMap<>();
         for (String name : names) {

@@ -9,18 +9,14 @@ import java.util.stream.Collectors;
 
 /**
  * 文件管理模块允许上传的视频扩展名及对应 MIME。
+ * <p>
+ * 只保留 MP4：浏览器能直接在线播放的视频格式里，只有 MP4(H.264) 做到了
+ * Chrome / Firefox / Safari / iOS / Android 全平台覆盖；mov、avi、mkv、flv 等
+ * 要么容器不被识别、要么内部编码（HEVC、ProRes）无法解码，传上去等于死文件。
  */
 @Getter
 public enum FileVideoExtensionEnum {
-    MP4("mp4", "video/mp4"),
-    WEBM("webm", "video/webm"),
-    OGG("ogg", "video/ogg"),
-    OGV("ogv", "video/ogg"),
-    MOV("mov", "video/quicktime"),
-    M4V("m4v", "video/x-m4v"),
-    AVI("avi", "video/x-msvideo"),
-    MKV("mkv", "video/x-matroska"),
-    FLV("flv", "video/x-flv");
+    MP4("mp4", "video/mp4");
 
     private final String extension;
     private final String mimeType;
