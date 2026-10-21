@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="liuyuyang.net.web.mapper.SearchLogMapper">
+
+    <!-- 统计周期内搜索次数最多的关键词 -->
+    <select id="selectHotKeywords" resultType="liuyuyang.net.vo.analysis.HotKeywordVO">
+        select keyword,
+               count(*) as count
+        from search_log
+        where create_time >= #{startTime}
+        group by keyword
+        order by count desc
+        limit #{limit}
+    </select>
+</mapper>

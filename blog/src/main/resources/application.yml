@@ -40,6 +40,8 @@ backup:
 
 # 使用 @EnumValue 与数据库整型互转（否则默认按枚举名映射会报错）
 mybatis-plus:
+  # Mapper XML 位置（复杂 SQL 统一维护在 XML 中）
+  mapper-locations: classpath*:/mapper/**/*.xml
   configuration:
     default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
 

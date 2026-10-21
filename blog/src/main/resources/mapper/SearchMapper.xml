@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="liuyuyang.net.web.mapper.SearchMapper">
+
+    <!-- 文章可见性过滤下推到 SQL：无配置可见，草稿/删除/全站隐藏不可见 -->
+    <sql id="visibleArticleFrom">
+        from article a
+        left join article_config c on c.article_id = a.id
+        where coalesce(c.is_draft, 0) = 0
+          and coalesce(c.is_del, 0) = 0
+          and coalesce(c.status, 1) != 3
+    </sql>
+
+    <!-- ngram 全文索引查询（关键词长度 >= 2 时使用） -->
+    <select id="searchArticles" resultType="liuyuyang.net.vo.search.SearchItemVO">
+        select a.id, a.title
+        <include refid="visibleArticleFrom"/>
+        and match(a.title) against(#{kw} in boolean mode)
+        order by a.create_time desc
+        limit #{limit}
+    </select>
+
+    <select id="searchRecords" resultType="liuyuyang.net.vo.search.SearchItemVO">
+        select id, content
+        from record
+        where match(content) against(#{kw} in boolean mode)
+        order by create_time desc
+        limit #{limit}
+    </select>
+
+    <!-- 短词回退：ngram 最小 token 为 2，单字关键词退化为 LIKE -->
+    <select id="searchArticlesLike" resultType="liuyuyang.net.vo.search.SearchItemVO">
+        select a.id, a.title
+        <include refid="visibleArticleFrom"/>
+        and a.title like concat('%', #{kw}, '%')
+        order by a.create_time desc
+        limit #{limit}
+    </select>
+
+    <select id="searchRecordsLike" resultType="liuyuyang.net.vo.search.SearchItemVO">
+        select id, content
+        from record
+        where content like concat('%', #{kw}, '%')
+        order by create_time desc
+        limit #{limit}
+    </select>
+</mapper>
