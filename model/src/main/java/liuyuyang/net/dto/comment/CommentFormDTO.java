@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class CommentFormDTO extends Comment {
-    @Schema(description = "人机验证Token")
-    @JsonProperty("h_captcha_response")
+    @Schema(description = "人机验证 Token（Cloudflare Turnstile）")
+    @JsonProperty("cf_turnstile_response")
     private String captchaToken;
 }

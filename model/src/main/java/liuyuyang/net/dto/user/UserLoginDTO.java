@@ -19,7 +19,7 @@ public class UserLoginDTO {
     @Size(min = 1, max = 50, message = "密码长度必须在1到50个字符之间")
     private String password;
 
-    @Schema(description = "人机验证Token")
-    @JsonProperty("h_captcha_response")
+    @Schema(description = "人机验证 Token（Cloudflare Turnstile）")
+    @JsonProperty("cf_turnstile_response")
     private String captchaToken;
 }

@@ -44,7 +44,7 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
         DEFAULT_CONFIGS.put("local_storage", new String[]{"{\"type\": \"local\", \"domain\": \"\"}", "文件存储方式：type 为 local/qiniu，domain 为本地存储的访问域名"});
         DEFAULT_CONFIGS.put("backup_storage", new String[]{"{\"type\": \"local\", \"bucket_name\": \"\", \"domain\": \"\", \"enabled\": false, \"cron\": \"0 0 3 * * ?\", \"retain_count\": 10}", "数据库备份存储：type 为 local/qiniu，qiniu 需私有桶并复用「七牛云存储」的密钥；enabled/cron 控制定时备份，retain_count 为定时备份保留份数（0 不清理）"});
         DEFAULT_CONFIGS.put("baidu_statis_key", new String[]{"{\"key\": \"\"}", "A 百度统计：在前端获取该配置来激活统计功能"});
-        DEFAULT_CONFIGS.put("hcaptcha_key", new String[]{"{\"key\": \"\", \"secret\": \"\", \"enabled\": false}", "人机验证配置：enabled 为功能开关，key 为站点密钥（公钥），secret 为服务端校验密钥（私钥），开启后登录/评论等接口强制人机验证"});
+        DEFAULT_CONFIGS.put("turnstile_key", new String[]{"{\"key\": \"\", \"secret\": \"\", \"enabled\": false}", "人机验证配置（Cloudflare Turnstile）：enabled 为功能开关，key 为站点密钥（公钥），secret 为服务端校验密钥（私钥），开启后登录/评论等接口强制人机验证"});
         DEFAULT_CONFIGS.put("is_system_init", new String[]{"{\"value\": false}", "系统是否初始化"});
     }
 
@@ -52,6 +52,8 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
     @PostConstruct
     public void initDefaultConfigs() {
         try {
+            migrateHcaptchaToTurnstile();
+
             Map<String, EnvConfig> existing = this.list().stream()
                     .collect(Collectors.toMap(EnvConfig::getName, c -> c));
             ObjectMapper mapper = new ObjectMapper();
@@ -84,6 +86,32 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
         return qiniuConfig != null && qiniuConfig.getValue() != null
                 && qiniuConfig.getValue().get("access_key") instanceof String accessKey
                 && !accessKey.isBlank();
+    }
+
+    /**
+     * 人机验证从 hCaptcha 迁移到 Cloudflare Turnstile：
+     * 旧密钥与 Turnstile 不兼容，迁移时清空密钥并关闭开关，
+     * 由管理员在后台重新填写 Turnstile 密钥后再启用，避免升级后验证必然失败。
+     * 新旧配置同时存在时以 turnstile_key 为准，不动旧数据
+     */
+    private void migrateHcaptchaToTurnstile() {
+        try {
+            EnvConfig old = this.getByName("hcaptcha_key");
+            if (old == null || this.getByName("turnstile_key") != null) {
+                return;
+            }
+            Map<String, Object> migrated = new HashMap<>();
+            migrated.put("enabled", false);
+            migrated.put("key", "");
+            migrated.put("secret", "");
+            old.setName("turnstile_key");
+            old.setValue(migrated);
+            old.setNotes(DEFAULT_CONFIGS.get("turnstile_key")[1]);
+            this.updateById(old);
+            log.warn("已将旧人机验证配置 hcaptcha_key 迁移为 turnstile_key 并关闭，请在后台重新填写 Cloudflare Turnstile 密钥后启用");
+        } catch (Exception e) {
+            log.error("迁移 hcaptcha_key 配置失败，将在启动时自动补齐默认 turnstile_key 配置", e);
+        }
     }
 
     @Override
@@ -176,16 +204,16 @@ public class EnvConfigServiceImpl extends ServiceImpl<EnvConfigMapper, EnvConfig
         // 白名单式公开：只下发本来就是给前端用的配置（key 类公钥、高德地图密钥）
         Map<String, Object> data = new HashMap<>(3);
         EnvConfig baidu = this.getByName("baidu_statis_key");
-        EnvConfig hcaptcha = this.getByName("hcaptcha_key");
+        EnvConfig turnstile = this.getByName("turnstile_key");
         EnvConfig gaodeMap = this.getByName("gaode_map_key");
         data.put("baidu_statis_key", baidu != null ? baidu.getValue() : null);
-        // hcaptcha 的 secret 是服务端私钥，绝不能下发给前端，这里只暴露站点密钥 key
+        // turnstile 的 secret 是服务端私钥，绝不能下发给前端，这里只暴露站点密钥 key
         // 开关关闭时不下发，前端据此不渲染验证码组件
-        if (CaptchaServiceImpl.isEnabled(hcaptcha)) {
-            Object sitekey = hcaptcha.getValue().get("key");
-            data.put("hcaptcha_key", Map.of("key", sitekey instanceof String s ? s : ""));
+        if (CaptchaServiceImpl.isEnabled(turnstile)) {
+            Object sitekey = turnstile.getValue().get("key");
+            data.put("turnstile_key", Map.of("key", sitekey instanceof String s ? s : ""));
         } else {
-            data.put("hcaptcha_key", null);
+            data.put("turnstile_key", null);
         }
         data.put("gaode_map_key", gaodeMap != null ? gaodeMap.getValue() : null);
         return data;

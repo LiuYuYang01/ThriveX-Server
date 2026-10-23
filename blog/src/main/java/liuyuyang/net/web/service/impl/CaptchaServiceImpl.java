@@ -24,7 +24,8 @@ import java.time.Duration;
 @Slf4j
 @Service
 public class CaptchaServiceImpl implements CaptchaService {
-    private static final String VERIFY_URL = "https://api.hcaptcha.com/siteverify";
+    // Cloudflare Turnstile 服务端校验接口，请求参数（secret/response/remoteip）与 hCaptcha 同构
+    private static final String VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
     private static final Duration VERIFY_TIMEOUT = Duration.ofSeconds(5);
 
     private final WebClient webClient;
@@ -56,13 +57,13 @@ public class CaptchaServiceImpl implements CaptchaService {
     }
 
     private void doCheck(String captchaToken) {
-        EnvConfig config = envConfigService.getByName("hcaptcha_key");
+        EnvConfig config = envConfigService.getByName("turnstile_key");
         // 开关关闭（或老数据未启用）视为未启用人机验证，直接放行
         if (!isEnabled(config)) return;
 
         String secret = secretOf(config);
         if (secret == null || secret.isBlank()) {
-            log.warn("hCaptcha 已启用但未配置 secret，跳过服务端校验，请在后台补全配置");
+            log.warn("Turnstile 已启用但未配置 secret，跳过服务端校验，请在后台补全配置");
             return;
         }
 
@@ -91,7 +92,7 @@ public class CaptchaServiceImpl implements CaptchaService {
             throw e;
         } catch (Exception e) {
             // 校验服务不可用时按失败处理，避免验证环节被网络异常绕过
-            log.error("调用 hCaptcha 校验接口失败", e);
+            log.error("调用 Turnstile 校验接口失败", e);
             throw new CustomException(403, "人机验证服务暂不可用，请稍后再试");
         }
 
@@ -101,7 +102,7 @@ public class CaptchaServiceImpl implements CaptchaService {
     }
 
     /**
-     * hCaptcha 是否启用：优先看 enabled 开关；
+     * Turnstile 是否启用：优先看 enabled 开关；
      * 老数据没有该字段时，配置过站点密钥即视为启用（兼容升级前的行为）
      */
     public static boolean isEnabled(EnvConfig config) {
