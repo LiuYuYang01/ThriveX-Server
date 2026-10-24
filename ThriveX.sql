@@ -198,7 +198,7 @@ CREATE TABLE `cate` (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `name` (`name`) USING BTREE,
   UNIQUE KEY `cate_pk` (`mark`)
-) ENGINE=InnoDB AUTO_INCREMENT=92 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=93 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -207,7 +207,7 @@ CREATE TABLE `cate` (
 
 LOCK TABLES `cate` WRITE;
 /*!40000 ALTER TABLE `cate` DISABLE KEYS */;
-INSERT INTO `cate` VALUES (1,'💎 默认分类','/','kfbj',0,'cate',0,1),(68,'⛳️ 足迹','/footprint','zj',83,'page',0,1),(69,'👋 关于我','/my','my',83,'page',0,8),(70,'😇 朋友圈','/friend','pyq',83,'page',0,4),(71,'💌 留言墙','/wall/all','wall',83,'page',0,5),(72,'🔥 GitHub','https://github.com/LiuYuYang01/ThriveX-Blog','github',83,'page',0,10),(73,'📊 统计','/data','data',83,'page',0,11),(74,'🏕️ 闪念','/record','record',83,'page',0,2),(77,'🔭 我的设备','/equipment','wdsb',83,'page',0,7),(78,'🏷️ 标签墙','/tags','bqy',83,'page',0,6),(79,'💪 我的履历','/resume','wdll',83,'page',0,9),(81,'🐟 鱼塘','/fishpond','yt',83,'page',0,3),(83,'🧩 探索','/','ts',0,'page',0,3),(90,'🏆 里程碑','/milestone','lcb',0,'page',0,2),(91,'👀 一些互动','/echoes','echoes',83,'page',0,12);
+INSERT INTO `cate` VALUES (1,'💎 默认分类','/','kfbj',0,'cate',0,1),(68,'⛳️ 足迹','/footprint','zj',83,'page',0,1),(69,'👋 关于我','/my','my',83,'page',0,8),(70,'😇 朋友圈','/friend','pyq',83,'page',0,4),(71,'💌 留言墙','/wall/all','wall',83,'page',0,5),(72,'🔥 GitHub','https://github.com/LiuYuYang01/ThriveX-Blog','github',83,'page',0,10),(73,'📊 统计','/data','data',83,'page',0,11),(74,'🏕️ 闪念','/record','record',83,'page',0,2),(77,'🔭 我的设备','/equipment','wdsb',83,'page',0,7),(78,'🏷️ 标签墙','/tags','bqy',83,'page',0,6),(79,'💪 我的履历','/resume','wdll',83,'page',0,9),(81,'🐟 鱼塘','/fishpond','yt',83,'page',0,3),(83,'🧩 探索','/','ts',0,'page',0,3),(90,'🏆 里程碑','/milestone','lcb',0,'page',0,2),(91,'👀 一些互动','/echoes','echoes',83,'page',0,12),(92,'📔 日记本','/diary','diary',83,'page',0,13);
 /*!40000 ALTER TABLE `cate` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -241,6 +241,63 @@ LOCK TABLES `comment` WRITE;
 /*!40000 ALTER TABLE `comment` DISABLE KEYS */;
 INSERT INTO `comment` VALUES (515,'ThriveX','https://q1.qlogo.cn/g?b=qq&nk=3311118881&s=640','记得点个star','3311118881@qq.com','https://liuyuyang.net',2,0,1,'1744980488518'),(517,'神秘人','https://q1.qlogo.cn/g?b=qq&nk=3311118881&s=640','Hello','3311118881@qq.com','',1,0,0,'1778672355584');
 /*!40000 ALTER TABLE `comment` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `diary`
+--
+
+DROP TABLE IF EXISTS `diary`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `diary` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `diary_date` date NOT NULL COMMENT '日记日期',
+  `title` varchar(120) DEFAULT NULL COMMENT '标题',
+  `content` text NOT NULL COMMENT '正文',
+  `images` json DEFAULT NULL COMMENT '图片',
+  `mood` varchar(16) DEFAULT NULL COMMENT '心情',
+  `weather` varchar(16) DEFAULT NULL COMMENT '天气',
+  `location` varchar(255) DEFAULT NULL COMMENT '位置',
+  `create_time` bigint NOT NULL COMMENT '创建时间',
+  `update_time` bigint DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_diary_date` (`diary_date`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='私密日记';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `diary`
+--
+
+LOCK TABLES `diary` WRITE;
+/*!40000 ALTER TABLE `diary` DISABLE KEYS */;
+/*!40000 ALTER TABLE `diary` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `diary_question`
+--
+
+DROP TABLE IF EXISTS `diary_question`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `diary_question` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `question` varchar(120) NOT NULL COMMENT '密语问题',
+  `answer_hash` varchar(100) NOT NULL COMMENT '答案BCrypt哈希，禁止明文',
+  `create_time` bigint NOT NULL COMMENT '创建时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='日记访问密语';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `diary_question`
+--
+
+LOCK TABLES `diary_question` WRITE;
+/*!40000 ALTER TABLE `diary_question` DISABLE KEYS */;
+/*!40000 ALTER TABLE `diary_question` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -591,7 +648,7 @@ DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
   `id` int NOT NULL AUTO_INCREMENT,
   `username` varchar(50) NOT NULL COMMENT '用户名',
-  `password` varchar(50) NOT NULL COMMENT '密码',
+  `password` varchar(100) NOT NULL COMMENT '密码',
   `name` varchar(50) NOT NULL COMMENT '用户名称',
   `email` varchar(100) DEFAULT NULL COMMENT '用户邮箱',
   `avatar` varchar(255) DEFAULT NULL COMMENT '用户头像',

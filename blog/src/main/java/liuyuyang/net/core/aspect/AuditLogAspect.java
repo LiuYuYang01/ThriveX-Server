@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * 操作日志切面
@@ -43,6 +44,9 @@ import java.util.List;
 public class AuditLogAspect {
     // 参数/错误信息的最大记录长度，防止正文类大参数撑爆日志表
     private static final int MAX_CONTENT_LENGTH = 2000;
+    // 密语答案与密码一样，绝不进入操作日志
+    private static final Pattern SENSITIVE_VALUE_PATTERN = Pattern.compile(
+            "(\"\\w*(?:password|passwd|answer|secret)\\w*\"\\s*:\\s*)\"[^\"]*\"", Pattern.CASE_INSENSITIVE);
 
     @Resource
     private OperationLogService operationLogService;
@@ -123,6 +127,8 @@ public class AuditLogAspect {
     private static final java.util.Map<String, String> MODULE_MAPPINGS = new java.util.LinkedHashMap<>() {{
         put("record/comment", "闪念评论管理");
         put("record", "闪念管理");
+        put("diary/credential", "日记密语管理");
+        put("diary", "日记管理");
         put("article", "文章管理");
         put("cate", "分类管理");
         put("tag", "标签管理");
@@ -230,11 +236,11 @@ public class AuditLogAspect {
     }
 
     /**
-     * 脱敏参数中的密码类字段
+     * 脱敏参数中的凭据类字段：密码、密语答案、密钥。
      */
     private String maskSensitiveParams(String params) {
         if (params == null) return null;
-        return params.replaceAll("(\"\\w*[pP]assword\\w*\"\\s*:\\s*)\"[^\"]*\"", "$1\"***\"");
+        return SENSITIVE_VALUE_PATTERN.matcher(params).replaceAll("$1\"***\"");
     }
 
     private String truncate(String content) {
