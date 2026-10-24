@@ -14,7 +14,6 @@ import liuyuyang.net.dto.diary.DiaryFormDTO;
 import liuyuyang.net.dto.diary.DiaryQuestionFormDTO;
 import liuyuyang.net.dto.diary.DiaryUnlockDTO;
 import liuyuyang.net.validation.ValidationGroups;
-import liuyuyang.net.vo.diary.DiaryBookVO;
 import liuyuyang.net.vo.diary.DiaryQuestionVO;
 import liuyuyang.net.vo.diary.DiaryUnlockVO;
 import liuyuyang.net.vo.diary.DiaryVO;
@@ -60,15 +59,13 @@ public class DiaryController {
 
     @NoTokenRequired
     @RateLimit
-    @GetMapping("/book")
-    @Operation(summary = "按月翻阅日记（前台，需访客令牌）")
-    public Result<DiaryBookVO> getDiaryBook(@RequestHeader(value = DIARY_TOKEN_HEADER, required = false) String diaryToken,
-                                            @RequestParam(required = false) Integer year,
-                                            @RequestParam(required = false) Integer month) {
+    @GetMapping("/pages")
+    @Operation(summary = "获取整本日记（前台，需访客令牌，按日期升序一篇一页）")
+    public Result<List<DiaryVO>> getDiaryPages(@RequestHeader(value = DIARY_TOKEN_HEADER, required = false) String diaryToken) {
         if (!diaryTokenUtils.isValid(diaryToken)) {
             throw new CustomException(401, "阅读时间到了，请重新解锁");
         }
-        return Result.success(diaryService.getDiaryBook(year, month));
+        return Result.success(diaryService.getDiaryPages());
     }
 
     @GetMapping

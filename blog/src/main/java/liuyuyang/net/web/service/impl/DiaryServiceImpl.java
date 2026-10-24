@@ -10,8 +10,6 @@ import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.diary.DiaryFilterDTO;
 import liuyuyang.net.dto.diary.DiaryFormDTO;
 import liuyuyang.net.model.Diary;
-import liuyuyang.net.vo.diary.DiaryBookVO;
-import liuyuyang.net.vo.diary.DiaryMonthVO;
 import liuyuyang.net.vo.diary.DiaryVO;
 import liuyuyang.net.web.mapper.DiaryMapper;
 import liuyuyang.net.web.service.DiaryService;
@@ -22,11 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -164,46 +159,10 @@ public class DiaryServiceImpl extends ServiceImpl<DiaryMapper, Diary> implements
     }
 
     @Override
-    public DiaryBookVO getDiaryBook(Integer year, Integer month) {
-        List<Diary> dated = diaryMapper.selectList(new QueryWrapper<Diary>().select("id", "diary_date").orderByDesc("diary_date"));
-
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        for (Diary diary : dated) {
-            if (diary.getDiaryDate() == null) {
-                continue;
-            }
-            counts.merge(YearMonth.from(diary.getDiaryDate()).toString(), 1, Integer::sum);
-        }
-
-        List<DiaryMonthVO> months = new ArrayList<>();
-        counts.forEach((key, count) -> {
-            YearMonth ym = YearMonth.parse(key);
-            months.add(new DiaryMonthVO(ym.getYear(), ym.getMonthValue(), count));
-        });
-
-        DiaryBookVO book = new DiaryBookVO();
-        book.setTotal(dated.size());
-        book.setMonths(months);
-
-        YearMonth target;
-        if (year != null && month != null && month >= 1 && month <= 12 && year > 1970 && year <= 2999) {
-            target = YearMonth.of(year, month);
-        } else if (!months.isEmpty()) {
-            DiaryMonthVO latest = months.get(0);
-            target = YearMonth.of(latest.getYear(), latest.getMonth());
-        } else {
-            target = YearMonth.now();
-        }
-
-        book.setYear(target.getYear());
-        book.setMonth(target.getMonthValue());
-
+    public List<DiaryVO> getDiaryPages() {
         List<Diary> entries = diaryMapper.selectList(new QueryWrapper<Diary>()
-                .ge("diary_date", target.atDay(1))
-                .le("diary_date", target.atEndOfMonth())
                 .orderByAsc("diary_date")
                 .orderByAsc("id"));
-        book.setEntries(entries.stream().map(this::toVO).toList());
-        return book;
+        return entries.stream().map(this::toVO).toList();
     }
 }
