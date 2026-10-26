@@ -288,21 +288,19 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
             // 如果有密码就必须通过密码才能查看
             if (Boolean.TRUE.equals(data.getConfig().getIsEncrypt())) {
-                // 如果需要访问密码且没有传递密码参数
-                if (password.isEmpty()) {
-                    throw new CustomException(612, "请输入文章访问密码");
-                }
-
                 data.setDescription("该文章需要密码才能查看");
                 data.setContent("该文章需要密码才能查看");
 
-                // 验证密码是否正确（历史数据密码可能为 null，避免 NPE）
-                String articlePassword = config.getPassword();
-                if (articlePassword != null && articlePassword.equals(password)) {
-                    data.setDescription(description);
-                    data.setContent(content);
-                } else {
-                    throw new CustomException(613, "文章访问密码错误");
+                // 未输入密码时只返回打码数据（标题等元信息照常可用），由前端弹出密码框
+                if (!password.isEmpty()) {
+                    // 验证密码是否正确（历史数据密码可能为 null，避免 NPE）
+                    String articlePassword = config.getPassword();
+                    if (articlePassword != null && articlePassword.equals(password)) {
+                        data.setDescription(description);
+                        data.setContent(content);
+                    } else {
+                        throw new CustomException(613, "文章访问密码错误");
+                    }
                 }
             }
         }
