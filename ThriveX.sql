@@ -253,6 +253,9 @@ DROP TABLE IF EXISTS `diary`;
 CREATE TABLE `diary` (
   `id` int NOT NULL AUTO_INCREMENT,
   `diary_date` date NOT NULL COMMENT '日记日期',
+  `diary_year` smallint NOT NULL COMMENT '归档年份',
+  `diary_month` tinyint NOT NULL COMMENT '归档月份（1-12）',
+  `diary_day` tinyint NOT NULL COMMENT '归档日（1-31）',
   `title` varchar(120) DEFAULT NULL COMMENT '标题',
   `content` text NOT NULL COMMENT '正文',
   `images` json DEFAULT NULL COMMENT '图片',
@@ -262,8 +265,9 @@ CREATE TABLE `diary` (
   `create_time` bigint NOT NULL COMMENT '创建时间',
   `update_time` bigint DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  KEY `idx_diary_date` (`diary_date`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='私密日记';
+  KEY `idx_diary_date` (`diary_date`),
+  KEY `idx_diary_archive` (`diary_year`,`diary_month`,`diary_day`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='私密日记，按年 / 月 / 日归档';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

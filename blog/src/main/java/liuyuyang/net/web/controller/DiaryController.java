@@ -14,6 +14,7 @@ import liuyuyang.net.dto.diary.DiaryFormDTO;
 import liuyuyang.net.dto.diary.DiaryQuestionFormDTO;
 import liuyuyang.net.dto.diary.DiaryUnlockDTO;
 import liuyuyang.net.validation.ValidationGroups;
+import liuyuyang.net.vo.diary.DiaryArchiveVO;
 import liuyuyang.net.vo.diary.DiaryQuestionVO;
 import liuyuyang.net.vo.diary.DiaryUnlockVO;
 import liuyuyang.net.vo.diary.DiaryVO;
@@ -73,6 +74,12 @@ public class DiaryController {
     public Result<Map<String, Object>> getDiaryList(DiaryFilterDTO diaryFilterDTO) {
         Page<DiaryVO> list = diaryService.getDiaryList(diaryFilterDTO);
         return Result.success(Paging.filter(list));
+    }
+
+    @GetMapping("/archive")
+    @Operation(summary = "获取日记归档目录（年 / 月 / 日）")
+    public Result<List<DiaryArchiveVO>> getDiaryArchive() {
+        return Result.success(diaryService.getDiaryArchive());
     }
 
     @GetMapping("/{id:\\d+}")

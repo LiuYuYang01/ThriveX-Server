@@ -22,6 +22,15 @@ public class Diary extends BaseModel {
     @NotNull(message = "日记日期不能为空", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private LocalDate diaryDate;
 
+    @Schema(description = "归档年份", example = "2026")
+    private Integer diaryYear;
+
+    @Schema(description = "归档月份（1-12）", example = "11")
+    private Integer diaryMonth;
+
+    @Schema(description = "归档日（1-31）", example = "1")
+    private Integer diaryDay;
+
     @Schema(description = "标题", example = "关于一场没下的雨")
     @Size(max = 120, message = "标题不能超过120个字符", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private String title;
