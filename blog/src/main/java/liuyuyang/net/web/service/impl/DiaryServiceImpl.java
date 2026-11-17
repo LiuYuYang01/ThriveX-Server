@@ -3,8 +3,6 @@ package liuyuyang.net.web.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import liuyuyang.net.core.execption.CustomException;
 import liuyuyang.net.core.utils.CommonUtils;
 import liuyuyang.net.dto.diary.DiaryFilterDTO;
@@ -14,7 +12,6 @@ import liuyuyang.net.vo.diary.DiaryArchiveVO;
 import liuyuyang.net.vo.diary.DiaryVO;
 import liuyuyang.net.web.mapper.DiaryMapper;
 import liuyuyang.net.web.service.DiaryService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @Service
 @Transactional
 public class DiaryServiceImpl extends ServiceImpl<DiaryMapper, Diary> implements DiaryService {
@@ -37,29 +33,12 @@ public class DiaryServiceImpl extends ServiceImpl<DiaryMapper, Diary> implements
 
     @Resource
     private DiaryMapper diaryMapper;
-    @Resource
-    private ObjectMapper objectMapper;
 
     private DiaryVO toVO(Diary diary) {
         DiaryVO vo = new DiaryVO();
-        BeanUtils.copyProperties(diary, vo, "diaryDate", "images");
+        BeanUtils.copyProperties(diary, vo, "diaryDate");
         vo.setDiaryDate(diary.getDiaryDate() == null ? null : diary.getDiaryDate().toString());
-        vo.setImages(parseImages(diary.getImages()));
         return vo;
-    }
-
-    private List<String> parseImages(String images) {
-        if (images == null || images.isBlank()) {
-            return new ArrayList<>();
-        }
-        try {
-            List<String> list = objectMapper.readValue(images, new TypeReference<List<String>>() {
-            });
-            return list == null ? new ArrayList<>() : list.stream().filter(url -> url != null && !url.isBlank()).toList();
-        } catch (Exception e) {
-            log.warn("日记图片数据解析失败，已按空处理");
-            return new ArrayList<>();
-        }
     }
 
     @Override
@@ -96,9 +75,6 @@ public class DiaryServiceImpl extends ServiceImpl<DiaryMapper, Diary> implements
         if (diary.getTitle() != null) {
             String title = diary.getTitle().trim();
             diary.setTitle(title.isEmpty() ? null : title);
-        }
-        if (diary.getImages() == null || diary.getImages().isBlank()) {
-            diary.setImages("[]");
         }
     }
 

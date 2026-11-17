@@ -258,7 +258,6 @@ CREATE TABLE `diary` (
   `diary_day` tinyint NOT NULL COMMENT '归档日（1-31）',
   `title` varchar(120) DEFAULT NULL COMMENT '标题',
   `content` text NOT NULL COMMENT '正文',
-  `images` json DEFAULT NULL COMMENT '图片',
   `mood` varchar(16) DEFAULT NULL COMMENT '心情',
   `weather` varchar(16) DEFAULT NULL COMMENT '天气',
   `location` varchar(255) DEFAULT NULL COMMENT '位置',

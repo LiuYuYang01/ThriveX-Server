@@ -3,8 +3,6 @@ package liuyuyang.net.vo.diary;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
 public class DiaryVO {
     @Schema(description = "日记ID", example = "1")
@@ -18,9 +16,6 @@ public class DiaryVO {
 
     @Schema(description = "正文")
     private String content;
-
-    @Schema(description = "图片地址列表")
-    private List<String> images;
 
     @Schema(description = "心情", example = "🌿")
     private String mood;

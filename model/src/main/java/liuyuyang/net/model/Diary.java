@@ -40,10 +40,6 @@ public class Diary extends BaseModel {
     @Size(max = 10000, message = "正文不能超过10000个字符", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private String content;
 
-    @Schema(description = "图片", example = "[]")
-    @Size(max = 5000, message = "图片数据不能超过5000个字符", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
-    private String images;
-
     @Schema(description = "心情", example = "🌿")
     @Size(max = 16, message = "心情不能超过16个字符", groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private String mood;
