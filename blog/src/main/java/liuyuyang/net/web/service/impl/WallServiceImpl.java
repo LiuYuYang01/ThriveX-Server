@@ -89,6 +89,14 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
         return vo;
     }
 
+    // 非管理员（含匿名访客）不返回留言者邮箱
+    private static void hideWallEmails(List<WallVO> list, boolean admin) {
+        if (admin || list == null) {
+            return;
+        }
+        list.forEach(vo -> vo.setEmail(null));
+    }
+
     @Override
     public void addWallData(WallFormDTO wallFormDTO) throws Exception {
         validateSubmitCate(wallFormDTO.getCateId());
@@ -136,10 +144,10 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
         return toWallVO(data);
     }
 
-    private QueryWrapper<Wall> buildWallQueryWrapper(WallFilterDTO wallFilterDTO) {
+    private QueryWrapper<Wall> buildWallQueryWrapper(WallFilterDTO wallFilterDTO, boolean admin) {
         QueryWrapper<Wall> queryWrapper = commonUtils.queryWrapperDateFilter(wallFilterDTO);
         // 非管理员强制只看已审核，防止翻看待审核内容
-        WallAuditStatusEnum status = commonUtils.isAdmin() && wallFilterDTO.getStatus() != null
+        WallAuditStatusEnum status = admin && wallFilterDTO.getStatus() != null
                 ? wallFilterDTO.getStatus()
                 : WallAuditStatusEnum.APPROVED;
         queryWrapper.eq("status", status.getValue());
@@ -179,7 +187,8 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
 
     @Override
     public Page<WallVO> getWallList(WallFilterDTO wallFilterDTO) {
-        QueryWrapper<Wall> queryWrapper = buildWallQueryWrapper(wallFilterDTO);
+        boolean admin = commonUtils.isAdmin();
+        QueryWrapper<Wall> queryWrapper = buildWallQueryWrapper(wallFilterDTO, admin);
 
         Page<Wall> page = CommonUtils.buildPage(wallFilterDTO);
         List<Wall> raw;
@@ -197,6 +206,7 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
 
         fillWallCate(raw);
         List<WallVO> list = raw.stream().map(WallServiceImpl::toWallVO).collect(Collectors.toList());
+        hideWallEmails(list, admin);
         result.setRecords(list);
         return result;
     }
@@ -226,6 +236,7 @@ public class WallServiceImpl extends ServiceImpl<WallMapper, Wall> implements Wa
 
         fillWallCate(raw);
         List<WallVO> vos = raw.stream().map(WallServiceImpl::toWallVO).collect(Collectors.toList());
+        hideWallEmails(vos, commonUtils.isAdmin());
         result.setRecords(vos);
         return result;
     }

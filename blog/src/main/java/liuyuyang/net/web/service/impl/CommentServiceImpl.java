@@ -134,15 +134,20 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 
     @Override
     public CommentVO getCommentData(Integer id) {
+        boolean admin = commonUtils.isAdmin();
         Comment data = commentMapper.selectById(id);
 
-        if (data == null) {
+        // 未审核评论仅管理端可见：非管理员按「不存在」处理，避免按 id 遍历绕过审核
+        if (data == null || (!admin && !Objects.equals(data.getStatus(), 1))) {
             throw new CustomException("该评论不存在");
         }
 
-        // 获取所有相关评论
+        // 获取所有相关评论（非管理员只看已审核，避免未过审回复随父评论一并返回）
         QueryWrapper<Comment> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("article_id", data.getArticleId());
+        if (!admin) {
+            queryWrapper.eq("status", 1);
+        }
         List<Comment> list = commentMapper.selectList(queryWrapper);
 
         // 构建评论树
@@ -150,14 +155,20 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         CommentVO vo = toCommentVO(data);
         vo.setArticleTitle(articleTitleOf(data.getArticleId()));
         vo.setChildren(children);
+
+        if (!admin) {
+            vo.setEmail(null);
+            hideCommentEmails(children, admin);
+        }
         return vo;
     }
 
     @Override
     public Page<CommentVO> getCommentList(CommentFilterDTO commentFilterDTO) {
+        boolean admin = commonUtils.isAdmin();
         // LIST 模式：平铺列表可直接数据库分页
         if (commentFilterDTO.getPattern() == CommentPatternEnum.LIST) {
-            QueryWrapper<Comment> queryWrapper = buildCommentQueryWrapper(commentFilterDTO);
+            QueryWrapper<Comment> queryWrapper = buildCommentQueryWrapper(commentFilterDTO, admin);
             Page<Comment> page = CommonUtils.buildPage(commentFilterDTO);
             List<Comment> flat;
             Page<CommentVO> result;
@@ -177,17 +188,18 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                 return vo;
             }).collect(Collectors.toList());
             fillArticleTitles(vos); // 复用批量标题回填逻辑
+            hideCommentEmails(vos, admin);
             result.setRecords(vos);
             return result;
         }
 
         // TREE 模式：一级评论做数据库分页，子评论按当页顶层 id 批量查出后挂载
-        return getCommentTreePage(commentFilterDTO);
+        return getCommentTreePage(commentFilterDTO, admin);
     }
 
     // TREE 模式：顶层评论 DB 分页 + 子评论批量挂载
-    private Page<CommentVO> getCommentTreePage(CommentFilterDTO commentFilterDTO) {
-        QueryWrapper<Comment> rootWrapper = buildCommentQueryWrapper(commentFilterDTO);
+    private Page<CommentVO> getCommentTreePage(CommentFilterDTO commentFilterDTO, boolean admin) {
+        QueryWrapper<Comment> rootWrapper = buildCommentQueryWrapper(commentFilterDTO, admin);
         // 仅查一级评论
         rootWrapper.and(w -> w.isNull("comment_id").or().eq("comment_id", 0));
 
@@ -210,6 +222,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         // 批量查当页顶层评论的所有子评论
         List<CommentVO> vos = buildTreeWithChildren(roots);
         fillArticleTitles(vos);
+        hideCommentEmails(vos, admin);
         result.setRecords(vos);
         return result;
     }
@@ -236,9 +249,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         return vos;
     }
 
-    private QueryWrapper<Comment> buildCommentQueryWrapper(CommentFilterDTO commentFilterDTO) {
+    private QueryWrapper<Comment> buildCommentQueryWrapper(CommentFilterDTO commentFilterDTO, boolean admin) {
         QueryWrapper<Comment> queryWrapper = commonUtils.queryWrapperDateFilter(commentFilterDTO);
-        if (commonUtils.isAdmin()) {
+        if (admin) {
             // 管理员可按状态筛选，不传则查看全部
             if (commentFilterDTO.getStatus() != null) {
                 queryWrapper.eq("status", commentFilterDTO.getStatus());
@@ -282,6 +295,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         // 批量挂载子评论
         List<CommentVO> vos = buildTreeWithChildren(roots);
         fillArticleTitles(vos);
+        hideCommentEmails(vos, commonUtils.isAdmin());
         result.setRecords(vos);
         return result;
     }
@@ -296,25 +310,6 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 
         data.setStatus(1);
         commentMapper.updateById(data);
-    }
-
-    private List<Comment> queryFlatComments(CommentFilterDTO commentFilterDTO) {
-        QueryWrapper<Comment> queryWrapper = commonUtils.queryWrapperDateFilter(commentFilterDTO);
-        if (commonUtils.isAdmin()) {
-            // 管理员可按状态筛选，不传则查看全部
-            if (commentFilterDTO.getStatus() != null) {
-                queryWrapper.eq("status", commentFilterDTO.getStatus());
-            }
-        } else {
-            // 非管理员强制只看已审核，防止翻看待审核内容
-            queryWrapper.eq("status", 1);
-        }
-
-        if (commentFilterDTO.getContent() != null) {
-            queryWrapper.like("content", "%" + commentFilterDTO.getContent() + "%");
-        }
-
-        return commentMapper.selectList(queryWrapper);
     }
 
     private void fillArticleTitles(List<CommentVO> nodes) {
@@ -362,6 +357,17 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         CommentVO vo = new CommentVO();
         BeanUtils.copyProperties(c, vo);
         return vo;
+    }
+
+    // 非管理员（含匿名访客）不返回评论者邮箱：该邮箱只用于回复通知，属个人信息
+    private void hideCommentEmails(List<CommentVO> nodes, boolean admin) {
+        if (admin || nodes == null || nodes.isEmpty()) {
+            return;
+        }
+        for (CommentVO node : nodes) {
+            node.setEmail(null);
+            hideCommentEmails(node.getChildren(), admin);
+        }
     }
 
     // 递归构建评论列表

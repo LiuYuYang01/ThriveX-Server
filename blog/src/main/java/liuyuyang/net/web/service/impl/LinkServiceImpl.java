@@ -151,6 +151,7 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
 
     @Override
     public Page<LinkVO> getLinkList(LinkFilterDTO linkFilterDTO) {
+        boolean admin = commonUtils.isAdmin();
         QueryWrapper<Link> queryWrapper = new QueryWrapper<>();
 
         // 根据关键字通过标题过滤出对应文章数据
@@ -158,8 +159,10 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
             queryWrapper.like("title", "%" + linkFilterDTO.getTitle() + "%");
         }
 
-        if(linkFilterDTO.getStatus() != null) {
-            queryWrapper.eq("status", linkFilterDTO.getStatus()); // 只显示审核成功的网站
+        // 非管理员强制只看已审核，防止待审核的友链申请被公开读取
+        LinkStatusEnum status = admin ? linkFilterDTO.getStatus() : LinkStatusEnum.APPROVED;
+        if (status != null) {
+            queryWrapper.eq("status", status.getValue());
         }
 
         Page<Link> page = CommonUtils.buildPage(linkFilterDTO);
@@ -193,6 +196,11 @@ public class LinkServiceImpl extends ServiceImpl<LinkMapper, Link> implements Li
                         .thenComparingInt(o -> o.getOrder() == null ? Integer.MAX_VALUE : o.getOrder())
                         .thenComparing(LinkVO::getCreateTime, Comparator.reverseOrder()))
                 .collect(Collectors.toList());
+
+        // 非管理员（含匿名访客）不返回站长邮箱
+        if (!admin) {
+            list.forEach(linkVO -> linkVO.setEmail(null));
+        }
 
         result.setRecords(list);
         return result;

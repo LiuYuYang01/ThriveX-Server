@@ -149,13 +149,19 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
 
     @Override
     public RecordCommentVO getRecordCommentData(Integer id) {
+        boolean admin = commonUtils.isAdmin();
         RecordComment data = recordCommentMapper.selectById(id);
-        if (data == null) {
+
+        // 未审核评论仅管理端可见：非管理员按「不存在」处理，避免按 id 遍历绕过审核
+        if (data == null || (!admin && !Objects.equals(data.getStatus(), 1))) {
             throw new CustomException("该评论不存在");
         }
 
         QueryWrapper<RecordComment> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("record_id", data.getRecordId());
+        if (!admin) {
+            queryWrapper.eq("status", 1);
+        }
         List<RecordComment> list = recordCommentMapper.selectList(queryWrapper);
 
         RecordCommentVO vo = toRecordCommentVO(data);
@@ -165,6 +171,11 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
                 .findFirst()
                 .map(RecordCommentVO::getChildren)
                 .orElse(new ArrayList<>()));
+
+        if (!admin) {
+            vo.setEmail(null);
+            hideRecordCommentEmails(vo.getChildren());
+        }
         return vo;
     }
 
@@ -269,6 +280,9 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
         // 因此这里仍查全量用于组树，但仅对「一级评论」做分页，避免子评论跨页丢失。
         List<RecordComment> list = recordCommentMapper.selectList(queryWrapper);
         List<RecordCommentVO> vos = buildTwoLevelCommentTree(list);
+        if (!commonUtils.isAdmin()) {
+            hideRecordCommentEmails(vos);
+        }
         return commonUtils.paginate(pageDTO, vos);
     }
 
@@ -335,6 +349,17 @@ public class RecordCommentServiceImpl extends ServiceImpl<RecordCommentMapper, R
         RecordCommentVO vo = new RecordCommentVO();
         BeanUtils.copyProperties(comment, vo);
         return vo;
+    }
+
+    // 非管理员（含匿名访客）不返回评论者邮箱
+    private void hideRecordCommentEmails(List<RecordCommentVO> nodes) {
+        if (nodes == null || nodes.isEmpty()) {
+            return;
+        }
+        for (RecordCommentVO node : nodes) {
+            node.setEmail(null);
+            hideRecordCommentEmails(node.getChildren());
+        }
     }
 
     /**
